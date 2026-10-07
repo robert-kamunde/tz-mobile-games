@@ -1,0 +1,9 @@
+{
+  "name": "@tzg/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Engine-independent building blocks shared by both games. No Phaser or DOM rendering code.",
+  "main": "src/index.ts",
+  "types": "src/index.ts"
+}

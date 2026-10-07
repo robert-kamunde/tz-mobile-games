@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": ".", "outDir": "../../node_modules/.tsc/shell-node", "types": ["node"] },
+  "include": ["e2e", "*.ts", "src/testHooksApi.ts"]
+}
