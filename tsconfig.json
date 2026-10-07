@@ -1,4 +1,11 @@
 {
   "files": [],
-  "references": [{ "path": "packages/core" }, { "path": "packages/shell" }, { "path": "packages/shell/tsconfig.node.json" }]
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/shell" },
+    { "path": "packages/pool" },
+    { "path": "tooling" },
+    { "path": "packages/shell/tsconfig.node.json" },
+    { "path": "packages/pool/tsconfig.node.json" }
+  ]
 }

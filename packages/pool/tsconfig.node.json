@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": ".", "outDir": "../../node_modules/.tsc/pool-node", "types": ["node"] },
+  "include": ["test", "e2e", "*.ts"],
+  "references": [{ "path": "../core" }, { "path": "./tsconfig.json" }, { "path": "../../tooling" }]
+}

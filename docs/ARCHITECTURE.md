@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-07 (Milestone 0)
+Last updated: 2026-10-07 (Milestone 1)
 
 ## Overview
 
@@ -11,7 +11,8 @@ packages/
   core/    Engine-independent logic. No Phaser, no DOM globals. Fully unit-tested.
   shell/   Phaser app shell: boot, scaling, lifecycle wiring, settings, language, rotate prompt.
            Contains no gameplay. demo/ is a placeholder app used only by the shell's browser tests.
-  pool/    (Milestone 1) The pool game: rules + physics in plain TS, Phaser only for drawing and input.
+  pool/    The pool game. src/physics is plain TS (no Phaser); src/scenes draws and handles input.
+tooling/   Shared Vite and Playwright setup and browser-test helpers (Node side only).
 ```
 
 Dependency direction is strictly `game -> shell -> core`. Core never imports shell or Phaser.
@@ -29,6 +30,10 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A7 | The shell halts the Phaser loop itself when the app is backgrounded | Phaser 4 only resets its clock on `visibilitychange` and relies on the browser to stop `requestAnimationFrame`. Found by the backgrounding test (frames kept advancing). Halting explicitly guarantees no CPU, GPU or battery use in the background. | 2026-10-07 |
 | A8 | Canvas renders at design resolution (1280x720), scaled to fit, letterboxed | Low-end GPUs. Higher device pixel ratio is not used. Revisit if text looks soft on real devices. | 2026-10-07 |
 | A9 | Exact dependency versions, no `^` ranges | Reproducible builds. Playwright is pinned to 1.56.1 to match the Chromium build installed in the dev environment. | 2026-10-07 |
+| A10 | Pool physics: 1 ms fixed step, discrete collisions, sliding/rolling ball model with top/back and side spin | At the 7 m/s maximum a ball moves 7 mm per step, under a third of its radius, so it cannot pass through a ball or cushion without continuous collision code. About 4 µs per step for 16 balls in tests. Spin is in the model now (MVP needs it) so adding the spin control later needs no physics rewrite. | 2026-10-07 |
+| A11 | No trigonometry, `hypot`, `pow`, `exp`, `log` or random numbers in `src/physics` | These can return different last bits on different JavaScript engines, which would make the same shot end differently on two phones (and break AI planning and any future online play). Enforced by `test/purity.test.ts`. | 2026-10-07 |
+| A12 | Static art (table, balls) is drawn once into textures instead of live Phaser Graphics | Phaser rebuilds Graphics geometry on the CPU every frame; a texture is one quad. In the test browser this changed idle fps only slightly (24 to 26), because that browser's software renderer is limited by fill rate, but it removes avoidable CPU work on phones. | 2026-10-07 |
+| A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
 
@@ -50,14 +55,40 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 - `rotateOverlay.ts`: a DOM message (not canvas) asking the player to rotate the phone when the orientation is wrong.
 - `testHooks.ts` / `testHooksApi.ts`: `window.__tzg`, read-only state for browser tests. Installed only when built with `--mode e2e`; the release build is checked to contain no `__tzg`.
 
+## Pool (`packages/pool/src`)
+
+| Path | Purpose |
+|---|---|
+| `config/table.ts` | UK 7 ft table and ball sizes, in metres. |
+| `config/physics.ts` | Friction, restitution, step size, shot speed range, safety limits. Starting values, to be tuned in play-testing. |
+| `config/layout.ts` | Screen layout, colours (placeholders), power bar, aim guide, cue stick. |
+| `physics/types.ts` | Ball, table, shot and shot-event types. |
+| `physics/geometry.ts` | Builds cushion segments and pocket jaws from the table config. Pocket ids 0-5 clockwise from top-left. |
+| `physics/rack.ts` | Blackball rack (black in the middle of row 3, different colours on the back corners). Cue ball is id 0. |
+| `physics/simulation.ts` | `PoolSimulation`: `strike`, `step`, `runUntilSettled`, `placeCueBall`, `shotEvents`. Shot events (ball contacts in order, cushions, pockets) are what the Milestone 2 rules engine will read. |
+| `physics/aim.ts` | `computeAimGuide`: sweeps the cue ball to the first ball or cushion; ghost ball and predicted directions. Reusable by the AI. |
+| `physics/placement.ts` | Practice-mode cue ball respawn. Replaced by ball in hand in Milestone 2. |
+| `scenes/TableScene.ts` | Practice table: input, simulation loop, re-rack. |
+| `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing and the power control. |
+
+### Physics model
+- Each ball has velocity, top/back spin stored as contact-point velocity (`sx, sy`; rolling means `s = -v`) and side spin `wz`.
+- Skidding: cloth friction opposes the slip; the slip shrinks 3.5x faster than the velocity changes, so a stun shot rolls at 5/7 of its speed. Rolling: constant rolling resistance.
+- Ball-ball: impulse along the line of centres with restitution; spin is unchanged, which produces follow and draw. No throw.
+- Cushion: restitution on the speed into the cushion; friction removes part of the contact slip, trading tangential speed and side spin (this is how side spin bends rebounds). Energy never increases (tested).
+- Pockets: a ball drops when its centre comes within the drop radius of the pocket point; jaws make a channel to it. A ball can hang in the jaws.
+- Safety: a ball found far outside the table is removed and logged as `escaped`; a shot still moving after 60 s is stopped and logged as `timeout`. Tests require that neither ever happens.
+
 ## Data stored on the device
 
 | Key | Owner | Schema version | Contents |
 |---|---|---|---|
 | `<gameId>.settings` | shell | 1 | `{ locale, soundVolume, musicVolume }` |
 
+Pool's `gameId` is `pool`. Pool stores nothing else yet.
+
 `gameId` must never change after release or players lose their data.
 
 ## TypeScript projects
 
-`tsc -b` from the root builds three projects: `packages/core`, `packages/shell` (browser code, `vite/client` types) and `packages/shell/tsconfig.node.json` (configs and Playwright tests, Node types). Browser code cannot see Node types.
+`tsc -b` from the root builds: `packages/core`, `packages/shell` and `packages/pool` (browser code, `vite/client` types), `tooling` and each package's `tsconfig.node.json` (configs, unit and browser tests, Node types). Browser code cannot see Node types.

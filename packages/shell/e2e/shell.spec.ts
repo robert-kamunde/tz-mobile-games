@@ -1,27 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import { bootTo, setHidden, trackErrors } from '../../../tooling/e2eHelpers';
 
-/** Collects console errors and uncaught exceptions so every test can assert a clean run. */
-function trackErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(msg.text());
-  });
-  page.on('pageerror', (err) => errors.push(err.message));
-  return errors;
-}
-
-async function boot(page: Page): Promise<void> {
-  await page.goto('/');
-  await page.waitForFunction(() => window.__tzg?.activeScenes().includes('Placeholder'));
-}
-
-async function setHidden(page: Page, hidden: boolean): Promise<void> {
-  await page.evaluate((h) => {
-    Object.defineProperty(document, 'hidden', { configurable: true, get: () => h });
-    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => (h ? 'hidden' : 'visible') });
-    document.dispatchEvent(new Event('visibilitychange'));
-  }, hidden);
-}
+const boot = (page: Page) => bootTo(page, 'Placeholder');
 
 async function tapElement(page: Page, name: string): Promise<void> {
   const point = await page.evaluate((n) => window.__tzg!.elementCenter('Placeholder', n), name);
@@ -134,16 +114,18 @@ test('asks to rotate when held upright, and clears after rotating', async ({ pag
   await expect(page.locator('#rotate-overlay')).toBeHidden();
 });
 
-test('keeps a usable frame rate with a 6x slower CPU', async ({ page }) => {
+test('stays inside the frame budget with a 6x slower CPU', async ({ page }) => {
   await boot(page);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
-  const start = await page.evaluate(() => window.__tzg!.frames());
+  await page.evaluate(() => window.__tzg!.resetFrameCpuStats());
   await page.waitForTimeout(2000);
-  const fps = ((await page.evaluate(() => window.__tzg!.frames())) - start) / 2;
-  test.info().annotations.push({ type: 'fps@6x', description: fps.toFixed(1) });
-  console.log(`fps at 6x CPU throttle: ${fps.toFixed(1)}`);
-  expect(fps).toBeGreaterThan(25);
+  const cpu = await page.evaluate(() => window.__tzg!.frameCpuStats());
+  const summary = `cpu avg ${cpu.averageMs.toFixed(2)} ms, max ${cpu.maxMs.toFixed(1)} ms over ${cpu.frames} frames`;
+  test.info().annotations.push({ type: 'idle@6x', description: summary });
+  console.log(`shell at 6x CPU throttle: ${summary}`);
+  expect(cpu.frames).toBeGreaterThan(10);
+  expect(cpu.averageMs).toBeLessThan(8);
 });
 
 test('a game opened in the background waits, then starts when shown', async ({ page }) => {

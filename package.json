@@ -9,9 +9,10 @@
   "scripts": {
     "typecheck": "tsc -b",
     "test": "vitest run",
-    "test:e2e": "npm run build:e2e -w @tzg/shell && playwright test -c packages/shell/playwright.config.ts",
+    "test:e2e": "npm run test:e2e -w @tzg/shell -w @tzg/pool",
     "dev:shell": "npm run dev -w @tzg/shell",
-    "check": "npm run typecheck && npm run test && npm run test:e2e"
+    "check": "npm run typecheck && npm run test && npm run test:e2e",
+    "dev:pool": "npm run dev -w @tzg/pool"
   },
   "engines": {
     "node": ">=22"

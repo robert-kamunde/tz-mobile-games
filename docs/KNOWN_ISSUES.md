@@ -11,7 +11,9 @@ Last updated: 2026-10-07
 | ID | Item |
 |---|---|
 | U1 | Nothing has run on a real Android phone or Android WebView yet. |
-| U2 | Performance measured only in headless desktop Chromium with 6x CPU throttle (28.5 to 32 fps). Real low-end phone numbers unknown. |
+| U2 | GPU performance is unknown. The test browser renders in software: pool runs at 26 fps idle there even unthrottled, because drawing one table-sized rectangle costs that renderer half a frame. CPU cost is measured and small (about 1 ms per frame during a break at 6x throttle). Needs a real low-end phone. |
+| U4 | Table and pocket sizes are standard published UK 7 ft figures, not measured on a table in Tanzania. |
+| U5 | Physics values (friction, restitution) are starting points. The break currently spreads the rack modestly; feel needs tuning by playing on a phone. |
 | U3 | Kiswahili strings not reviewed by a native speaker. |
 
 ## Bugs
@@ -22,4 +24,6 @@ None open.
 |---|---|---|---|
 | TD1 | JS bundle is about 1.38 MB (361 kB gzipped), almost all Phaser. | Slower first load on low-end phones. Loaded from the device inside the APK, so no download cost. | Measure load time on a real device; consider a custom Phaser build only if it is a problem. |
 | TD2 | A corrupt or newer-version save is replaced with defaults on the next save, without keeping a backup copy. | Fine for settings. Not acceptable once player stats/progress are saved. | Milestone 1, before Pool stats are stored: keep the unreadable value under a backup key. |
-| TD3 | The 6x CPU frame-rate test has a 25 fps threshold with about 3 to 7 fps of margin. | Could become flaky on a slower CI machine. | Revisit when CI is set up. |
+| TD3 | ~~The 6x CPU frame-rate test had a thin margin.~~ Replaced by a CPU-time-per-frame check with a wide margin (1 to 2.4 ms against an 8 ms limit). | Resolved in Milestone 1. | n/a |
+| TD4 | Practice-mode placeholders in the pool scene: cue ball respawns automatically; no spin control UI; aim has no fine-adjust control. | Intended for Milestone 1 only. | Milestone 2 (ball in hand, rules), Milestone 3 (spin control, fine aim) unless re-planned. |
+| TD5 | Browser tests wait for shots to settle in real time, so the suite takes about 3 minutes. | Slower feedback. | Acceptable for now; revisit if it grows. |

@@ -4,7 +4,9 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 38 tests, `packages/core/test`
+### Unit tests (`npm test`): 76 tests
+
+#### Core, `packages/core/test` (38)
 | Area | What is covered |
 |---|---|
 | Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained. |
@@ -13,8 +15,24 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 
-### Browser tests (`npm run test:e2e`): 11 scenarios x 3 screen sizes = 33 runs
-Runs a production-like build (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet).
+#### Pool, `packages/pool/test` (38)
+| Area | What is covered |
+|---|---|
+| Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
+| Rolling and sliding | Rolling distance matches v²/2a; stun shot skids for 2v/(7µg) then rolls at 5/7 speed; backspin draws back, topspin follows through. |
+| Collisions | Full-ball hit matches restitution; with elastic balls a cut separates at 90°; cushion returns speed scaled by restitution; left and right side spin bend the rebound by exactly opposite amounts. |
+| Pockets | Diagonal shot drops in the corner; straight shot drops in the middle; fast ball along the cushion past a middle pocket stays legal either way. |
+| Robustness | Full power in 72 directions from 3 spots never tunnels or escapes; 40 random shots (seeded) on a full rack always settle with no overlaps or escapes; energy never rises during a break; a break settles within half the time limit. |
+| Determinism | Same break twice is bit-for-bit identical; 30, 60, 144 fps and random frame times give identical results. |
+| Input validation | Zero, NaN and infinite shots refused; no shot while balls move or with the cue ball potted; power and tip offset clamped; cue ball placement refuses balls, pockets, off-table and NaN. |
+| Respawn | Practice respawn uses the start spot when free, otherwise the next free spot. |
+| Aim guide | Full hit distance and zero deflection; cut gives 90° paths; empty line reaches the cushion; pocketed balls ignored; max distance; invalid direction; agrees with the simulation on the first ball hit. |
+| Source rules | No Phaser, DOM, trigonometry, pow/exp/log, random or clock calls in `src/physics`. |
+
+### Browser tests (`npm run test:e2e`): 21 scenarios x 3 screen sizes = 63 runs
+Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
+
+#### Shell demo (11 scenarios)
 
 | Scenario | Checks |
 |---|---|
@@ -27,7 +45,21 @@ Runs a production-like build (`--mode e2e`) in Chromium with touch and mobile em
 | Corrupt save | Garbage in storage: falls back to defaults, no errors. |
 | Blocked storage | `localStorage` throws: game still runs and language still switches. |
 | Orientation | No prompt in landscape; Kiswahili rotate prompt in portrait; clears after rotating back. |
-| Slow CPU | 6x CPU throttle keeps more than 25 fps (logged; see results). |
+| Slow CPU | With a 6x CPU throttle, average CPU time per frame stays under 8 ms (half a 60 fps frame). |
+
+#### Pool (10 scenarios)
+| Scenario | Checks |
+|---|---|
+| Opens | 16 balls racked, Kiswahili, nothing moving, no errors. |
+| Aiming | Dragging on the table points the cue at the finger (within about 1°). |
+| Shooting | Pulling the power bar shoots; balls settle; the rack moved; no overlaps, escapes, timeouts or errors. |
+| Tiny pull | Below 4% power, letting go cancels. |
+| Cancelled touch | A system touch cancel on the power bar does not shoot; the bar works afterwards. |
+| Busy table | Power bar and aiming are ignored while balls move. |
+| Cue ball potted | Aimed into the corner pocket, it drops and comes back to its start spot. |
+| Re-rack | The button restores all balls and the default aim. |
+| Background mid-shot | Hidden: the simulation stops advancing. Shown again: the shot finishes with exactly the same ball positions as an uninterrupted shot. |
+| Slow CPU | A full break at 6x CPU throttle: average CPU time per frame under 8 ms; balls settle without overlapping. |
 
 ### Release build check
 `npm run build -w @tzg/shell`, then confirm `__tzg` does not appear in `packages/shell/dist/assets/*.js`.
@@ -37,10 +69,12 @@ Runs a production-like build (`--mode e2e`) in Chromium with touch and mobile em
 | Date | Milestone | Typecheck | Unit | Browser | Notes |
 |---|---|---|---|---|---|
 | 2026-10-07 | 0 | pass | 38/38 | 33/33 | fps at 6x CPU throttle: 28.5 to 32.0 across runs (headless Chromium, software rendering in a cloud container, not a phone). Release build has no test hooks. First browser run failed 3/30: frames kept running in the background (fixed, see ARCHITECTURE A7). |
+| 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
 - Any Android phone or Android WebView. All browser tests use desktop Chromium emulating touch.
-- Real GPU performance, memory use, battery drain, thermal throttling.
+- Real GPU performance, memory use, battery drain, thermal throttling. The test browser has no GPU, so frame rate cannot be judged here.
+- How the physics feels (speed, friction, break spread) to real players.
 - Real app backgrounding (home button, incoming call, screen lock) inside the Capacitor wrapper.
 - Kiswahili wording reviewed by a native speaker.
 
@@ -51,6 +85,7 @@ Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android 
 3. Press home mid-game, wait 1 minute, return: game resumes, nothing lost.
 4. Lock screen and unlock; take an incoming call: same as 3.
 5. Rotate to portrait: rotate prompt shows; back to landscape: prompt clears.
-6. Play 10 minutes: no stutter worth noting, phone not hot, no crash.
+6. Play 10 minutes: no stutter worth noting, phone not hot, no crash. Note the frame rate during a full-power break.
+6a. Pool: aim with one finger, pull power with another; aim lands where the finger is; a pull-and-swipe-down of the notification shade does not shoot.
 7. Turn on airplane mode mid-session: nothing changes.
 8. Clear app data, reopen: starts fresh without errors.

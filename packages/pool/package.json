@@ -1,24 +1,21 @@
 {
-  "name": "@tzg/shell",
+  "name": "@tzg/pool",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Phaser app shell shared by both games: boot, scaling, lifecycle, settings, language. Contains no gameplay.",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "description": "Pool ya Mtaani. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 4173 --strictPort",
     "build:e2e": "vite build --mode e2e --outDir dist-e2e",
     "test:e2e": "npm run build:e2e && playwright test"
   },
   "dependencies": {
     "@tzg/core": "0.1.0",
+    "@tzg/shell": "0.1.0",
     "phaser": "4.2.1"
   },
   "devDependencies": {
-    "@types/node": "22.20.5",
     "vite": "8.3.3"
   }
 }

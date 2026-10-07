@@ -36,6 +36,12 @@ Bar pool as Tanzanians actually play it: **Blackball rules** (7 reds, 7 yellows,
 ### Out of scope for first launch
 Online multiplayer, extra venues, cues or cosmetics, ads, purchases, leaderboards, tournaments. See backlog.
 
+### Controls as built in Milestone 1 (practice table)
+- Drag anywhere on the table: the cue points from the cue ball towards the finger. A guide line shows the path, the ghost ball at first contact, and the predicted object-ball and cue-ball directions.
+- Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
+- Aiming and power can use two fingers at once. Controls are disabled while balls move.
+- Not yet built: spin control, fine aim adjustment, rules, turns, AI, menus, sound.
+
 ### Core loop
 Aim, set power and spin, shoot, balls settle, rules engine decides the outcome (continue, change turn, foul, win, loss), repeat. A match ends on a legal or illegal pot of the black.
 

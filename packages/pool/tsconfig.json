@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "rootDir": ".", "outDir": "../../node_modules/.tsc/pool", "types": ["vite/client"] },
+  "include": ["src"],
+  "references": [{ "path": "../core" }, { "path": "../shell" }]
+}

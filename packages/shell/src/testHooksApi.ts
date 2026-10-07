@@ -15,6 +15,16 @@ export interface TestHooks {
   rotatePromptVisible(): boolean;
   /** Center of a named UI element in page (CSS) pixels, so tests can tap it like a player would. */
   elementCenter(sceneKey: string, name: string): { x: number; y: number } | null;
+  /**
+   * CPU time per frame (game update + render submission) since the last reset, in ms. GPU raster time
+   * is not included: the test browser renders in software, so only the CPU side is meaningful there.
+   */
+  frameCpuStats(): { frames: number; averageMs: number; maxMs: number };
+  resetFrameCpuStats(): void;
+  /** Converts a point in design pixels (e.g. 1280x720 space) to page (CSS) pixels. */
+  designToPage(x: number, y: number): { x: number; y: number };
+  /** Calls a game-specific probe registered with registerTestProbe. Throws for an unknown name. */
+  probe(name: string, ...args: unknown[]): unknown;
 }
 
 declare global {

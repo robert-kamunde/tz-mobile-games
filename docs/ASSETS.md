@@ -1,6 +1,6 @@
 # Asset Inventory
 
-No art, audio or font files exist yet. Everything on screen is a labelled placeholder.
+No art, audio or font files exist yet. Everything on screen is a labelled placeholder (the pool table shows "MEZA YA MAZOEZI: michoro ya muda" / "PRACTICE TABLE: placeholder art").
 
 | Name | Type | Purpose | Status | Location | Replacement requirements |
 |---|---|---|---|---|---|
@@ -9,3 +9,8 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Background colour `#1d5c3a` | Colour | Shell demo background (table green) | Placeholder | `packages/shell/demo/main.ts` | Pool art direction. |
 | Rotate prompt | DOM text | Asks player to turn the phone sideways | Final behaviour, placeholder styling | `packages/shell/src/rotateOverlay.ts` | Icon of a rotating phone, styled to match the game. |
 | App icon, splash screen | Image | Android launcher and startup | Missing | n/a | Needed before the first device build (Release step 3). |
+| Pool table | Generated texture (flat shapes) | Rails, cloth, pockets, cushion lines, baulk line | Placeholder | `packages/pool/src/scenes/TableView.ts`, colours in `config/layout.ts` | Table art at 1280x720 design size (cloth, wood rails, pockets), readable on a small screen; the cushion and pocket shapes must match `config/table.ts`. |
+| Balls (cue, red, yellow, black) | Generated textures (flat circles) | Balls | Placeholder | `TableView.ts` | Shaded ball sprites, about 28 px across at design size; red and yellow must be told apart by colour-blind players (add a marking). |
+| Cue stick | Line | Shows aim and pull-back | Placeholder | `AimView.ts` | Cue sprite. |
+| Power bar | Rectangles | Power control | Placeholder | `PowerBar.ts` | Styled bar and handle. |
+| Sounds | Audio | Cue strike, ball clicks, cushion, pocket | Missing | n/a | Short, small files; needed before release. Not in Milestone 1 scope. |
