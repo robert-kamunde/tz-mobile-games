@@ -26,6 +26,7 @@ export interface PoolState {
   verdict: ShotVerdict | null;
   status: string;
   gameOverShown: boolean;
+  trays: { potted: number; slots: number }[];
 }
 
 export const SCENE = 'Table';

@@ -55,7 +55,7 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
 - Aiming and power can use two fingers at once. Controls are disabled while balls move.
 - Ball in hand: a ring shows round the cue ball; drag it to place it. It follows the finger only over free cloth (never onto a ball, cushion or pocket) and stays behind the baulk line before the break.
-- Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip and balls left. The status line says what happened (foul, colours decided) and who plays next.
+- Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip and balls left, and a tray under each name that fills with that player's potted balls once colours are decided. The status line says what happened (foul, colours decided) and who plays next.
 - New game: bottom right. During a match it needs a second tap within 3 seconds.
 - Not yet built: AI, menus, settings screen, stats, rules screen, spin control, fine aim adjustment, sound.
 

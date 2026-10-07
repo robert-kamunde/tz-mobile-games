@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.1 (unreleased) - Potted-ball trays
+- Under each player's name, a row of 7 slots fills with their colour as their balls are potted (Robert's request). Hidden while the table is open.
+
 ## 0.3.0 (unreleased) - Milestone 2: Blackball rules and pass-and-play
 - Rules engine (`src/rules`): break, open table, colours, fouls with ball in hand anywhere (R1), the black (any pocket, R2), re-rack on a black potted on the break (R3), win and loss.
 - Two players on one phone: player panels with colour and balls left, status line with fouls and whose turn it is, game-over panel, New game (second tap needed mid-match), breaks alternate.

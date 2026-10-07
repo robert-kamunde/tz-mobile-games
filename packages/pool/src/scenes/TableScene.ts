@@ -7,7 +7,7 @@ import { UK_7FT_TABLE } from '../config/table';
 import { computeAimGuide } from '../physics/aim';
 import { buildTableGeometry } from '../physics/geometry';
 import { respawnCueBall } from '../physics/placement';
-import { rackBalls } from '../physics/rack';
+import { countInRack, rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
 import type { TableGeometry, Vec2 } from '../physics/types';
 import {
@@ -296,7 +296,12 @@ export class TableScene extends Phaser.Scene {
     const counts = this.groupCounts();
     const panel = (player: PlayerId) => {
       const group = this.match.groups[player];
-      return { group, remaining: group ? counts[group] : 0, onBlack: isOnBlack(this.match, player, counts) };
+      return {
+        group,
+        remaining: group ? counts[group] : 0,
+        total: group ? countInRack(group) : 0,
+        onBlack: isOnBlack(this.match, player, counts),
+      };
     };
     this.hud.showPlayers(this.match, [panel(0), panel(1)]);
     this.hud.setHint(this.match.ballInHand !== null);
@@ -325,6 +330,7 @@ export class TableScene extends Phaser.Scene {
       verdict: this.lastResult?.verdict ?? null,
       status: this.hud.statusText,
       gameOverShown: this.hud.gameOverVisible,
+      trays: this.hud.trayState,
     }));
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
     // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game

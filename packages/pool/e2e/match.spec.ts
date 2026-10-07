@@ -96,3 +96,15 @@ test('New game during a match needs a second tap', async ({ page }) => {
   s = await state(page);
   expect(s.balls[1]!.pocketed).toBe(false);
 });
+
+test('each player sees their potted balls in a tray under their name once colours are decided', async ({ page }) => {
+  await boot(page);
+  // Open table: no trays yet.
+  expect((await state(page)).trays).toEqual([{ potted: 0, slots: 0 }, { potted: 0, slots: 0 }]);
+  const s = await state(page);
+  const pottedReds = s.balls.filter((b) => b.kind === 'red').slice(0, 3).map((b) => ({ id: b.id, pocketed: true }));
+  const pottedYellow = s.balls.filter((b) => b.kind === 'yellow').slice(0, 1).map((b) => ({ id: b.id, pocketed: true }));
+  await layout(page, [...pottedReds, ...pottedYellow], { phase: 'play', current: 1, groups: ['yellow', 'red'], ballInHand: null });
+  expect((await state(page)).trays).toEqual([{ potted: 1, slots: 7 }, { potted: 3, slots: 7 }]);
+  await page.screenshot({ path: test.info().outputPath('trays.png') });
+});

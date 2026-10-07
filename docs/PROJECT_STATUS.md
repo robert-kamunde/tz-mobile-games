@@ -13,6 +13,7 @@ Last updated: 2026-10-07
 - Milestone 1: deterministic pool physics with spin, touch aiming, guide line, power bar.
 - Milestone 1 build published as a private web page for Robert to try on his phone (2026-10-07).
 - Milestone 2: full Blackball rules engine, ball in hand, two-player pass-and-play with fouls, colours, win/loss and New game. 112 unit tests and 72 browser test runs pass.
+- Potted-ball trays under each player's name (Robert's request after playing M2 on his phone). 113 unit tests and 75 browser test runs pass.
 
 ## In progress
 - Nothing. Waiting on Robert to confirm the Milestone 3 scope and for his feedback from playing on a phone.

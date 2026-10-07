@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FixedStepper } from '@tzg/core';
 import { DEFAULT_PHYSICS } from '../src/config/physics';
 import { respawnCueBall } from '../src/physics/placement';
-import { RACK_PATTERN, rackBalls } from '../src/physics/rack';
+import { RACK_PATTERN, countInRack, rackBalls } from '../src/physics/rack';
 import type { Shot } from '../src/physics/types';
 import {
   GEOMETRY, TABLE, cueAt, layoutProblems, objectBall, powerFor, rackedSim, seededRandom, simWith, snapshot, totalEnergy,
@@ -31,6 +31,14 @@ describe('table and rack', () => {
     expect(back[0]).not.toBe(back[back.length - 1]);
     expect(balls[0]!.x).toBeLessThan(TABLE.baulkLine);
     expect(layoutProblems(balls)).toEqual([]);
+  });
+
+  it('countInRack agrees with the racked balls', () => {
+    const balls = rackBalls(TABLE);
+    for (const kind of ['red', 'yellow', 'black'] as const) {
+      expect(countInRack(kind)).toBe(balls.filter((b) => b.kind === kind).length);
+    }
+    expect(countInRack('cue')).toBe(0);
   });
 });
 

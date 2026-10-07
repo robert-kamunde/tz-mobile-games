@@ -15,6 +15,9 @@ export const RACK_PATTERN: readonly (readonly BallKind[])[] = [
 
 export const CUE_BALL_ID = 0;
 
+/** How many balls of a kind the rack holds (7 for each colour). */
+export const countInRack = (kind: BallKind): number => RACK_PATTERN.flat().filter((k) => k === kind).length;
+
 function makeBall(id: number, kind: BallKind, x: number, y: number, t: TableConfig): Ball {
   const isCue = kind === 'cue';
   return {

@@ -42,6 +42,11 @@ export const HUD = {
   status: { x: 570, y: 36, wrapWidth: 480, lineSpacing: -2 },
   /** Player panels at the two top corners of the table. */
   players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 13, gap: 10, inactiveAlpha: 0.45 },
+  /**
+   * Potted-ball tray under each player's name: one slot per ball of their colour, filled as they
+   * are potted. Sits between the name and the top rail (rail starts at y 70).
+   */
+  tray: { y: 60, ballRadius: 9, spacing: 22, emptyAlpha: 0.35, outlineWidth: 1.5 },
   placeholder: { x: 24, y: DESIGN.height - 22 },
   hint: { x: 570, y: DESIGN.height - 22 },
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */

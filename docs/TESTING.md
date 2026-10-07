@@ -4,7 +4,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 112 tests
+### Unit tests (`npm test`): 113 tests
 
 #### Core, `packages/core/test` (38)
 | Area | What is covered |
@@ -35,7 +35,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Rules + physics | A real full-power break is judged legal. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, random or clock calls in `src/physics` and `src/rules`. |
 
-### Browser tests (`npm run test:e2e`): 24 scenarios x 3 screen sizes = 72 runs
+### Browser tests (`npm run test:e2e`): 25 scenarios x 3 screen sizes = 75 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -65,7 +65,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Background mid-shot | Hidden: the simulation stops advancing. Shown again: the shot finishes with exactly the same ball positions as an uninterrupted shot. |
 | Slow CPU | A full break at 6x CPU throttle: average CPU time per frame under 8 ms; balls settle without overlapping. |
 
-#### Pool match (5 scenarios, `match.spec.ts`)
+#### Pool match (6 scenarios, `match.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Break placement | Player 1 breaks; dragging the cue ball past the baulk line keeps it behind the line. |
@@ -73,6 +73,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Blocked placement | The cue ball cannot be dropped onto another ball. |
 | Winning | Set up on the black (test-only layout), aim and shoot by touch: the black drops, player 1 wins, the game-over panel shows, shooting is disabled, New game starts a match with player 2 breaking. |
 | New game confirm | One tap mid-match changes nothing; a second tap restarts. |
+| Potted-ball trays | No trays while the table is open; once colours are set, each player's tray shows 7 slots with their potted balls filled (checked with 1 and 3 potted). |
 
 ### Release build check
 `npm run build -w @tzg/shell`, then confirm `__tzg` does not appear in `packages/shell/dist/assets/*.js`.
@@ -83,6 +84,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 |---|---|---|---|---|---|
 | 2026-10-07 | 0 | pass | 38/38 | 33/33 | fps at 6x CPU throttle: 28.5 to 32.0 across runs (headless Chromium, software rendering in a cloud container, not a phone). Release build has no test hooks. First browser run failed 3/30: frames kept running in the background (fixed, see ARCHITECTURE A7). |
 | 2026-10-07 | 2 | pass | 112/112 | shell 33/33, pool 39/39 | All new tests passed on the first full run. Layout reviewed on 640x360 screenshots: text sizes raised so nothing renders under 10 CSS px on a 360-px-tall phone; status line overlapped a player panel at first (fixed); the aim guide ran off the table through a pocket (fixed: it now stops at pockets). |
+| 2026-10-07 | 2.1 | pass | 113/113 | pool 42/42 | Potted-ball trays. Checked on a 640x360 screenshot: the trays fit between the player names and the top rail. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)

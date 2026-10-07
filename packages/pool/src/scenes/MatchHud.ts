@@ -1,16 +1,26 @@
 import * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
+import { countInRack } from '../physics/rack';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
 
 export interface PlayerPanelInfo {
   readonly group: Group | null;
   /** Own group balls left on the table (ignored while the table is open). */
   readonly remaining: number;
+  /** Balls in the player's group at the start of the frame (0 while the table is open). */
+  readonly total: number;
   readonly onBlack: boolean;
 }
 
+/** What a player's potted-ball tray shows: filled slots and visible slots. */
+export interface TrayState {
+  readonly potted: number;
+  readonly slots: number;
+}
+
 const PLAYERS: readonly PlayerId[] = [0, 1];
+const TRAY_SLOTS = Math.max(countInRack('red'), countInRack('yellow'));
 const HUD_DEPTH = 10;
 
 /**
@@ -19,7 +29,8 @@ const HUD_DEPTH = 10;
  * the translator; the scene decides what to say.
  */
 export class MatchHud {
-  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc }[];
+  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc; tray: Phaser.GameObjects.Arc[] }[];
+  private readonly trays: [TrayState, TrayState] = [{ potted: 0, slots: 0 }, { potted: 0, slots: 0 }];
   private readonly status: Phaser.GameObjects.Text;
   private readonly hint: Phaser.GameObjects.Text;
   private readonly newGame: Phaser.GameObjects.Text;
@@ -42,7 +53,14 @@ export class MatchHud {
       chip.setStrokeStyle(1.5, COLORS.ballOutline, 0.6).setName(`playerChip-${player}`);
       const labelX = left ? p.leftX + 2 * p.chipRadius + p.gap : p.rightX - 2 * p.chipRadius - p.gap;
       const label = scene.add.text(labelX, p.y, '', text(TEXT_STYLE.playerSize)).setOrigin(left ? 0 : 1, 0.5).setName(`player-${player}`);
-      return { label, chip };
+      // Slots run inwards from the outer edge, under the chip and name.
+      const tr = HUD.tray;
+      const firstX = left ? p.leftX + tr.ballRadius : p.rightX - tr.ballRadius;
+      const step = left ? tr.spacing : -tr.spacing;
+      const tray = Array.from({ length: TRAY_SLOTS }, (_, i) =>
+        scene.add.circle(firstX + i * step, tr.y, tr.ballRadius).setName(`tray-${player}-${i}`).setVisible(false),
+      );
+      return { label, chip, tray };
     });
 
     this.status = scene.add
@@ -91,7 +109,7 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
     for (const o of all) o.setDepth(HUD_DEPTH);
   }
 
@@ -114,7 +132,27 @@ export class MatchHud {
       const alpha = active ? 1 : HUD.players.inactiveAlpha;
       label.setAlpha(alpha).setFontStyle(active ? 'bold' : 'normal');
       chip.setAlpha(alpha);
+      this.showTray(player, info[player]);
     }
+  }
+
+  /** Filled and visible tray slots per player, for tests. */
+  get trayState(): readonly [TrayState, TrayState] {
+    return this.trays;
+  }
+
+  /** Potted balls of the player's colour fill slots from the outer edge; the rest stay as faint outlines. Hidden while the table is open. */
+  private showTray(player: PlayerId, { group, remaining, total }: PlayerPanelInfo): void {
+    const slots = group ? total : 0;
+    const potted = slots - (group ? remaining : 0);
+    this.panels[player]!.tray.forEach((slot, i) => {
+      slot.setVisible(i < slots);
+      if (!group || i >= slots) return;
+      const filled = i < potted;
+      slot.setFillStyle(COLORS.ball[group], filled ? 1 : 0);
+      slot.setStrokeStyle(HUD.tray.outlineWidth, filled ? COLORS.ballOutline : COLORS.ball[group], filled ? 1 : HUD.tray.emptyAlpha);
+    });
+    this.trays[player] = { potted, slots };
   }
 
   /** Bottom line: how to use the controls right now. */
