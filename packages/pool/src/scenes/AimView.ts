@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { AIM_GUIDE, COLORS, CUE_STICK } from '../config/layout';
+import { AIM_GUIDE, BALL_IN_HAND, COLORS, CUE_STICK } from '../config/layout';
 import type { AimGuide } from '../physics/aim';
 import type { Ball, Vec2 } from '../physics/types';
 import type { TableView } from './TableView';
@@ -19,9 +19,15 @@ export class AimView {
     this.cueGraphics.clear();
   }
 
-  draw(cue: Ball, direction: Vec2, guide: AimGuide | null, power: number): void {
+  /** `ballInHand` adds a ring round the cue ball to show it can be dragged. */
+  draw(cue: Ball, direction: Vec2, guide: AimGuide | null, power: number, ballInHand: boolean): void {
     this.drawGuide(cue, guide);
     this.drawCue(cue, direction, power);
+    if (ballInHand) {
+      const c = this.table.toDesign(cue.x, cue.y);
+      this.cueGraphics.lineStyle(BALL_IN_HAND.ringWidth, COLORS.ballInHandRing, 1);
+      this.cueGraphics.strokeCircle(c.x, c.y, BALL_IN_HAND.ringRadius);
+    }
   }
 
   private drawGuide(cue: Ball, guide: AimGuide | null): void {

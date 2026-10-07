@@ -13,4 +13,6 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Balls (cue, red, yellow, black) | Generated textures (flat circles) | Balls | Placeholder | `TableView.ts` | Shaded ball sprites, about 28 px across at design size; red and yellow must be told apart by colour-blind players (add a marking). |
 | Cue stick | Line | Shows aim and pull-back | Placeholder | `AimView.ts` | Cue sprite. |
 | Power bar | Rectangles | Power control | Placeholder | `PowerBar.ts` | Styled bar and handle. |
+| Match HUD | Text, circles, rectangle | Player panels, status line, game-over panel, New game button | Placeholder styling | `MatchHud.ts` | Styled panels and buttons; a font chosen for Kiswahili readability. |
+| Ball-in-hand ring | Circle outline | Shows the cue ball can be dragged | Placeholder | `AimView.ts` | Could become a hand icon. |
 | Sounds | Audio | Cue strike, ball clicks, cushion, pocket | Missing | n/a | Short, small files; needed before release. Not in Milestone 1 scope. |

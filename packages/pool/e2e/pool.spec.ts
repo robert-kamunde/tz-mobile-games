@@ -1,75 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
-import { bootTo, setHidden, touchDrag, trackErrors, type PagePoint } from '../../../tooling/e2eHelpers';
-import { POWER_BAR } from '../src/config/layout';
+import { expect, test } from '@playwright/test';
+import { setHidden, touchDrag, trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-
-interface BallState {
-  id: number;
-  kind: string;
-  x: number;
-  y: number;
-  r: number;
-  pocketed: boolean;
-}
-
-interface PoolState {
-  moving: boolean;
-  shots: number;
-  steps: number;
-  aim: { x: number; y: number };
-  power: number;
-  balls: BallState[];
-  events: string[];
-}
-
-const SCENE = 'Table';
-const boot = (page: Page) => bootTo(page, SCENE);
-const state = (page: Page) => page.evaluate(() => window.__tzg!.probe('pool.state') as PoolState);
-
-/** A table point (metres) in page pixels. */
-async function tablePoint(page: Page, x: number, y: number): Promise<PagePoint> {
-  return page.evaluate(
-    ([tx, ty]) => {
-      const d = window.__tzg!.probe('pool.tableToDesign', tx, ty) as { x: number; y: number };
-      return window.__tzg!.designToPage(d.x, d.y);
-    },
-    [x, y] as const,
-  );
-}
-
-async function elementCenter(page: Page, name: string): Promise<PagePoint> {
-  const p = await page.evaluate((n) => window.__tzg!.elementCenter('Table', n), name);
-  expect(p, `element ${name}`).not.toBeNull();
-  return p!;
-}
-
-/** Drags the power bar down by a fraction of its length and lets go. */
-async function pullPower(page: Page, fraction: number, options: { cancel?: boolean } = {}): Promise<void> {
-  const handle = await elementCenter(page, 'powerHandle');
-  const length = await page.evaluate(
-    ([top, height]) => window.__tzg!.designToPage(0, top + height).y - window.__tzg!.designToPage(0, top).y,
-    [POWER_BAR.top, POWER_BAR.height] as const,
-  );
-  await touchDrag(page, handle, { x: handle.x, y: handle.y + length * fraction }, options);
-}
-
-async function waitUntilSettled(page: Page, timeoutMs = 30_000): Promise<PoolState> {
-  await expect.poll(async () => (await state(page)).moving, { timeout: timeoutMs, intervals: [100] }).toBe(false);
-  return state(page);
-}
-
-function overlaps(balls: BallState[]): string[] {
-  const on = balls.filter((b) => !b.pocketed);
-  const out: string[] = [];
-  for (let i = 0; i < on.length; i++) {
-    for (let j = i + 1; j < on.length; j++) {
-      const a = on[i]!;
-      const b = on[j]!;
-      if (Math.hypot(a.x - b.x, a.y - b.y) < a.r + b.r - 1e-6) out.push(`${a.id}/${b.id}`);
-    }
-  }
-  return out;
-}
+import { SCENE, boot, overlaps, pullPower, state, tablePoint, waitUntilSettled } from './poolPage';
 
 test('opens on a racked table in Kiswahili with no errors', async ({ page }) => {
   const errors = trackErrors(page);
@@ -143,30 +75,6 @@ test('controls are ignored while balls are moving', async ({ page }) => {
   expect(s.shots).toBe(1);
   expect(s.aim).toEqual(aimBefore);
   await waitUntilSettled(page);
-});
-
-test('a potted cue ball comes back to its starting spot', async ({ page }) => {
-  await boot(page);
-  // Aim at the top-left corner pocket; the path from the cue's start is clear.
-  const cue = (await state(page)).balls[0]!;
-  await touchDrag(page, await tablePoint(page, 0.3, 0.3), await tablePoint(page, 0, 0));
-  await pullPower(page, 0.25);
-  const settled = await waitUntilSettled(page);
-  expect(settled.events).toContain('pocket');
-  const after = settled.balls[0]!;
-  expect(after.pocketed).toBe(false);
-  expect([after.x, after.y]).toEqual([cue.x, cue.y]);
-});
-
-test('re-rack restores all balls', async ({ page }) => {
-  await boot(page);
-  await pullPower(page, 1);
-  await waitUntilSettled(page);
-  await page.touchscreen.tap(...Object.values(await elementCenter(page, 'rerackButton')) as [number, number]);
-  await expect.poll(async () => (await state(page)).balls.filter((b) => b.pocketed).length).toBe(0);
-  const s = await state(page);
-  expect(s.balls[1]).toMatchObject({ x: UK_7FT_TABLE.footSpot, y: UK_7FT_TABLE.playWidth / 2 });
-  expect(s.aim).toEqual({ x: 1, y: 0 });
 });
 
 test('going to the background mid-shot freezes the table and gives the same result after returning', async ({ page }) => {

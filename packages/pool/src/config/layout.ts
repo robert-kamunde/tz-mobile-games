@@ -29,14 +29,34 @@ export const COLORS = {
   powerFill: 0xf2994a,
   powerHandle: 0xffffff,
   text: '#ffffff',
+  textDim: '#b8c2bd',
+  ballInHandRing: 0xf2c94c,
+  overlay: 0x0b0e11,
+  accent: '#f2994a',
   buttonText: '#101418',
   buttonBackground: '#ffffff',
 } as const;
 
 export const HUD = {
-  hint: { x: DESIGN.width / 2, y: 36 },
+  /** Status line centred over the table. */
+  status: { x: 570, y: 36, wrapWidth: 480, lineSpacing: -2 },
+  /** Player panels at the two top corners of the table. */
+  players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 13, gap: 10, inactiveAlpha: 0.45 },
   placeholder: { x: 24, y: DESIGN.height - 22 },
-  rerack: { x: 1196, y: 44, padding: { x: 14, y: 10 } },
+  hint: { x: 570, y: DESIGN.height - 22 },
+  /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
+  newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30, padding: { x: 14, y: 10 } },
+  /** Game-over panel over the middle of the table. */
+  gameOver: { x: 570, y: 330, width: 640, height: 200, alpha: 0.82 },
+  /** A second tap on New game within this time confirms it mid-match. */
+  confirmMs: 3000,
+} as const;
+
+export const BALL_IN_HAND = {
+  /** A touch this close to the cue ball (design pixels) picks it up instead of aiming. */
+  grabRadius: 44,
+  ringRadius: 24,
+  ringWidth: 3,
 } as const;
 
 export const POWER_BAR = {
@@ -71,13 +91,18 @@ export const CUE_STICK = {
 export const SIMULATION_LOOP = {
   /** A slow frame runs at most this many physics steps; beyond that the shot plays slower instead of freezing. */
   maxStepsPerFrame: 100,
-  /** Search step when putting a potted cue ball back (practice mode), metres. */
+  /** Search step when finding a free spot for a potted cue ball before ball in hand, metres. */
   respawnSearchStep: 0.06,
 } as const;
 
 export const TEXT_STYLE = {
   fontFamily: 'system-ui, sans-serif',
-  hintSize: '22px',
-  buttonSize: '24px',
-  labelSize: '18px',
+  // Sizes are design pixels. On a common 360-px-tall phone they render at half size, so nothing
+  // below 20 (10 CSS px) is used.
+  hintSize: '20px',
+  statusSize: '24px',
+  playerSize: '24px',
+  titleSize: '52px',
+  buttonSize: '28px',
+  labelSize: '20px',
 } as const;

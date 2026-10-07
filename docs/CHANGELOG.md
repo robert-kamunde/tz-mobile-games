@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (unreleased) - Milestone 2: Blackball rules and pass-and-play
+- Rules engine (`src/rules`): break, open table, colours, fouls with ball in hand anywhere (R1), the black (any pocket, R2), re-rack on a black potted on the break (R3), win and loss.
+- Two players on one phone: player panels with colour and balls left, status line with fouls and whose turn it is, game-over panel, New game (second tap needed mid-match), breaks alternate.
+- Ball in hand: drag the cue ball to free cloth; held behind the baulk line before the break.
+- Aim guide now stops at pockets. Larger text for small phones. Re-rack button replaced by New game.
+
 ## 0.2.0 (unreleased) - Milestone 1: pool table and physics
 - New `@tzg/pool` package: UK 7 ft table, Blackball rack, deterministic physics with skid/roll, top/back and side spin, ball and cushion collisions, pocket jaws and drops.
 - Practice table: drag on the table to aim with a guide line (ghost ball and predicted paths), pull the power bar to shoot, re-rack button. Potted cue ball comes back automatically (placeholder for ball in hand).

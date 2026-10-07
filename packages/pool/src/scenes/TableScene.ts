@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
-import { FixedStepper, type Logger } from '@tzg/core';
+import { FixedStepper, type Logger, type Translator } from '@tzg/core';
 import { getServices, registerTestProbe } from '@tzg/shell';
-import { AIM_GUIDE, COLORS, HUD, SIMULATION_LOOP, TEXT_STYLE } from '../config/layout';
+import { AIM_GUIDE, BALL_IN_HAND, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { computeAimGuide } from '../physics/aim';
@@ -9,8 +9,20 @@ import { buildTableGeometry } from '../physics/geometry';
 import { respawnCueBall } from '../physics/placement';
 import { rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
-import type { Vec2 } from '../physics/types';
+import type { TableGeometry, Vec2 } from '../physics/types';
+import {
+  isOnBlack,
+  opponentOf,
+  resolveShot,
+  startMatch,
+  type GroupCounts,
+  type MatchState,
+  type PlayerId,
+  type ShotResult,
+} from '../rules/blackball';
+import { summarizeShot } from '../rules/shotSummary';
 import { AimView } from './AimView';
+import { MatchHud } from './MatchHud';
 import { PowerBar } from './PowerBar';
 import { TableView } from './TableView';
 
@@ -18,22 +30,28 @@ import { TableView } from './TableView';
 const BREAK_AIM: Vec2 = { x: 1, y: 0 };
 
 /**
- * Milestone 1 practice table: aim by dragging on the table, shoot with the power bar, re-rack.
- * No rules, turns or AI yet. Phaser is used only for drawing and input; the simulation is
- * src/physics/simulation.ts.
+ * A two-player (pass-and-play) Blackball match on one table. Phaser is used only for drawing and
+ * input: the simulation is src/physics and the rules are src/rules.
  */
 export class TableScene extends Phaser.Scene {
   static readonly KEY = 'Table';
 
+  private geometry!: TableGeometry;
   private sim!: PoolSimulation;
+  private match!: MatchState;
   private view!: TableView;
   private aimView!: AimView;
   private powerBar!: PowerBar;
+  private hud!: MatchHud;
   private stepper!: FixedStepper;
   private logger!: Logger;
+  private t!: Translator;
   private aim: Vec2 = BREAK_AIM;
   private aimPointerId: number | null = null;
   private powerPointerId: number | null = null;
+  private placePointerId: number | null = null;
+  private countsBeforeShot: GroupCounts = { red: 0, yellow: 0 };
+  private lastResult: ShotResult | null = null;
   private shots = 0;
 
   constructor() {
@@ -42,43 +60,18 @@ export class TableScene extends Phaser.Scene {
 
   create(): void {
     const services = getServices(this);
-    const t = services.translator;
+    this.t = services.translator;
     this.logger = services.logger.child('table');
 
-    const geometry = buildTableGeometry(UK_7FT_TABLE);
-    this.view = new TableView(this, geometry, UK_7FT_TABLE);
+    this.geometry = buildTableGeometry(UK_7FT_TABLE);
+    this.view = new TableView(this, this.geometry, UK_7FT_TABLE);
     this.view.drawTable();
-    this.sim = new PoolSimulation(geometry, DEFAULT_PHYSICS, rackBalls(UK_7FT_TABLE), this.logger.child('physics'));
+    this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view);
-    this.powerBar = new PowerBar(this, t.t('pool.power'));
+    this.powerBar = new PowerBar(this, this.t.t('pool.power'));
+    this.hud = new MatchHud(this, this.t, () => this.startNewMatch(opponentOf(this.match.breaker)));
     this.stepper = new FixedStepper({ stepMs: DEFAULT_PHYSICS.stepSeconds * 1000, maxStepsPerFrame: SIMULATION_LOOP.maxStepsPerFrame });
-
-    const hint = this.add
-      .text(HUD.hint.x, HUD.hint.y, '', { fontFamily: TEXT_STYLE.fontFamily, fontSize: TEXT_STYLE.hintSize, color: COLORS.text })
-      .setOrigin(0.5)
-      .setName('hint');
-    const placeholder = this.add
-      .text(HUD.placeholder.x, HUD.placeholder.y, '', { fontFamily: TEXT_STYLE.fontFamily, fontSize: TEXT_STYLE.labelSize, color: COLORS.text })
-      .setOrigin(0, 0.5)
-      .setAlpha(0.7)
-      .setName('placeholderLabel');
-    const rerack = this.add
-      .text(HUD.rerack.x, HUD.rerack.y, '', {
-        fontFamily: TEXT_STYLE.fontFamily,
-        fontSize: TEXT_STYLE.buttonSize,
-        color: COLORS.buttonText,
-        backgroundColor: COLORS.buttonBackground,
-        padding: HUD.rerack.padding,
-      })
-      .setOrigin(0.5)
-      .setName('rerackButton')
-      .setInteractive({ useHandCursor: true });
-    rerack.on('pointerup', () => this.rerack());
-
-    hint.setText(t.t('pool.hint'));
-    placeholder.setText(t.t('pool.placeholder'));
-    rerack.setText(t.t('pool.rerack'));
 
     this.input.on('pointerdown', this.onPointerDown, this);
     this.input.on('pointermove', this.onPointerMove, this);
@@ -94,7 +87,7 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.registerProbes();
-    this.refreshAim();
+    this.startNewMatch(0);
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -104,12 +97,105 @@ export class TableScene extends Phaser.Scene {
     if (!this.sim.isMoving) this.onShotSettled();
   }
 
+  // ---- Match flow -------------------------------------------------------------------------
+
+  private startNewMatch(breaker: PlayerId): void {
+    if (this.sim.isMoving) return;
+    this.cancelGestures();
+    this.sim = this.newSimulation();
+    this.match = startMatch(breaker);
+    this.lastResult = null;
+    this.aim = BREAK_AIM;
+    this.hud.hideGameOver();
+    this.view.syncBalls(this.sim.balls);
+    this.hud.setStatus(this.turnMessage());
+    this.refresh();
+    this.logger.info(`new match, player ${breaker + 1} breaks`);
+  }
+
+  private shoot(power: number): void {
+    if (this.match.phase === 'over') return;
+    this.countsBeforeShot = this.groupCounts();
+    const result = this.sim.strike({ direction: this.aim, power, side: 0, height: 0 });
+    if (result !== 'ok') {
+      this.logger.warn(`shot refused: ${result}`);
+      this.refresh();
+      return;
+    }
+    this.shots += 1;
+    this.stepper.reset();
+    this.aimView.hide();
+    this.powerBar.setEnabled(false);
+    this.logger.info(`shot ${this.shots}: player ${this.match.current + 1}, power ${power.toFixed(2)}`);
+  }
+
+  private onShotSettled(): void {
+    let result: ShotResult;
+    try {
+      result = resolveShot(this.match, summarizeShot(this.sim.shotEvents(), this.sim.balls), this.countsBeforeShot);
+    } catch (error) {
+      // Should be impossible; keep the game playable by passing the turn with no penalty.
+      this.logger.error('could not judge the shot; passing the turn', error);
+      result = { state: { ...this.match, phase: 'play', current: opponentOf(this.match.current), ballInHand: null }, verdict: { kind: 'turn-over' }, groupsAssigned: false };
+    }
+    this.lastResult = result;
+    this.match = result.state;
+    this.logger.info(`shot ${this.shots}: ${JSON.stringify(result.verdict)}`);
+
+    const messages: string[] = [];
+    const verdict = result.verdict;
+    if (verdict.kind === 'rerack') {
+      this.sim = this.newSimulation();
+      this.aim = BREAK_AIM;
+      messages.push(this.t.t('status.rerack'));
+    } else if (verdict.kind === 'foul') {
+      messages.push(this.t.t(`foul.${verdict.reason}`));
+    }
+    if (result.groupsAssigned) {
+      const shooter = this.match.current;
+      const group = this.match.groups[shooter];
+      if (group) messages.push(this.t.t('status.groups', { player: this.hud.playerName(shooter), group: this.hud.groupName(group) }));
+    }
+
+    if (this.sim.cueBall.pocketed && this.match.phase !== 'over') {
+      // Put it somewhere legal first; with ball in hand the player then drags it where they want.
+      const placed = respawnCueBall(this.sim, UK_7FT_TABLE.cueStart, UK_7FT_TABLE.playWidth / 2, SIMULATION_LOOP.respawnSearchStep);
+      if (!placed) this.logger.error('no free spot for the cue ball');
+    }
+    this.view.syncBalls(this.sim.balls);
+
+    if (verdict.kind === 'game-over') {
+      const winner = this.hud.playerName(verdict.winner);
+      const loser = this.hud.playerName(opponentOf(verdict.winner));
+      this.hud.showGameOver(this.t.t('over.title', { player: winner }), this.t.t(`over.${verdict.reason}`, { loser }));
+      this.hud.setStatus('');
+    } else {
+      messages.push(this.turnMessage());
+      this.hud.setStatus(messages.join('\n'));
+    }
+    this.refresh();
+  }
+
+  private turnMessage(): string {
+    const player = this.hud.playerName(this.match.current);
+    if (this.match.phase === 'break') return this.t.t('status.break', { player });
+    if (this.match.ballInHand) return this.t.t('status.ballInHand', { player });
+    if (this.lastResult?.verdict.kind === 'continue') return this.t.t('status.continue', { player });
+    return this.t.t('status.turn', { player });
+  }
+
+  // ---- Input ------------------------------------------------------------------------------
+
   private onPointerDown(pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
-    if (this.sim.isMoving || over.length > 0) return; // buttons handle their own input
+    if (this.sim.isMoving || over.length > 0 || this.match.phase === 'over') return; // buttons handle their own input
     if (this.powerPointerId === null && this.powerBar.hitTest(pointer.x, pointer.y)) {
       this.powerPointerId = pointer.id;
       this.powerBar.begin(pointer.y);
-      this.refreshAim();
+      this.refresh();
+      return;
+    }
+    if (this.match.ballInHand && this.placePointerId === null && this.isNearCueBall(pointer.x, pointer.y)) {
+      this.placePointerId = pointer.id;
       return;
     }
     if (this.aimPointerId === null && this.view.containsDesignPoint(pointer.x, pointer.y)) {
@@ -121,7 +207,9 @@ export class TableScene extends Phaser.Scene {
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
     if (pointer.id === this.powerPointerId) {
       this.powerBar.move(pointer.y);
-      this.refreshAim();
+      this.refresh();
+    } else if (pointer.id === this.placePointerId) {
+      this.placeCueBall(pointer.x, pointer.y);
     } else if (pointer.id === this.aimPointerId) {
       this.aimAt(pointer.x, pointer.y);
     }
@@ -129,20 +217,40 @@ export class TableScene extends Phaser.Scene {
 
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
     if (pointer.id === this.aimPointerId) this.aimPointerId = null;
+    if (pointer.id === this.placePointerId) this.placePointerId = null;
     if (pointer.id !== this.powerPointerId) return;
     this.powerPointerId = null;
     // A cancelled touch (system gesture, notification shade, incoming call) must never fire a shot.
     if (pointer.wasCanceled) {
       this.powerBar.cancel();
-      this.refreshAim();
+      this.refresh();
       return;
     }
     const power = this.powerBar.release();
     if (power === null) {
-      this.refreshAim();
+      this.refresh();
       return;
     }
     this.shoot(power);
+  }
+
+  private isNearCueBall(designX: number, designY: number): boolean {
+    const cue = this.sim.cueBall;
+    const c = this.view.toDesign(cue.x, cue.y);
+    const dx = designX - c.x;
+    const dy = designY - c.y;
+    return dx * dx + dy * dy <= BALL_IN_HAND.grabRadius * BALL_IN_HAND.grabRadius;
+  }
+
+  /** Ball in hand: follow the finger wherever the spot is free; otherwise the ball stays at its last good spot. */
+  private placeCueBall(designX: number, designY: number): void {
+    const target = this.view.toTable(designX, designY);
+    // Before the break the cue ball must stay behind the baulk line; it slides along the line instead of stopping.
+    const x = this.match.ballInHand === 'baulk' ? Math.min(target.x, UK_7FT_TABLE.baulkLine) : target.x;
+    if (this.sim.placeCueBall(x, target.y) === 'ok') {
+      this.view.syncBalls(this.sim.balls);
+      this.refresh();
+    }
   }
 
   private aimAt(designX: number, designY: number): void {
@@ -154,63 +262,54 @@ export class TableScene extends Phaser.Scene {
     // Touching the cue ball itself gives no direction; keep the previous aim.
     if (len < cue.radius) return;
     this.aim = { x: dx / len, y: dy / len };
-    this.refreshAim();
-  }
-
-  private shoot(power: number): void {
-    const result = this.sim.strike({ direction: this.aim, power, side: 0, height: 0 });
-    if (result !== 'ok') {
-      this.logger.warn(`shot refused: ${result}`);
-      this.refreshAim();
-      return;
-    }
-    this.shots += 1;
-    this.stepper.reset();
-    this.aimView.hide();
-    this.powerBar.setEnabled(false);
-    this.logger.info(`shot ${this.shots}: power ${power.toFixed(2)}`);
-  }
-
-  private onShotSettled(): void {
-    const events = this.sim.shotEvents();
-    const potted = events.filter((e) => e.type === 'pocket').map((e) => (e.type === 'pocket' ? e.ball : -1));
-    this.logger.info(`shot ${this.shots} settled; potted [${potted.join(', ')}]`);
-    if (this.sim.cueBall.pocketed) {
-      // Practice-mode placeholder for ball in hand (Milestone 2).
-      const placed = respawnCueBall(this.sim, UK_7FT_TABLE.cueStart, UK_7FT_TABLE.playWidth / 2, SIMULATION_LOOP.respawnSearchStep);
-      if (placed) {
-        this.view.syncBalls(this.sim.balls);
-      } else {
-        this.logger.error('no free spot for the cue ball; re-racking');
-        this.rerack();
-      }
-    }
-    this.powerBar.setEnabled(true);
-    this.refreshAim();
-  }
-
-  private rerack(): void {
-    if (this.sim.isMoving) return;
-    this.cancelGestures();
-    this.sim = new PoolSimulation(this.sim.table, this.sim.physics, rackBalls(UK_7FT_TABLE), this.logger.child('physics'));
-    this.aim = BREAK_AIM;
-    this.view.syncBalls(this.sim.balls);
-    this.refreshAim();
-    this.logger.info('re-racked');
+    this.refresh();
   }
 
   private cancelGestures(): void {
     this.aimPointerId = null;
     this.powerPointerId = null;
+    this.placePointerId = null;
     this.powerBar.cancel();
-    if (!this.sim.isMoving) this.refreshAim();
+    if (this.match && !this.sim.isMoving) this.refresh();
   }
 
-  private refreshAim(): void {
+  // ---- Helpers ----------------------------------------------------------------------------
+
+  private newSimulation(): PoolSimulation {
+    return new PoolSimulation(this.geometry, DEFAULT_PHYSICS, rackBalls(UK_7FT_TABLE), this.logger.child('physics'));
+  }
+
+  private groupCounts(): GroupCounts {
+    let red = 0;
+    let yellow = 0;
+    for (const b of this.sim.balls) {
+      if (b.pocketed) continue;
+      if (b.kind === 'red') red += 1;
+      else if (b.kind === 'yellow') yellow += 1;
+    }
+    return { red, yellow };
+  }
+
+  /** Redraws everything that depends on the match state while the table is still. */
+  private refresh(): void {
     if (this.sim.isMoving) return;
+    const counts = this.groupCounts();
+    const panel = (player: PlayerId) => {
+      const group = this.match.groups[player];
+      return { group, remaining: group ? counts[group] : 0, onBlack: isOnBlack(this.match, player, counts) };
+    };
+    this.hud.showPlayers(this.match, [panel(0), panel(1)]);
+    this.hud.setHint(this.match.ballInHand !== null);
+
+    const over = this.match.phase === 'over';
+    this.powerBar.setEnabled(!over);
+    if (over) {
+      this.aimView.hide();
+      return;
+    }
     const cue = this.sim.cueBall;
-    const guide = computeAimGuide(cue, this.aim, this.sim.balls, this.sim.table.cushions, AIM_GUIDE.maxDistance);
-    this.aimView.draw(cue, this.aim, guide, this.powerBar.power);
+    const guide = computeAimGuide(cue, this.aim, this.sim.balls, this.sim.table.cushions, this.sim.table.pockets, AIM_GUIDE.maxDistance);
+    this.aimView.draw(cue, this.aim, guide, this.powerBar.power, this.match.ballInHand !== null);
   }
 
   private registerProbes(): void {
@@ -222,7 +321,30 @@ export class TableScene extends Phaser.Scene {
       power: this.powerBar.power,
       balls: this.sim.balls.map((b) => ({ id: b.id, kind: b.kind, x: b.x, y: b.y, r: b.radius, pocketed: b.pocketed })),
       events: this.sim.shotEvents().map((e) => e.type),
+      match: this.match,
+      verdict: this.lastResult?.verdict ?? null,
+      status: this.hud.statusText,
+      gameOverShown: this.hud.gameOverVisible,
     }));
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
+    // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game
+    // situations without playing a whole frame. Registered only in e2e builds.
+    registerTestProbe('pool.testLayout', (layout, match) => {
+      if (this.sim.isMoving) throw new Error('cannot lay out the table while balls move');
+      const spots = layout as { id: number; x?: number; y?: number; pocketed?: boolean }[];
+      for (const spot of spots) {
+        const ball = this.sim.balls.find((b) => b.id === spot.id);
+        if (!ball) throw new Error(`no ball ${spot.id}`);
+        if (spot.x !== undefined) ball.x = spot.x;
+        if (spot.y !== undefined) ball.y = spot.y;
+        if (spot.pocketed !== undefined) ball.pocketed = spot.pocketed;
+      }
+      this.match = { ...this.match, ...(match as Partial<MatchState>) };
+      this.lastResult = null;
+      this.view.syncBalls(this.sim.balls);
+      this.hud.setStatus(this.turnMessage());
+      this.refresh();
+      return true;
+    });
   }
 }

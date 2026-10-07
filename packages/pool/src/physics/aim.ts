@@ -1,4 +1,4 @@
-import type { Ball, Segment, Vec2 } from './types';
+import type { Ball, Pocket, Segment, Vec2 } from './types';
 
 export type AimTarget =
   | {
@@ -10,6 +10,7 @@ export type AimTarget =
       readonly cueDirection: Vec2;
     }
   | { readonly type: 'cushion' }
+  | { readonly type: 'pocket'; readonly pocketId: number }
   | { readonly type: 'none' };
 
 export interface AimGuide {
@@ -20,14 +21,15 @@ export interface AimGuide {
 }
 
 /**
- * Sweeps the cue ball along a straight line and reports the first ball or cushion it would touch.
- * Used for the aiming guide and later by the AI. Ignores friction and spin (a straight-line guide).
+ * Sweeps the cue ball along a straight line and reports the first ball, cushion or pocket it would
+ * reach. Used for the aiming guide and later by the AI. Ignores friction and spin (a straight-line guide).
  */
 export function computeAimGuide(
   cue: Ball,
   direction: Vec2,
   balls: readonly Ball[],
   cushions: readonly Segment[],
+  pockets: readonly Pocket[],
   maxDistance: number,
 ): AimGuide | null {
   const len = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
@@ -38,6 +40,7 @@ export function computeAimGuide(
   let best = maxDistance;
   let hitBall: Ball | null = null;
   let hitCushion = false;
+  let hitPocket: Pocket | null = null;
 
   for (const other of balls) {
     if (other === cue || other.pocketed) continue;
@@ -45,7 +48,6 @@ export function computeAimGuide(
     if (t !== null && t < best) {
       best = t;
       hitBall = other;
-      hitCushion = false;
     }
   }
   for (const s of cushions) {
@@ -54,6 +56,16 @@ export function computeAimGuide(
       best = t;
       hitBall = null;
       hitCushion = true;
+    }
+  }
+  // The ball drops when its centre enters the pocket's drop circle.
+  for (const pocket of pockets) {
+    const t = rayCircle(p, d, pocket.center, pocket.dropRadius);
+    if (t !== null && t < best) {
+      best = t;
+      hitBall = null;
+      hitCushion = false;
+      hitPocket = pocket;
     }
   }
 
@@ -70,6 +82,8 @@ export function computeAimGuide(
     const tl = Math.sqrt(tx * tx + ty * ty);
     const cueDirection = tl > 1e-9 ? { x: tx / tl, y: ty / tl } : { x: 0, y: 0 };
     target = { type: 'ball', ballId: hitBall.id, objectDirection: n, cueDirection };
+  } else if (hitPocket) {
+    target = { type: 'pocket', pocketId: hitPocket.id };
   } else if (hitCushion) {
     target = { type: 'cushion' };
   }

@@ -36,11 +36,28 @@ Bar pool as Tanzanians actually play it: **Blackball rules** (7 reds, 7 yellows,
 ### Out of scope for first launch
 Online multiplayer, extra venues, cues or cosmetics, ads, purchases, leaderboards, tournaments. See backlog.
 
-### Controls as built in Milestone 1 (practice table)
+### Rules as built (Milestone 2)
+Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and the rest below) were chosen by Claude from World/WPA Blackball and can be changed on request; each is one place in `src/rules/blackball.ts`.
+
+| Situation | Rule |
+|---|---|
+| Break | Player 1 breaks the first game, then breaks alternate. The cue ball starts anywhere behind the baulk line. Legal break: an object ball potted, or at least 2 object balls reach a cushion. Otherwise it is a foul. |
+| After the break | The table is always open after the break, whatever was potted. A pot on the break keeps the breaker at the table. |
+| Open table | Any red or yellow may be hit first; hitting the black first is a foul. Potting only one colour claims it (the opponent gets the other). Potting both keeps the table open and the turn. |
+| Groups decided | Must hit an own ball first. Potting an opponent's ball is a foul, even alongside an own ball. |
+| Fouls | No ball hit; wrong ball first; cue ball potted; opponent's ball potted; no ball potted and no ball reaching a cushion after contact; illegal break. Penalty: opponent has ball in hand anywhere for one visit (R1). |
+| Turn | Continues after legally potting an own ball (or any colour on an open table); otherwise passes. |
+| The black | On the black once all own balls are down; must hit it first. Legally potting it in any pocket wins (R2). Potting it at any other time, or with a foul, loses. Potting the last own ball and the black in one shot loses. A foul while on the black is only a foul. |
+| Black on the break | Re-rack; the same player breaks again (R3). |
+
+### Controls as built (Milestones 1-2)
 - Drag anywhere on the table: the cue points from the cue ball towards the finger. A guide line shows the path, the ghost ball at first contact, and the predicted object-ball and cue-ball directions.
 - Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
 - Aiming and power can use two fingers at once. Controls are disabled while balls move.
-- Not yet built: spin control, fine aim adjustment, rules, turns, AI, menus, sound.
+- Ball in hand: a ring shows round the cue ball; drag it to place it. It follows the finger only over free cloth (never onto a ball, cushion or pocket) and stays behind the baulk line before the break.
+- Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip and balls left. The status line says what happened (foul, colours decided) and who plays next.
+- New game: bottom right. During a match it needs a second tap within 3 seconds.
+- Not yet built: AI, menus, settings screen, stats, rules screen, spin control, fine aim adjustment, sound.
 
 ### Core loop
 Aim, set power and spin, shoot, balls settle, rules engine decides the outcome (continue, change turn, foul, win, loss), repeat. A match ends on a legal or illegal pot of the black.

@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-07 (Milestone 1)
+Last updated: 2026-10-07 (Milestone 2)
 
 ## Overview
 
@@ -33,6 +33,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A10 | Pool physics: 1 ms fixed step, discrete collisions, sliding/rolling ball model with top/back and side spin | At the 7 m/s maximum a ball moves 7 mm per step, under a third of its radius, so it cannot pass through a ball or cushion without continuous collision code. About 4 µs per step for 16 balls in tests. Spin is in the model now (MVP needs it) so adding the spin control later needs no physics rewrite. | 2026-10-07 |
 | A11 | No trigonometry, `hypot`, `pow`, `exp`, `log` or random numbers in `src/physics` | These can return different last bits on different JavaScript engines, which would make the same shot end differently on two phones (and break AI planning and any future online play). Enforced by `test/purity.test.ts`. | 2026-10-07 |
 | A12 | Static art (table, balls) is drawn once into textures instead of live Phaser Graphics | Phaser rebuilds Graphics geometry on the CPU every frame; a texture is one quad. In the test browser this changed idle fps only slightly (24 to 26), because that browser's software renderer is limited by fill rate, but it removes avoidable CPU work on phones. | 2026-10-07 |
+| A14 | Rules are pure functions over plain data (`resolveShot(state, summary, countsBefore)`), fed by a summary of the physics event log | Every rule is unit-testable without the physics or a browser; the AI can reuse it to judge simulated shots. Covered by the same purity test as the physics. | 2026-10-07 |
+| A15 | Browser tests may set up a position through an e2e-only probe (`pool.testLayout`) | Late-game situations (on the black, ball in hand) cannot be reached reliably by playing shots in a test. The probe exists only in e2e builds; the release build is checked to contain no test hooks. | 2026-10-07 |
 | A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
@@ -66,10 +68,13 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `physics/geometry.ts` | Builds cushion segments and pocket jaws from the table config. Pocket ids 0-5 clockwise from top-left. |
 | `physics/rack.ts` | Blackball rack (black in the middle of row 3, different colours on the back corners). Cue ball is id 0. |
 | `physics/simulation.ts` | `PoolSimulation`: `strike`, `step`, `runUntilSettled`, `placeCueBall`, `shotEvents`. Shot events (ball contacts in order, cushions, pockets) are what the Milestone 2 rules engine will read. |
-| `physics/aim.ts` | `computeAimGuide`: sweeps the cue ball to the first ball or cushion; ghost ball and predicted directions. Reusable by the AI. |
-| `physics/placement.ts` | Practice-mode cue ball respawn. Replaced by ball in hand in Milestone 2. |
-| `scenes/TableScene.ts` | Practice table: input, simulation loop, re-rack. |
-| `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing and the power control. |
+| `physics/aim.ts` | `computeAimGuide`: sweeps the cue ball to the first ball, cushion or pocket; ghost ball and predicted directions. Reusable by the AI. |
+| `physics/placement.ts` | Finds a free spot for a potted cue ball, before the player drags it (ball in hand). |
+| `rules/shotSummary.ts` | Turns the physics event log into what the rules need: first ball hit, balls potted, cue ball potted, cushion after contact, balls to a cushion (break). |
+| `rules/blackball.ts` | Blackball rules: `startMatch`, `resolveShot`, `legalFirstContacts`, `isOnBlack`. Returns the next match state and a verdict (continue, turn over, foul with reason, re-rack, game over with reason). |
+| `scenes/TableScene.ts` | The match: input (aim, power, ball in hand), simulation loop, applying verdicts, new game. |
+| `scenes/MatchHud.ts` | Player panels, status line, controls hint, New game button (two-tap confirm mid-match), game-over panel. |
+| `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing (table, balls, aim guide, cue stick, ball-in-hand ring) and the power control. |
 
 ### Physics model
 - Each ball has velocity, top/back spin stored as contact-point velocity (`sx, sy`; rolling means `s = -v`) and side spin `wz`.
@@ -85,7 +90,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 |---|---|---|---|
 | `<gameId>.settings` | shell | 1 | `{ locale, soundVolume, musicVolume }` |
 
-Pool's `gameId` is `pool`. Pool stores nothing else yet.
+Pool's `gameId` is `pool`. Pool stores nothing else yet: a match in progress lives only in memory (KNOWN_ISSUES TD6).
 
 `gameId` must never change after release or players lose their data.
 

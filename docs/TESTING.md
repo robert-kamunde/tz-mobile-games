@@ -4,7 +4,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 76 tests
+### Unit tests (`npm test`): 112 tests
 
 #### Core, `packages/core/test` (38)
 | Area | What is covered |
@@ -15,7 +15,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 
-#### Pool, `packages/pool/test` (38)
+#### Pool, `packages/pool/test` (74)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -26,10 +26,16 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Determinism | Same break twice is bit-for-bit identical; 30, 60, 144 fps and random frame times give identical results. |
 | Input validation | Zero, NaN and infinite shots refused; no shot while balls move or with the cue ball potted; power and tip offset clamped; cue ball placement refuses balls, pockets, off-table and NaN. |
 | Respawn | Practice respawn uses the start spot when free, otherwise the next free spot. |
-| Aim guide | Full hit distance and zero deflection; cut gives 90° paths; empty line reaches the cushion; pocketed balls ignored; max distance; invalid direction; agrees with the simulation on the first ball hit. |
-| Source rules | No Phaser, DOM, trigonometry, pow/exp/log, random or clock calls in `src/physics`. |
+| Aim guide | Full hit distance and zero deflection; cut gives 90° paths; empty line reaches the cushion; stops at a pocket; pocketed balls ignored; max distance; invalid direction; agrees with the simulation on the first ball hit. |
+| Rules: break | Start state; pot on the break continues with open table; legal break without pot passes; illegal break is a foul; cue ball in on the break is a foul; black on the break re-racks with the same breaker. |
+| Rules: open table | One colour claims it (either player); hitting one colour and potting the other claims the potted one; both colours keep it open; black first is a foul; fouls never assign groups; no pot passes; black on an open table loses. |
+| Rules: groups | Own pot continues; opponent ball first is a foul with ball in hand anywhere; potting an opponent ball is a foul; miss, no cushion, cue ball in are fouls; ball in hand passes to the right player and clears after a clean shot. |
+| Rules: black | Must hit the black first when on it; legal pot wins; with the cue ball or an opponent ball it loses; last own ball and black together loses; foul on the black is only a foul; no shots after the match ends. |
+| Shot summary | First contact, cushion after contact, pots in order, break cushion count; cushion before contact ignored; empty shot; unknown ball id throws. |
+| Rules + physics | A real full-power break is judged legal. |
+| Source rules | No Phaser, DOM, trigonometry, pow/exp/log, random or clock calls in `src/physics` and `src/rules`. |
 
-### Browser tests (`npm run test:e2e`): 21 scenarios x 3 screen sizes = 63 runs
+### Browser tests (`npm run test:e2e`): 24 scenarios x 3 screen sizes = 72 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -47,7 +53,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Orientation | No prompt in landscape; Kiswahili rotate prompt in portrait; clears after rotating back. |
 | Slow CPU | With a 6x CPU throttle, average CPU time per frame stays under 8 ms (half a 60 fps frame). |
 
-#### Pool (10 scenarios)
+#### Pool table (8 scenarios, `pool.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Opens | 16 balls racked, Kiswahili, nothing moving, no errors. |
@@ -56,10 +62,17 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Tiny pull | Below 4% power, letting go cancels. |
 | Cancelled touch | A system touch cancel on the power bar does not shoot; the bar works afterwards. |
 | Busy table | Power bar and aiming are ignored while balls move. |
-| Cue ball potted | Aimed into the corner pocket, it drops and comes back to its start spot. |
-| Re-rack | The button restores all balls and the default aim. |
 | Background mid-shot | Hidden: the simulation stops advancing. Shown again: the shot finishes with exactly the same ball positions as an uninterrupted shot. |
 | Slow CPU | A full break at 6x CPU throttle: average CPU time per frame under 8 ms; balls settle without overlapping. |
+
+#### Pool match (5 scenarios, `match.spec.ts`)
+| Scenario | Checks |
+|---|---|
+| Break placement | Player 1 breaks; dragging the cue ball past the baulk line keeps it behind the line. |
+| Foul and ball in hand | A break into a pocket without contact is a "no ball hit" foul; player 2 gets ball in hand; the cue ball is back on the table and can be dragged to a new spot; the status line shows the foul. |
+| Blocked placement | The cue ball cannot be dropped onto another ball. |
+| Winning | Set up on the black (test-only layout), aim and shoot by touch: the black drops, player 1 wins, the game-over panel shows, shooting is disabled, New game starts a match with player 2 breaking. |
+| New game confirm | One tap mid-match changes nothing; a second tap restarts. |
 
 ### Release build check
 `npm run build -w @tzg/shell`, then confirm `__tzg` does not appear in `packages/shell/dist/assets/*.js`.
@@ -69,6 +82,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Date | Milestone | Typecheck | Unit | Browser | Notes |
 |---|---|---|---|---|---|
 | 2026-10-07 | 0 | pass | 38/38 | 33/33 | fps at 6x CPU throttle: 28.5 to 32.0 across runs (headless Chromium, software rendering in a cloud container, not a phone). Release build has no test hooks. First browser run failed 3/30: frames kept running in the background (fixed, see ARCHITECTURE A7). |
+| 2026-10-07 | 2 | pass | 112/112 | shell 33/33, pool 39/39 | All new tests passed on the first full run. Layout reviewed on 640x360 screenshots: text sizes raised so nothing renders under 10 CSS px on a 360-px-tall phone; status line overlapped a player panel at first (fixed); the aim guide ran off the table through a pocket (fixed: it now stops at pockets). |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
@@ -87,5 +101,6 @@ Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android 
 5. Rotate to portrait: rotate prompt shows; back to landscape: prompt clears.
 6. Play 10 minutes: no stutter worth noting, phone not hot, no crash. Note the frame rate during a full-power break.
 6a. Pool: aim with one finger, pull power with another; aim lands where the finger is; a pull-and-swipe-down of the notification shade does not shoot.
+6b. Pool: play a full two-player game to the black; check every foul message reads correctly in Kiswahili; ball in hand drag is easy with a thumb; all text is readable without squinting.
 7. Turn on airplane mode mid-session: nothing changes.
 8. Clear app data, reopen: starts fresh without errors.
