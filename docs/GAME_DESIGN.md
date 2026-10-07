@@ -39,15 +39,15 @@ Online multiplayer, extra venues, cues or cosmetics, ads, purchases, leaderboard
 ### Core loop
 Aim, set power and spin, shoot, balls settle, rules engine decides the outcome (continue, change turn, foul, win, loss), repeat. A match ends on a legal or illegal pot of the black.
 
-### Rules: OPEN QUESTIONS (need confirmation before the rules engine is built)
+### Rules decisions
 Bar rules in Tanzania vary. These choices change gameplay and code, so they must be confirmed:
 
 | # | Question | Options | Draft default |
 |---|---|---|---|
-| R1 | Penalty after a foul | (a) Opponent gets two visits ("two shots") (b) Ball in hand anywhere, one visit (World Blackball / WPA) | (b), the official rule used by TAPA championships. Unverified for bar play. |
-| R2 | Black ball pocket | Any pocket, or must be nominated | Any pocket |
-| R3 | Potting the black on the break | Re-rack, or win | Re-rack |
-| R4 | Ball sizes / table | Standard UK 7 ft bar table, 2" object balls, smaller cue ball | UK 7 ft dimensions |
+| R1 | Penalty after a foul | (a) Opponent gets two visits ("two shots") (b) Ball in hand anywhere, one visit (World Blackball / WPA) | **Decided 2026-10-07 by Robert: (b) ball in hand, one visit.** |
+| R2 | Black ball pocket | Any pocket, or must be nominated | Default: any pocket (unchanged unless Robert objects) |
+| R3 | Potting the black on the break | Re-rack, or win | Default: re-rack |
+| R4 | Ball sizes / table | Standard UK 7 ft bar table, 2" object balls, smaller cue ball | Default: UK 7 ft dimensions |
 
 ### Physics requirements
 Deterministic, frame-rate-independent simulation (fixed timestep) so shots behave the same on every phone and AI shot planning can simulate ahead. Ball–ball and ball–cushion collisions, rolling friction, spin effects, pocket capture. Must stay smooth on a low-end phone with 15 moving balls.
