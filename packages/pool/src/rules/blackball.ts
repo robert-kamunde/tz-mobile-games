@@ -59,6 +59,37 @@ export interface BlackballConfig {
   readonly breakCushionBalls: number;
 }
 
+const isPlayerId = (v: unknown): v is PlayerId => v === 0 || v === 1;
+
+/**
+ * Returns a valid in-progress MatchState read from untrusted data (a saved game), or null.
+ * Finished matches are not accepted: they are never saved.
+ */
+export function validateMatchState(raw: unknown): MatchState | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (!isPlayerId(r.breaker) || !isPlayerId(r.current)) return null;
+  if (r.phase !== 'break' && r.phase !== 'play') return null;
+  if (r.winner !== null) return null;
+  if (r.ballInHand !== 'baulk' && r.ballInHand !== 'anywhere' && r.ballInHand !== null) return null;
+  if (!Array.isArray(r.groups) || r.groups.length !== 2) return null;
+  const [a, b] = r.groups as unknown[];
+  const open = a === null && b === null;
+  const decided = (a === 'red' && b === 'yellow') || (a === 'yellow' && b === 'red');
+  if (!open && !decided) return null;
+  // Before the break: the breaker is to play from behind the baulk line on an open table.
+  if (r.phase === 'break' && (r.current !== r.breaker || r.ballInHand !== 'baulk' || !open)) return null;
+  if (r.phase === 'play' && r.ballInHand === 'baulk') return null;
+  return {
+    breaker: r.breaker,
+    current: r.current,
+    phase: r.phase,
+    groups: [a as Group | null, b as Group | null],
+    ballInHand: r.ballInHand,
+    winner: null,
+  };
+}
+
 /** Counts the red and yellow balls still on the table. */
 export function countGroups(balls: readonly Ball[]): GroupCounts {
   let red = 0;

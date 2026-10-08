@@ -32,22 +32,52 @@ export interface PoolState {
   pickerShown: boolean;
 }
 
+export interface MenuState {
+  continueShown: boolean;
+  panel: 'picker' | 'stats' | 'rules' | 'settings' | null;
+  locale: string;
+}
+
 export const SCENE = 'Table';
+export const MENU_SCENE = 'Menu';
 export const state = (page: Page) => page.evaluate(() => window.__tzg!.probe('pool.state') as PoolState);
+export const menuState = (page: Page) => page.evaluate(() => window.__tzg!.probe('pool.menu') as MenuState);
+
+/** Waits until only the given scene runs (scene changes take a frame). */
+export async function waitForScene(page: Page, key: string): Promise<void> {
+  await page.waitForFunction((k) => {
+    const active = window.__tzg?.activeScenes() ?? [];
+    return active.length === 1 && active[0] === k;
+  }, key);
+}
 
 export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard';
 
-/** Picks an opponent on the picker with a real tap. */
+/** Picks an opponent on the table's picker (after New game) with a real tap. */
 export async function pickOpponent(page: Page, choice: OpponentChoice): Promise<void> {
   await expect.poll(async () => (await state(page)).pickerShown).toBe(true);
   await tap(page, `opponent-${choice}`);
   await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
 }
 
-/** Opens the game and picks the opponent (two players unless told otherwise). */
+/** From the main menu: Play, pick the opponent, and wait for the table. */
+export async function playFromMenu(page: Page, choice: OpponentChoice): Promise<void> {
+  await tap(page, 'menu-play', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
+  await tap(page, `opponent-${choice}`, MENU_SCENE);
+  await waitForScene(page, SCENE);
+}
+
+/** Opens the game and starts a new game from the menu (two players unless told otherwise). */
 export async function boot(page: Page, choice: OpponentChoice = 'two'): Promise<void> {
-  await bootTo(page, SCENE);
-  await pickOpponent(page, choice);
+  await bootTo(page, MENU_SCENE);
+  await playFromMenu(page, choice);
+}
+
+/** Reloads the page, as when Android kills the app and the player opens it again, and waits for the menu. */
+export async function reopen(page: Page): Promise<void> {
+  await page.reload();
+  await waitForScene(page, MENU_SCENE);
 }
 
 /** A table point (metres) in page pixels. */
@@ -61,14 +91,14 @@ export async function tablePoint(page: Page, x: number, y: number): Promise<Page
   );
 }
 
-export async function elementCenter(page: Page, name: string): Promise<PagePoint> {
-  const p = await page.evaluate((n) => window.__tzg!.elementCenter('Table', n), name);
-  expect(p, `element ${name}`).not.toBeNull();
+export async function elementCenter(page: Page, name: string, scene = SCENE): Promise<PagePoint> {
+  const p = await page.evaluate(([s, n]) => window.__tzg!.elementCenter(s, n), [scene, name] as const);
+  expect(p, `element ${name} in ${scene}`).not.toBeNull();
   return p!;
 }
 
-export async function tap(page: Page, name: string): Promise<void> {
-  const p = await elementCenter(page, name);
+export async function tap(page: Page, name: string, scene = SCENE): Promise<void> {
+  const p = await elementCenter(page, name, scene);
   await page.touchscreen.tap(p.x, p.y);
 }
 
@@ -109,4 +139,24 @@ export async function dragOnTable(page: Page, from: { x: number; y: number }, to
 /** Test-only position setup (e2e builds): ball spots and match state. */
 export async function layout(page: Page, balls: { id: number; x?: number; y?: number; pocketed?: boolean }[], match: Partial<MatchState>): Promise<void> {
   await page.evaluate(([b, m]) => window.__tzg!.probe('pool.testLayout', b, m), [balls, match] as const);
+}
+
+/** Player 1 on the black (reds all potted), with the black lined up on the top-left pocket. */
+export async function setUpBlackPot(page: Page): Promise<void> {
+  const s = await state(page);
+  const reds = s.balls.filter((b) => b.kind === 'red').map((b) => ({ id: b.id, pocketed: true }));
+  const black = s.balls.find((b) => b.kind === 'black')!;
+  // Black 0.36 m from the top-left pocket, cue ball 0.2 m behind it on the same line.
+  const blackSpot = { x: 0.3, y: 0.2 };
+  const len = Math.hypot(blackSpot.x, blackSpot.y);
+  const cueSpot = { x: blackSpot.x + (blackSpot.x / len) * 0.2, y: blackSpot.y + (blackSpot.y / len) * 0.2 };
+  await layout(page, [...reds, { id: black.id, ...blackSpot }, { id: 0, ...cueSpot }], { phase: 'play', current: 0, groups: ['red', 'yellow'], ballInHand: null });
+}
+
+/** After setUpBlackPot: aims at the pocket and shoots (one more shot than before). */
+export async function potTheBlack(page: Page): Promise<void> {
+  const shots = (await state(page)).shots;
+  await dragOnTable(page, { x: 0.9, y: 0.6 }, { x: 0, y: 0 });
+  await pullPower(page, 0.3);
+  await expect.poll(async () => (await state(page)).shots).toBe(shots + 1);
 }

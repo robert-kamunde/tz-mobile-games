@@ -3,7 +3,7 @@ import { FixedStepper, createRandom, type Logger, type Translator } from '@tzg/c
 import { getServices, registerTestProbe } from '@tzg/shell';
 import { ShotPlanner } from '../ai/planner';
 import { AI_LEVELS } from '../config/ai';
-import { AIM_GUIDE, BALL_IN_HAND, SIMULATION_LOOP } from '../config/layout';
+import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { computeAimGuide } from '../physics/aim';
@@ -12,6 +12,10 @@ import { respawnCueBall } from '../physics/placement';
 import { countInRack, rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
 import type { Shot, TableGeometry, Vec2 } from '../physics/types';
+import { opponentId, type Opponent } from '../progress/opponent';
+import { recordGame } from '../progress/progress';
+import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
+import type { PoolSlots } from '../progress/slots';
 import {
   countGroups,
   isOnBlack,
@@ -27,7 +31,10 @@ import { summarizeShot } from '../rules/shotSummary';
 import { AimView } from './AimView';
 import { ComputerTurn } from './ComputerTurn';
 import { MatchHud } from './MatchHud';
-import { OpponentPicker, type Opponent } from './OpponentPicker';
+import { OpponentPicker } from './OpponentPicker';
+import { getPoolSlots } from './poolSlots';
+import { SCENE_KEYS } from './sceneKeys';
+import { addButton } from './ui';
 import { PowerBar } from './PowerBar';
 import { TableView } from './TableView';
 
@@ -37,13 +44,16 @@ const BREAK_AIM: Vec2 = { x: 1, y: 0 };
 /** Against the computer, the computer is player 2 and the person always breaks the first game. */
 const COMPUTER_PLAYER: PlayerId = 1;
 
+/** How the table is opened from the menu: a new game against an opponent, or the saved game. */
+export type TableStart = { readonly opponent: Opponent } | { readonly resume: true };
+
 /**
  * A Blackball match on one table, against another person on the same phone or the computer.
  * Phaser is used only for drawing and input: the simulation is src/physics, the rules src/rules
  * and the computer's thinking src/ai.
  */
 export class TableScene extends Phaser.Scene {
-  static readonly KEY = 'Table';
+  static readonly KEY = SCENE_KEYS.table;
 
   private geometry!: TableGeometry;
   private sim!: PoolSimulation;
@@ -58,6 +68,9 @@ export class TableScene extends Phaser.Scene {
   private opponentChosen = false;
   /** Varies the computer's aiming error between matches; each shot's seed adds the shot count. */
   private computerSeed = 0;
+  private slots!: PoolSlots;
+  /** The game as it was before the shot now rolling: what is saved if the app is closed mid-shot. */
+  private beforeShot: SavedMatch | null = null;
   private stepper!: FixedStepper;
   private logger!: Logger;
   private t!: Translator;
@@ -73,8 +86,12 @@ export class TableScene extends Phaser.Scene {
     super(TableScene.KEY);
   }
 
-  create(): void {
+  create(start: TableStart): void {
     const services = getServices(this);
+    this.slots = getPoolSlots(this);
+    this.beforeShot = null;
+    this.opponentChosen = false;
+    this.shots = 0;
     this.t = services.translator;
     this.logger = services.logger.child('table');
 
@@ -86,7 +103,8 @@ export class TableScene extends Phaser.Scene {
     this.aimView = new AimView(this, this.view);
     this.powerBar = new PowerBar(this, this.t.t('pool.power'));
     this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
-    this.picker = new OpponentPicker(this, this.t, (opponent) => this.onOpponentPicked(opponent));
+    this.picker = new OpponentPicker(this, this.t, PANEL.overTable, (opponent) => this.onOpponentPicked(opponent));
+    addButton(this, HUD.menu.left, HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: 0 }).setDepth(HUD.depth);
     this.computer = new ComputerTurn(
       {
         place: (spot) => this.placeCueBallAt(spot),
@@ -110,7 +128,11 @@ export class TableScene extends Phaser.Scene {
     this.input.on('pointerup', this.onPointerUp, this);
     this.input.on('pointerupoutside', this.onPointerUp, this);
 
-    const offPause = services.lifecycle.on('pause', () => this.cancelGestures());
+    // Android may kill a backgrounded app without warning, so the game is saved on every pause.
+    const offPause = services.lifecycle.on('pause', () => {
+      this.cancelGestures();
+      this.saveMatch();
+    });
     // Throw away time that built up while hidden, so returning never causes a burst of steps.
     const offResume = services.lifecycle.on('resume', () => this.stepper.reset());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -119,8 +141,18 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.registerProbes();
-    this.startNewMatch(0);
-    this.picker.show();
+    if ('opponent' in start) {
+      this.onOpponentPicked(start.opponent);
+      return;
+    }
+    const saved = this.slots.match.load().data;
+    if (saved) {
+      this.resumeMatch(saved);
+      return;
+    }
+    // The menu offers Continue only when a game is saved, so this means the save went bad since.
+    this.logger.warn('no saved game to continue; back to the menu');
+    this.scene.start(SCENE_KEYS.menu);
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -133,20 +165,29 @@ export class TableScene extends Phaser.Scene {
 
   // ---- Match flow -------------------------------------------------------------------------
 
-  /** New game: choose the opponent first. The current table stays behind the picker until then. */
+  /**
+   * New game: choose the opponent first. The current game stays behind the picker, and is still
+   * the saved game, until a choice is made; Back returns to it.
+   */
   private askForOpponent(): void {
     if (this.sim.isMoving) return;
     this.computer.cancel();
     this.cancelGestures();
-    this.picker.show();
+    const last = this.slots.progress.load().data.lastOpponent;
+    this.picker.show(last, () => {
+      this.refresh();
+      this.startComputerTurnIfDue();
+    });
     this.refresh();
   }
 
   private onOpponentPicked(opponent: Opponent): void {
     // A first game or a new opponent starts with player 1 breaking; a rematch alternates the break as before.
-    const rematch = this.opponentChosen && opponentKey(opponent) === opponentKey(this.opponent);
+    const rematch = this.opponentChosen && opponentId(opponent) === opponentId(this.opponent);
     this.opponentChosen = true;
     this.opponent = opponent;
+    const progress = this.slots.progress.load().data;
+    this.slots.progress.save({ ...progress, lastOpponent: opponent });
     this.hud.setComputerPlayer(opponent.kind === 'computer' ? COMPUTER_PLAYER : null);
     this.startNewMatch(rematch ? opponentOf(this.match.breaker) : 0);
   }
@@ -159,13 +200,59 @@ export class TableScene extends Phaser.Scene {
     this.sim = this.newSimulation();
     this.match = startMatch(breaker);
     this.lastResult = null;
+    this.shots = 0;
     this.aim = BREAK_AIM;
     this.hud.hideGameOver();
     this.view.syncBalls(this.sim.balls);
     this.hud.setStatus(this.turnMessage());
     this.refresh();
     this.logger.info(`new match against ${this.opponent.kind === 'computer' ? `the computer (${this.opponent.level})` : 'a person'}, player ${breaker + 1} breaks`);
+    this.saveMatch();
     this.startComputerTurnIfDue();
+  }
+
+  /** Puts a saved game back on the table, as it was after its last finished shot. */
+  private resumeMatch(saved: SavedMatch): void {
+    this.opponent = saved.opponent;
+    this.opponentChosen = true;
+    this.hud.setComputerPlayer(saved.opponent.kind === 'computer' ? COMPUTER_PLAYER : null);
+    this.computerSeed = Date.now() >>> 0;
+    this.sim = new PoolSimulation(this.geometry, DEFAULT_PHYSICS, restoreBalls(saved.balls, UK_7FT_TABLE), this.logger.child('physics'));
+    this.match = saved.match;
+    this.shots = saved.shots;
+    this.lastResult = null;
+    this.aim = BREAK_AIM;
+    this.view.syncBalls(this.sim.balls);
+    this.hud.setStatus(this.turnMessage());
+    this.refresh();
+    this.logger.info(`resumed a saved match after ${saved.shots} shots`);
+    this.startComputerTurnIfDue();
+  }
+
+  /** Back to the main menu. The game is saved and Continue brings it back. Ignored while balls roll. */
+  private goToMenu(): void {
+    if (this.sim.isMoving) return;
+    this.computer.cancel();
+    this.picker.hide();
+    this.saveMatch();
+    this.scene.start(SCENE_KEYS.menu);
+  }
+
+  private snapshot(): SavedMatch {
+    return { opponent: this.opponent, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots };
+  }
+
+  /**
+   * Saves the game in progress, or clears the save once the game is over. While balls roll, the
+   * game from before the shot is saved: a shot cut off half way cannot be judged.
+   */
+  private saveMatch(): void {
+    if (this.match.phase === 'over') {
+      this.slots.match.clear();
+      return;
+    }
+    const game = this.sim.isMoving ? this.beforeShot : this.snapshot();
+    if (game) this.slots.match.save(game);
   }
 
   private isComputerTurn(): boolean {
@@ -193,12 +280,14 @@ export class TableScene extends Phaser.Scene {
   private shoot(power: number): void {
     if (this.match.phase === 'over') return;
     this.countsBeforeShot = countGroups(this.sim.balls);
+    const before = this.snapshot();
     const result = this.sim.strike({ direction: this.aim, power, side: 0, height: 0 });
     if (result !== 'ok') {
       this.logger.warn(`shot refused: ${result}`);
       this.refresh();
       return;
     }
+    this.beforeShot = before;
     this.shots += 1;
     this.stepper.reset();
     this.aimView.hide();
@@ -217,6 +306,7 @@ export class TableScene extends Phaser.Scene {
     }
     this.lastResult = result;
     this.match = result.state;
+    this.beforeShot = null;
     this.logger.info(`shot ${this.shots}: ${JSON.stringify(result.verdict)}`);
 
     const messages: string[] = [];
@@ -246,12 +336,20 @@ export class TableScene extends Phaser.Scene {
       const loser = this.hud.playerName(opponentOf(verdict.winner));
       this.hud.showGameOver(this.t.t('over.title', { player: winner }), this.t.t(`over.${verdict.reason}`, { loser }));
       this.hud.setStatus('');
+      this.recordResult(verdict.winner);
     } else {
       messages.push(this.turnMessage());
       this.hud.setStatus(messages.join('\n'));
     }
+    this.saveMatch();
     this.refresh();
     this.startComputerTurnIfDue();
+  }
+
+  /** Counts a finished game in the stats. */
+  private recordResult(winner: PlayerId): void {
+    const progress = this.slots.progress.load().data;
+    this.slots.progress.save(recordGame(progress, this.opponent, winner));
   }
 
   private turnMessage(): string {
@@ -428,13 +526,10 @@ export class TableScene extends Phaser.Scene {
       this.view.syncBalls(this.sim.balls);
       this.computer.cancel();
       this.hud.setStatus(this.turnMessage());
+      this.saveMatch();
       this.refresh();
       this.startComputerTurnIfDue();
       return true;
     });
   }
-}
-
-function opponentKey(o: Opponent): string {
-  return o.kind === 'computer' ? `computer-${o.level}` : o.kind;
 }

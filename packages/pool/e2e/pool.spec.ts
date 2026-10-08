@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { setHidden, touchDrag, trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { SCENE, boot, overlaps, pickOpponent, pullPower, state, tablePoint, waitUntilSettled } from './poolPage';
+import { boot, overlaps, playFromMenu, pullPower, reopen, state, tablePoint, waitUntilSettled } from './poolPage';
 
 test('opens on a racked table in Kiswahili with no errors', async ({ page }) => {
   const errors = trackErrors(page);
@@ -86,9 +86,8 @@ test('going to the background mid-shot freezes the table and gives the same resu
   await pullPower(page, 0.9);
   const reference = await waitUntilSettled(page);
 
-  await page.reload();
-  await page.waitForFunction((k) => window.__tzg?.activeScenes().includes(k), SCENE);
-  await pickOpponent(page, 'two');
+  await reopen(page);
+  await playFromMenu(page, 'two');
   await pullPower(page, 0.9);
   await expect.poll(async () => (await state(page)).steps).toBeGreaterThan(200);
   await setHidden(page, true);

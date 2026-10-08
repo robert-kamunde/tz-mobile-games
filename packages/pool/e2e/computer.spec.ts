@@ -1,18 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
+import { trackErrors } from '../../../tooling/e2eHelpers';
 import { AI_TURN } from '../src/config/ai';
-import { SCENE, boot, layout, overlaps, pickOpponent, pullPower, state, tap, waitUntilSettled } from './poolPage';
+import { boot, layout, overlaps, pickOpponent, pullPower, state, tap, waitUntilSettled } from './poolPage';
 
-test('the game opens on the opponent picker, and the table ignores touches until a choice is made', async ({ page }) => {
+test('Play on the menu opens the opponent picker, and the person breaks the first game against the computer', async ({ page }) => {
   const errors = trackErrors(page);
-  await bootTo(page, SCENE);
-  const s = await state(page);
-  expect(s.pickerShown).toBe(true);
-  await pullPower(page, 0.8);
-  await page.waitForTimeout(200);
-  expect((await state(page)).shots).toBe(0);
-
-  await pickOpponent(page, 'easy');
+  await boot(page, 'easy');
   const picked = await state(page);
   expect(picked.opponent).toEqual({ kind: 'computer', level: 'easy' });
   // The person breaks the first game against the computer.
@@ -60,7 +53,7 @@ test('with ball in hand the computer places the cue ball legally and shoots', as
   expect(errors).toEqual([]);
 });
 
-test('New game mid-match stops the computer and opens the picker', async ({ page }) => {
+test('New game mid-match stops the computer and opens the picker, and the table ignores touches until a choice is made', async ({ page }) => {
   await boot(page, 'hard');
   await layout(page, [], { phase: 'play', current: 1, ballInHand: null });
   await expect.poll(async () => (await state(page)).computer).toBe('thinking');
@@ -70,6 +63,9 @@ test('New game mid-match stops the computer and opens the picker', async ({ page
   const s = await state(page);
   expect(s.computer).toBeNull();
   expect(s.shots).toBe(0);
+  await pullPower(page, 0.8);
+  await page.waitForTimeout(200);
+  expect((await state(page)).shots).toBe(0);
   await pickOpponent(page, 'two');
   expect((await state(page)).opponent).toEqual({ kind: 'human' });
   expect((await state(page)).status).toContain('Mchezaji 1');

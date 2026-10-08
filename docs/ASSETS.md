@@ -14,6 +14,9 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Cue stick | Line | Shows aim and pull-back | Placeholder | `AimView.ts` | Cue sprite. |
 | Power bar | Rectangles | Power control | Placeholder | `PowerBar.ts` | Styled bar and handle. |
 | Match HUD | Text, circles, rectangle | Player panels, potted-ball trays, status line, game-over panel, New game button | Placeholder styling | `MatchHud.ts` | Styled panels and buttons; a font chosen for Kiswahili readability. |
-| Opponent picker | Text buttons on a dark rectangle | "Unacheza na nani?" panel with four choices | Placeholder styling | `OpponentPicker.ts` | Styled panel and buttons; possibly an icon per level. |
+| Opponent picker | Text buttons on a dark rectangle | "Unacheza na nani?" panel with four choices; the last choice is yellow | Placeholder styling | `OpponentPicker.ts`, `ui.ts` | Styled panel and buttons; possibly an icon per level. |
+| Main menu | Title text and text buttons on the background colour | "Pool ya Mtaani" title, Continue, Play, Stats, Rules, Settings | Placeholder | `MenuScene.ts`, `MENU` in `config/layout.ts` | Title logo, a background picture of a local bar, styled buttons. |
+| Menu panels (Stats, Rules, Settings) | Text and buttons on a dark rectangle | Stats lines, rules text, language buttons, Back | Placeholder styling | `MenuScene.ts`, `ui.ts` (`Panel`) | Styled panels; the rules screen may need small diagrams. |
+| Menu button on the table | Text button | Back to the main menu, bottom left | Placeholder styling | `TableScene.ts` | Styled button, possibly an icon. |
 | Ball-in-hand ring | Circle outline | Shows the cue ball can be dragged | Placeholder | `AimView.ts` | Could become a hand icon. |
 | Sounds | Audio | Cue strike, ball clicks, cushion, pocket | Missing | n/a | Short, small files; needed before release. Not in Milestone 1 scope. |

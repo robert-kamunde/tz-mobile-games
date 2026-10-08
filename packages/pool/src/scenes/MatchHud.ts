@@ -3,6 +3,7 @@ import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
 import { countInRack } from '../physics/rack';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
+import { addButton, textStyle } from './ui';
 
 export interface PlayerPanelInfo {
   readonly group: Group | null;
@@ -21,7 +22,6 @@ export interface TrayState {
 
 const PLAYERS: readonly PlayerId[] = [0, 1];
 const TRAY_SLOTS = Math.max(countInRack('red'), countInRack('yellow'));
-const HUD_DEPTH = 10;
 
 /**
  * Match heads-up display: a panel per player, the status line, the controls hint, the New game
@@ -46,7 +46,7 @@ export class MatchHud {
     private readonly t: Translator,
     onNewGame: () => void,
   ) {
-    const text = (size: string, color: string = COLORS.text) => ({ fontFamily: TEXT_STYLE.fontFamily, fontSize: size, color });
+    const text = textStyle;
     const p = HUD.players;
     this.panels = PLAYERS.map((player) => {
       const left = player === 0;
@@ -75,8 +75,12 @@ export class MatchHud {
       .setName('status');
     this.hint = scene.add.text(HUD.hint.x, HUD.hint.y, '', text(TEXT_STYLE.hintSize, COLORS.textDim)).setOrigin(0.5).setName('hint');
     scene.add
-      .text(HUD.placeholder.x, HUD.placeholder.y, t.t('pool.placeholder'), text(TEXT_STYLE.labelSize, COLORS.textDim))
-      .setOrigin(0, 0.5)
+      .text(HUD.placeholder.x, HUD.placeholder.y, t.t('pool.placeholder'), {
+        ...text(TEXT_STYLE.labelSize, COLORS.textDim),
+        align: 'center',
+        wordWrap: { width: HUD.placeholder.wrapWidth },
+      })
+      .setOrigin(0.5)
       .setName('placeholderLabel');
 
     const g = HUD.gameOver;
@@ -84,34 +88,34 @@ export class MatchHud {
     this.overTitle = scene.add.text(g.x, g.y - 30, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
     this.overDetail = scene.add.text(g.x, g.y + 34, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
 
-    this.newGame = scene.add
-      .text(HUD.newGame.right, HUD.newGame.y, '', {
-        ...text(TEXT_STYLE.buttonSize, COLORS.buttonText),
-        backgroundColor: COLORS.buttonBackground,
-        padding: HUD.newGame.padding,
-      })
-      .setOrigin(1, 0.5)
-      .setName('newGameButton')
-      .setInteractive({ useHandCursor: true });
-    this.newGame.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.wasCanceled) return;
-      // Mid-match a restart needs a second tap, so a stray touch cannot throw a game away.
-      const now = scene.time.now;
-      if (this.matchActive && now > this.confirmUntil) {
-        this.confirmUntil = now + HUD.confirmMs;
-        this.newGame.setText(t.t('pool.confirmNewGame'));
-        scene.time.delayedCall(HUD.confirmMs, () => this.resetNewGameLabel());
-        return;
-      }
-      this.confirmUntil = 0;
-      this.resetNewGameLabel();
-      onNewGame();
-    });
+    this.newGame = addButton(
+      scene,
+      HUD.newGame.right,
+      HUD.newGame.y,
+      {
+        name: 'newGameButton',
+        label: '',
+        onTap: () => {
+          // Mid-match a restart needs a second tap, so a stray touch cannot throw a game away.
+          const now = scene.time.now;
+          if (this.matchActive && now > this.confirmUntil) {
+            this.confirmUntil = now + HUD.confirmMs;
+            this.newGame.setText(t.t('pool.confirmNewGame'));
+            scene.time.delayedCall(HUD.confirmMs, () => this.resetNewGameLabel());
+            return;
+          }
+          this.confirmUntil = 0;
+          this.resetNewGameLabel();
+          onNewGame();
+        },
+      },
+      { originX: 1 },
+    );
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
     const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
-    for (const o of all) o.setDepth(HUD_DEPTH);
+    for (const o of all) o.setDepth(HUD.depth);
   }
 
   /** Marks which player is the computer (named "Kompyuta"), or none. */

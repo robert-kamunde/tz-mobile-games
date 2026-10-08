@@ -1,71 +1,61 @@
-import * as Phaser from 'phaser';
+import type * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
-import { AI_LEVEL_IDS, type AiLevel } from '../config/ai';
-import { COLORS, PICKER, TEXT_STYLE } from '../config/layout';
-
-/** Who player 2 is: another person on the same phone, or the computer at a level. */
-export type Opponent = { readonly kind: 'human' } | { readonly kind: 'computer'; readonly level: AiLevel };
-
-const CHOICES: readonly { readonly id: string; readonly opponent: Opponent }[] = [
-  { id: 'two', opponent: { kind: 'human' } },
-  ...AI_LEVEL_IDS.map((level) => ({ id: level, opponent: { kind: 'computer', level } as const })),
-];
+import { OPPONENTS, opponentId, type Opponent } from '../progress/opponent';
+import { Panel, type PanelSpec } from './ui';
 
 /**
- * "Who are you playing?" panel shown at the start and after New game. Buttons are named
- * `opponent-<id>` for tests (two, easy, medium, hard).
+ * "Unacheza na nani?" panel: two players on one phone, or the computer at a level. The last choice
+ * is marked. Buttons are named `opponent-<id>` (two, easy, medium, hard) and `opponent-back`.
  */
 export class OpponentPicker {
-  private readonly objects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text)[] = [];
-  private shown = false;
+  private panel: Panel | null = null;
 
-  constructor(scene: Phaser.Scene, t: Translator, onPick: (opponent: Opponent) => void) {
-    const text = (size: string, color: string) => ({ fontFamily: TEXT_STYLE.fontFamily, fontSize: size, color });
-    const panel = scene.add.rectangle(PICKER.x, PICKER.y, PICKER.width, PICKER.height, COLORS.overlay, PICKER.alpha).setName('opponentPicker');
-    // Swallows taps on the panel so they never reach the table underneath.
-    panel.setInteractive();
-    const title = scene.add
-      .text(PICKER.x, PICKER.y + PICKER.titleOffsetY, t.t('picker.title'), text(TEXT_STYLE.statusSize, COLORS.text))
-      .setOrigin(0.5);
-    this.objects.push(panel, title);
-    CHOICES.forEach(({ id, opponent }, i) => {
-      const label = opponent.kind === 'human' ? t.t('picker.twoPlayers') : t.t('picker.computer', { level: t.t(`level.${opponent.level}`) });
-      const button = scene.add
-        .text(PICKER.x, PICKER.y + PICKER.firstButtonOffsetY + i * PICKER.buttonSpacing, label, {
-          ...text(TEXT_STYLE.buttonSize, COLORS.buttonText),
-          backgroundColor: COLORS.buttonBackground,
-          padding: PICKER.buttonPadding,
-          align: 'center',
-          fixedWidth: PICKER.buttonWidth,
-        })
-        .setOrigin(0.5)
-        .setName(`opponent-${id}`)
-        .setInteractive({ useHandCursor: true });
-      button.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-        if (pointer.wasCanceled || !this.shown) return;
-        this.hide();
-        onPick(opponent);
-      });
-      this.objects.push(button);
-    });
-    for (const o of this.objects) o.setDepth(PICKER.depth);
-    this.hide();
-  }
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly t: Translator,
+    private readonly area: PanelSpec['area'],
+    private readonly onPick: (opponent: Opponent) => void,
+  ) {}
 
   get visible(): boolean {
-    return this.shown;
+    return this.panel !== null;
   }
 
-  show(): void {
-    this.setShown(true);
+  /** `onBack` adds a Back button that closes the picker without choosing. */
+  show(last: Opponent | null, onBack?: () => void): void {
+    this.hide();
+    const t = this.t;
+    const lastId = last ? opponentId(last) : null;
+    this.panel = new Panel(this.scene, {
+      name: 'opponentPicker',
+      area: this.area,
+      title: t.t('picker.title'),
+      buttons: OPPONENTS.map((opponent) => ({
+        name: `opponent-${opponentId(opponent)}`,
+        label: opponent.kind === 'human' ? t.t('picker.twoPlayers') : t.t('picker.computer', { level: t.t(`level.${opponent.level}`) }),
+        highlighted: opponentId(opponent) === lastId,
+        onTap: () => {
+          this.hide();
+          this.onPick(opponent);
+        },
+      })),
+      ...(onBack
+        ? {
+            back: {
+              name: 'opponent-back',
+              label: t.t('ui.back'),
+              onTap: () => {
+                this.hide();
+                onBack();
+              },
+            },
+          }
+        : {}),
+    });
   }
 
   hide(): void {
-    this.setShown(false);
-  }
-
-  private setShown(shown: boolean): void {
-    this.shown = shown;
-    for (const o of this.objects) o.setVisible(shown);
+    this.panel?.destroy();
+    this.panel = null;
   }
 }

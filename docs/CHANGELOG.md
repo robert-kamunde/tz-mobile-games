@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0 (unreleased) - Milestone 4: menus, saving and stats
+- Main menu when the game opens: Continue (only when a game is saved), Play, Stats, Rules, Settings.
+- A Menu button on the table goes back to the menu and keeps the game.
+- The game in progress is saved at the start, after every shot and when the app goes to the background. If the app is closed mid-shot, it resumes from just before that shot. A finished game is removed. A damaged save is ignored (and backed up), so the menu opens normally.
+- Stats: games played and won against each computer level, and two-player games.
+- The opponent picker marks the last choice (also after New game, which now has Back).
+- Settings: Kiswahili or English, kept between sessions.
+- Rules screen in both languages.
+- Core: an unreadable save is copied to `<key>.backup` before defaults replace it (TD2).
+- The placeholder label moved under the power bar to make room for the Menu button. Shared button and panel helpers (`scenes/ui.ts`).
+- Shell test hooks can read the text and data of named objects (e2e builds only).
+
 ## 0.4.0 (unreleased) - Milestone 3: computer opponent
 - Opponent picker when the game opens and after New game: two players on one phone, or the computer at Easy, Medium or Hard.
 - Computer opponent (`src/ai`): finds pots, plain hits and escape shots, plays them out on a copy of the table with the real physics and rules, places the cue ball for ball in hand, breaks, and shoots with level-dependent aim and power error. Hard double-checks its best shots against small aiming errors.

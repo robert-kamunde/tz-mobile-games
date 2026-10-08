@@ -15,6 +15,10 @@ export interface TestHooks {
   rotatePromptVisible(): boolean;
   /** Center of a named UI element in page (CSS) pixels, so tests can tap it like a player would. */
   elementCenter(sceneKey: string, name: string): { x: number; y: number } | null;
+  /** Text shown by a named text object, or null if there is none. */
+  textOf(sceneKey: string, name: string): string | null;
+  /** A value stored on a named object with setData (e.g. a button's "highlighted"), or null. */
+  dataOf(sceneKey: string, name: string, key: string): unknown;
   /**
    * CPU time per frame (game update + render submission) since the last reset, in ms. GPU raster time
    * is not included: the test browser renders in software, so only the CPU side is meaningful there.

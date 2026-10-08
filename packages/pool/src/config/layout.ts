@@ -35,9 +35,13 @@ export const COLORS = {
   accent: '#f2994a',
   buttonText: '#101418',
   buttonBackground: '#ffffff',
+  /** A button marked as the current or last choice. */
+  buttonHighlight: '#f2c94c',
 } as const;
 
 export const HUD = {
+  /** Above the table, balls and cue stick; below panels. */
+  depth: 10,
   /** Status line centred over the table. */
   status: { x: 570, y: 36, wrapWidth: 480, lineSpacing: -2 },
   /** Player panels at the two top corners of the table. */
@@ -47,30 +51,51 @@ export const HUD = {
    * are potted. Sits between the name and the top rail (rail starts at y 70).
    */
   tray: { y: 60, ballRadius: 9, spacing: 22, emptyAlpha: 0.35, outlineWidth: 1.5 },
-  placeholder: { x: 24, y: DESIGN.height - 22 },
+  /** "Placeholder art" label, in two lines under the power bar. */
+  placeholder: { x: 1190, y: 626, wrapWidth: 150 },
+  /** Menu button, bottom left (anchored by its left edge). */
+  menu: { left: 12, y: DESIGN.height - 30 },
   hint: { x: 570, y: DESIGN.height - 22 },
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
-  newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30, padding: { x: 14, y: 10 } },
+  newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
   /** Game-over panel over the middle of the table. */
   gameOver: { x: 570, y: 330, width: 640, height: 200, alpha: 0.82 },
   /** A second tap on New game within this time confirms it mid-match. */
   confirmMs: 3000,
 } as const;
 
-/** Opponent picker: a panel over the middle of the table with one button per choice. */
-export const PICKER = {
-  x: 570,
-  y: 360,
-  width: 600,
-  height: 400,
-  alpha: 0.92,
-  titleOffsetY: -150,
-  firstButtonOffsetY: -75,
+/** Buttons: text on a solid background. */
+export const BUTTON = {
+  padding: { x: 14, y: 10 },
+  width: 440,
+} as const;
+
+/** Panels (opponent picker, stats, rules, settings): dark box, title, optional text, buttons, optional Back. */
+export const PANEL = {
+  titleTop: 40,
+  /** Space between the title, the text and the first button. */
+  gap: 28,
   buttonSpacing: 72,
-  buttonWidth: 440,
-  buttonPadding: { x: 14, y: 10 },
+  /** Back button's distance above the bottom edge. */
+  backBottom: 46,
+  bodyLineSpacing: 6,
+  sideMargin: 40,
   /** Above the table and the HUD. */
   depth: 20,
+  /** Over the middle of the table (the in-game opponent picker); the table shows faintly through it. */
+  overTable: { x: 570, y: 360, width: 600, height: 500, alpha: 0.94 },
+  /** Over the main menu, hiding it completely so its buttons do not show through the text. */
+  overMenu: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 1100, height: 660, alpha: 1 },
+} as const;
+
+/** Main menu. */
+export const MENU = {
+  x: DESIGN.width / 2,
+  titleY: 110,
+  firstButtonY: 250,
+  buttonSpacing: 82,
+  /** "Placeholder art" label, bottom right (anchored by its right edge). */
+  placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;
 
 export const BALL_IN_HAND = {
@@ -126,4 +151,6 @@ export const TEXT_STYLE = {
   titleSize: '52px',
   buttonSize: '28px',
   labelSize: '20px',
+  /** Longer text in panels (rules, stats). */
+  bodySize: '22px',
 } as const;

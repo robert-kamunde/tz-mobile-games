@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { boot, dragOnTable, layout, pickOpponent, pullPower, state, tap, waitUntilSettled } from './poolPage';
+import { boot, dragOnTable, layout, pickOpponent, potTheBlack, pullPower, setUpBlackPot, state, tap, waitUntilSettled } from './poolPage';
 
 test('player 1 breaks, and the cue ball stays behind the baulk line while placing it', async ({ page }) => {
   await boot(page);
@@ -48,19 +48,9 @@ test('the cue ball cannot be dropped on top of another ball', async ({ page }) =
 test('potting the black when on it wins, and New game starts a match with the other player breaking', async ({ page }) => {
   const errors = trackErrors(page);
   await boot(page);
-  const s = await state(page);
-  const reds = s.balls.filter((b) => b.kind === 'red').map((b) => ({ id: b.id, pocketed: true }));
-  const black = s.balls.find((b) => b.kind === 'black')!;
-  // Black 0.36 m from the top-left pocket, cue ball 0.2 m behind it on the same line.
-  const blackSpot = { x: 0.3, y: 0.2 };
-  const len = Math.hypot(blackSpot.x, blackSpot.y);
-  const cueSpot = { x: blackSpot.x + (blackSpot.x / len) * 0.2, y: blackSpot.y + (blackSpot.y / len) * 0.2 };
-  await layout(page, [...reds, { id: black.id, ...blackSpot }, { id: 0, ...cueSpot }], { phase: 'play', current: 0, groups: ['red', 'yellow'], ballInHand: null });
+  await setUpBlackPot(page);
   expect((await state(page)).status).toContain('Mchezaji 1');
-
-  await dragOnTable(page, { x: 0.9, y: 0.6 }, { x: 0, y: 0 });
-  await pullPower(page, 0.3);
-  await expect.poll(async () => (await state(page)).shots).toBe(1);
+  await potTheBlack(page);
   const over = await waitUntilSettled(page);
   expect(over.verdict).toEqual({ kind: 'game-over', winner: 0, reason: 'black-potted' });
   expect(over.gameOverShown).toBe(true);

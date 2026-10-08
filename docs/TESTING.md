@@ -4,19 +4,19 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 136 tests
+### Unit tests (`npm test`): 166 tests
 
-#### Core, `packages/core/test` (41)
+#### Core, `packages/core/test` (42)
 | Area | What is covered |
 |---|---|
-| Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained. |
+| Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained; an unreadable value is copied to `<key>.backup`, a missing or good one is not. |
 | Language | Kiswahili default; switching; placeholders; English then key fallback; unsupported locale ignored; missing-key finder. |
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (95)
+#### Pool, `packages/pool/test` (124)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -37,9 +37,12 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | AI: pot lines | A straight pot is found and aimed at the ghost ball and ranks easiest; a ball in the object ball's path or the cue ball's path removes the pot; only legal balls offered; longer pots need more speed; power clamped. |
 | AI: planner | Pots a simple ball and expects to; same decision and step count however the thinking is sliced; each level stays within its step limit; a decision taken early (time limit) is still a valid shot; breaks from behind the baulk line with a legal break; with ball in hand places the cue ball on a legal spot and pots; when its only ball is hidden behind a wall of opponent balls, still finds a legal hit (direction sweep); on the black, plays the winning pot; its prediction of each intended shot matches what the shot really does over 8 shots of a game; refuses to plan after the match ends. |
 | AI: whole game | Two Easy computers play a full game to a winner. |
+| Saved game | Round trip through JSON restores the same balls (kinds from the rack, at rest); rejected: a missing, extra or repeated ball, a ball off the table, a non-number position, a potted cue ball, two balls on one spot, an unknown opponent, a negative shot count, a finished match. A damaged save loads as no game, is backed up and never throws; saving and clearing work. |
+| Match state check | A fresh match and one in play pass; rejected: finished, unknown phase, bad player, the same colour twice, half-decided colours, colours during the break, the wrong breaker, baulk ball in hand after the break, not an object. |
+| Stats | Games per computer level and two-player games counted, wins only for the person; round trip with the last opponent; rejected: more wins than games, a missing level, fractional counts, a bad last opponent. Opponent validation accepts only known opponents. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 30 scenarios x 3 screen sizes = 90 runs
+### Browser tests (`npm run test:e2e`): 37 scenarios x 3 screen sizes = 111 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -82,19 +85,30 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 #### Computer opponent (5 scenarios, `computer.spec.ts`)
 | Scenario | Checks |
 |---|---|
-| Picker first | The game opens on the opponent picker; pulling the power bar meanwhile does nothing; choosing Easy starts a match with the player to break. |
+| Play from the menu | Play, then Easy, starts a match with the player to break and the computer idle. |
 | Computer's turn | It thinks and shoots with no input; a power-bar pull during its turn does not shoot (the shot log shows only player 1's break and the computer's shot); balls settle with no overlaps or escapes. |
 | Ball in hand | With ball in hand anywhere, Medium places the cue ball and shoots; the table is sound afterwards. |
-| New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; choosing two players restores "Mchezaji" names. |
+| New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; pulling the power bar meanwhile does nothing; choosing two players restores "Mchezaji" names. |
 | Frame budget | 6x CPU throttle: average CPU per frame while Hard thinks minus the same table while the player aims stays under the 6 ms thinking budget plus 6 ms; Hard still shoots (time limit). |
 
-All earlier pool scenarios now start by picking "two players" on the picker with a real tap.
+#### Menu and saving (7 scenarios, `menu.spec.ts`)
+| Scenario | Checks |
+|---|---|
+| Menu first | The game opens on the menu in Kiswahili with Play, Stats, Rules, Settings and the placeholder label, and no Continue; Rules opens with the rules text and Back closes it; Back on the picker returns to the menu without starting a game. |
+| Menu and Continue | After a break, Menu then Continue brings back the same balls, match and opponent; after reopening the page the same again. |
+| Closed mid-shot | Reopening while balls roll, then Continue, gives the table, match and shot count from just before that shot. |
+| Finished game | Winning on the black against Easy removes the saved game; the menu shows no Continue; Stats reads "Kompyuta (Rahisi): umeshinda 1 kati ya 1" and zero for the others; the picker marks Easy. |
+| Language | Settings, English: the menu redraws in English with Settings still open and English marked; kept after reopening; the table is in English too. |
+| Damaged save | A broken saved game and unreadable stats in storage: the menu opens with no Continue, the stats show zero, both values are in `.backup` keys, a new game saves over them, no errors. |
+| Computer resumes | A game saved on the computer's turn: after reopening and Continue, the computer plays its shot by itself. |
+
+All pool scenarios start from the menu: Play, then the opponent, with real taps.
 
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
 
 ### Release build check
-`npm run build -w @tzg/shell`, then confirm `__tzg` does not appear in `packages/shell/dist/assets/*.js`.
+`npm run build -w @tzg/shell` and `npm run build -w @tzg/pool`, then confirm `__tzg` (and, for pool, `testLayout` and `continueShown`) do not appear in `dist/assets/*.js`.
 
 ## Results log
 
@@ -104,6 +118,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-07 | 2 | pass | 112/112 | shell 33/33, pool 39/39 | All new tests passed on the first full run. Layout reviewed on 640x360 screenshots: text sizes raised so nothing renders under 10 CSS px on a 360-px-tall phone; status line overlapped a player panel at first (fixed); the aim guide ran off the table through a pocket (fixed: it now stops at pockets). |
 | 2026-10-07 | 2.1 | pass | 113/113 | pool 42/42 | Potted-ball trays. Checked on a 640x360 screenshot: the trays fit between the player names and the top rail. |
 | 2026-10-08 | 3 | pass | 136/136 (+2 ladder tests skipped) | shell 33/33, pool 57/57 | Ladder, 40 games each: Medium beat Easy 32/40, Hard beat Medium 36/40, every game finished (average 39 and 21 shots). Fouls per shot: Easy 14%, Medium 9 to 10%, Hard 4% (9% before the robustness check was added). Hard's longest decision: 213 824 physics steps. 6x throttle: frames while Hard thinks cost 1 to 9 ms more than frames while the player aims (12 to 25 ms, software renderer). Found and fixed: Phaser's frame delta undercounts on slow frames, so the thinking time limit now uses the clock (capped per frame for backgrounding); the controls hint showed during the computer's turn (now hidden); a slow background test hit the 30 s limit with more tests running alongside (limit raised for that test). |
+| 2026-10-08 | 4 | pass | 166/166 (+2 ladder tests skipped) | shell 33/33, pool 78/78 | All new browser tests passed on their first run, so two bugs were planted to check them: saving the moving table mid-shot and keeping the save after a finished game. The tests caught both. Screenshots at 640x360 and 915x412: the menu showed through the Stats, Rules and Settings panels and made them hard to read (those panels are now opaque). The pool suite took 3.6 minutes. Release build has no test hooks. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
@@ -117,7 +132,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android version and result in the results log.
 1. Install, open with no internet. Game reaches its first screen; note load time.
 2. Language defaults to Kiswahili; switch to English, close the app fully, reopen: English kept.
-3. Press home mid-game, wait 1 minute, return: game resumes, nothing lost.
+3. Press home mid-game, wait 1 minute, return: game resumes, nothing lost. Then press home, swipe the app away from recent apps, reopen: Continue on the menu brings the game back.
 4. Lock screen and unlock; take an incoming call: same as 3.
 5. Rotate to portrait: rotate prompt shows; back to landscape: prompt clears.
 6. Play 10 minutes: no stutter worth noting, phone not hot, no crash. Note the frame rate during a full-power break.

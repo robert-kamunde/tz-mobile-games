@@ -7,7 +7,9 @@ import { silentLogger } from './logger';
  *
  * Stored shape: {"v": <schemaVersion>, "data": <payload>}.
  * Loading never throws. Missing, unparseable, invalid or un-migratable data falls back to defaults,
- * and the reason is reported so it can be logged or surfaced in debugging.
+ * and the reason is reported so it can be logged or surfaced in debugging. The unreadable text is
+ * first copied to `<key>.backup` (one copy, the latest), so a bug or a newer version's save is
+ * never lost for good when defaults are saved over it.
  */
 export interface SaveSlotOptions<T> {
   key: string;
@@ -46,18 +48,22 @@ function isEnvelope(value: unknown): value is Envelope {
   return typeof value === 'object' && value !== null && Number.isInteger((value as Envelope).v) && 'data' in value;
 }
 
+export const backupKey = (key: string): string => `${key}.backup`;
+
 export function createSaveSlot<T>(options: SaveSlotOptions<T>): SaveSlot<T> {
   const { key, version, defaults, validate, store, migrations = {} } = options;
   const logger = options.logger ?? silentLogger;
 
-  const fallback = (outcome: LoadOutcome, detail?: unknown): LoadResult<T> => {
-    if (outcome !== 'missing') logger.warn(`save "${key}" ${outcome}; using defaults`, detail);
-    return { data: defaults(), outcome };
-  };
-
   return {
     load() {
       const text = store.get(key);
+      const fallback = (outcome: LoadOutcome, detail?: unknown): LoadResult<T> => {
+        if (outcome !== 'missing') {
+          logger.warn(`save "${key}" ${outcome}; using defaults`, detail);
+          if (text !== null) store.set(backupKey(key), text);
+        }
+        return { data: defaults(), outcome };
+      };
       if (text === null) return fallback('missing');
 
       let parsed: unknown;

@@ -47,6 +47,14 @@ export function installTestHooks(game: Phaser.Game, services: Services, rotateOv
       const b = obj.getBounds();
       return designToPage(b.centerX, b.centerY);
     },
+    textOf(sceneKey, name) {
+      const obj = game.scene.getScene(sceneKey)?.children.getByName(name);
+      return obj && 'text' in obj && typeof obj.text === 'string' ? obj.text : null;
+    },
+    dataOf(sceneKey, name, key) {
+      const obj = game.scene.getScene(sceneKey)?.children.getByName(name);
+      return (obj?.getData(key) as unknown) ?? null;
+    },
     frameCpuStats: () => ({ frames: cpu.frames, averageMs: cpu.frames ? cpu.totalMs / cpu.frames : 0, maxMs: cpu.maxMs }),
     resetFrameCpuStats() {
       cpu.frames = 0;

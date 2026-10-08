@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSaveSlot, MemoryStore, createWebStore, type KeyValueStore } from '../src';
+import { backupKey, createSaveSlot, MemoryStore, createWebStore, type KeyValueStore } from '../src';
 
 interface Stats {
   played: number;
@@ -36,6 +36,16 @@ describe('createSaveSlot', () => {
     const store = new MemoryStore();
     store.set('k', text);
     expect(slot(store).load()).toEqual({ data: { played: 0 }, outcome });
+    // The unreadable text is kept, so saving defaults over it loses nothing for good.
+    expect(store.get(backupKey('k'))).toBe(text);
+  });
+
+  it('makes no backup for missing or good data', () => {
+    const store = new MemoryStore();
+    slot(store).load();
+    slot(store).save({ played: 2 });
+    slot(store).load();
+    expect(store.get(backupKey('k'))).toBeNull();
   });
 
   it('migrates step by step from an older version', () => {
