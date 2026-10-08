@@ -95,3 +95,22 @@ test('each player sees their potted balls in a tray under their name once colour
   expect((await state(page)).trays).toEqual([{ potted: 1, slots: 7 }, { potted: 3, slots: 7 }]);
   await page.screenshot({ path: test.info().outputPath('trays.png') });
 });
+
+test('the first ball potted on an open table fills the potter\'s tray straight away', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  const s = await state(page);
+  const red = s.balls.find((b) => b.kind === 'red')!;
+  // Open table after the break: a red lined up on the top-left pocket, as in the black-pot setup.
+  const redSpot = { x: 0.3, y: 0.2 };
+  const len = Math.hypot(redSpot.x, redSpot.y);
+  const cueSpot = { x: redSpot.x + (redSpot.x / len) * 0.2, y: redSpot.y + (redSpot.y / len) * 0.2 };
+  await layout(page, [{ id: red.id, ...redSpot }, { id: 0, ...cueSpot }], { phase: 'play', current: 0, groups: [null, null], ballInHand: null });
+  await dragOnTable(page, { x: 0.9, y: 0.6 }, { x: 0, y: 0 });
+  await pullPower(page, 0.3);
+  await expect.poll(async () => (await state(page)).shots).toBe(1);
+  const after = await waitUntilSettled(page);
+  expect(after.match.groups).toEqual(['red', 'yellow']);
+  expect(after.trays[0]).toEqual({ potted: 1, slots: 7 });
+  expect(errors).toEqual([]);
+});

@@ -14,7 +14,7 @@ Last updated: 2026-10-08
 | U2 | GPU performance is unknown. The test browser renders in software: pool runs at 26 fps idle there even unthrottled, because drawing one table-sized rectangle costs that renderer half a frame. CPU cost is measured and small (about 1 ms per frame during a break at 6x throttle). Needs a real low-end phone. |
 | U4 | Table and pocket sizes are standard published UK 7 ft figures, not measured on a table in Tanzania. |
 | U6 | Text sizes were chosen from screenshots (nothing under 10 CSS px on a 360-px-tall phone), not checked on a real phone. |
-| U7 | Rule defaults beyond R1 (illegal break is a foul, table open after the break, both colours keep the table open) are Claude's choices from World Blackball, not confirmed against how Tanzanian bars play. |
+| U7 | Rule defaults beyond R1 (illegal break is a foul, both colours keep the table open) are Claude's choices from World Blackball, not confirmed against how Tanzanian bars play. |
 | U5 | Physics values (friction, restitution) are starting points. The break currently spreads the rack modestly; feel needs tuning by playing on a phone. |
 | U3 | Kiswahili strings not reviewed by a native speaker. This includes the Milestone 3 picker and computer wording ("Unacheza na nani?", "Kompyuta inacheza…", Rahisi/Wastani/Ngumu) and the Milestone 4 menu, stats and the Kiswahili rules text. |
 | U8 | Computer levels are tuned only by computer-against-computer games (TESTING.md ladder), not against people. Whether Easy is easy enough for a beginner and Hard is a challenge for a good bar player is unknown. |

@@ -42,7 +42,7 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 | Situation | Rule |
 |---|---|
 | Break | Player 1 breaks the first game, then breaks alternate. The cue ball starts anywhere behind the baulk line. Legal break: an object ball potted, or at least 2 object balls reach a cushion. Otherwise it is a foul. |
-| After the break | The table is always open after the break, whatever was potted. A pot on the break keeps the breaker at the table. |
+| After the break | A pot on the break keeps the breaker at the table. Potting only one colour on the break gives the breaker that colour (decided by Robert 2026-10-08); potting both, or nothing, leaves the table open. |
 | Open table | Any red or yellow may be hit first; hitting the black first is a foul. Potting only one colour claims it (the opponent gets the other). Potting both keeps the table open and the turn. |
 | Groups decided | Must hit an own ball first. Potting an opponent's ball is a foul, even alongside an own ball. |
 | Fouls | No ball hit; wrong ball first; cue ball potted; opponent's ball potted; no ball potted and no ball reaching a cushion after contact; illegal break. Penalty: opponent has ball in hand anywhere for one visit (R1). |

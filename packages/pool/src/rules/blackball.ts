@@ -162,14 +162,9 @@ export function resolveShot(
 
   const pottedGroupBalls = shot.potted.filter((k): k is Group => k === 'red' || k === 'yellow');
 
-  if (isBreak) {
-    // The table stays open after the break, whatever was potted.
-    const verdict: ShotVerdict = pottedGroupBalls.length > 0 ? { kind: 'continue' } : { kind: 'turn-over' };
-    return { state: nextTurn(state, verdict), verdict, groupsAssigned: false };
-  }
-
   if (ownGroup === null) {
-    // Open table: potting only one colour claims it; potting both keeps the table open.
+    // Open table, the break included (decided by Robert 2026-10-08): potting only one colour claims
+    // it; potting both keeps the table open and the turn.
     if (pottedGroupBalls.length === 0) return { state: nextTurn(state, { kind: 'turn-over' }), verdict: { kind: 'turn-over' }, groupsAssigned: false };
     const first = pottedGroupBalls[0]!;
     const single = pottedGroupBalls.every((k) => k === first);

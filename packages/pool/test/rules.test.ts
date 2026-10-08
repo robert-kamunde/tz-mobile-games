@@ -23,10 +23,27 @@ describe('break', () => {
     expect(startMatch(1)).toEqual({ breaker: 1, current: 1, phase: 'break', groups: [null, null], ballInHand: 'baulk', winner: null });
   });
 
-  it('a pot on the break keeps the breaker at the table, with the table still open', () => {
-    const r = resolveShot(startMatch(0), shot('red', ['yellow']), FULL);
+  it('one colour potted on the break gives the breaker that colour, and they play on', () => {
+    for (const breaker of [0, 1] as const) {
+      const r = resolveShot(startMatch(breaker), shot('red', ['yellow']), FULL);
+      expect(r.verdict).toEqual({ kind: 'continue' });
+      const groups = breaker === 0 ? ['yellow', 'red'] : ['red', 'yellow'];
+      expect(r.state).toMatchObject({ phase: 'play', current: breaker, groups, ballInHand: null });
+      expect(r.groupsAssigned).toBe(true);
+    }
+  });
+
+  it('both colours potted on the break keep the table open and the breaker at the table', () => {
+    const r = resolveShot(startMatch(0), shot('red', ['yellow', 'red']), FULL);
     expect(r.verdict).toEqual({ kind: 'continue' });
     expect(r.state).toMatchObject({ phase: 'play', current: 0, groups: [null, null], ballInHand: null });
+    expect(r.groupsAssigned).toBe(false);
+  });
+
+  it('a pot with a foul on the break decides no colours', () => {
+    const r = resolveShot(startMatch(0), shot('red', ['yellow'], { cueBallPotted: true }), FULL);
+    expect(r.verdict.kind).toBe('foul');
+    expect(r.state.groups).toEqual([null, null]);
     expect(r.groupsAssigned).toBe(false);
   });
 

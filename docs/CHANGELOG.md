@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 (unreleased) - Break pot decides colours
+- Rule change (Robert, 2026-10-08): potting only one colour on the break gives the breaker that colour, so their tray fills straight away. Before, the table stayed open after the break and the tray stayed empty until the next pot, which looked like a bug. Potting both colours on the break still leaves the table open.
+- Rules screen text updated in both languages.
+
 ## 0.5.0 (unreleased) - Milestone 4: menus, saving and stats
 - Main menu when the game opens: Continue (only when a game is saved), Play, Stats, Rules, Settings.
 - A Menu button on the table goes back to the menu and keeps the game.

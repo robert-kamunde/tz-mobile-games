@@ -4,7 +4,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 166 tests
+### Unit tests (`npm test`): 168 tests
 
 #### Core, `packages/core/test` (42)
 | Area | What is covered |
@@ -16,7 +16,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (124)
+#### Pool, `packages/pool/test` (126)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -28,7 +28,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Input validation | Zero, NaN and infinite shots refused; no shot while balls move or with the cue ball potted; power and tip offset clamped; cue ball placement refuses balls, pockets, off-table and NaN. |
 | Respawn | Practice respawn uses the start spot when free, otherwise the next free spot. |
 | Aim guide | Full hit distance and zero deflection; cut gives 90° paths; empty line reaches the cushion; stops at a pocket; pocketed balls ignored; max distance; invalid direction; agrees with the simulation on the first ball hit. |
-| Rules: break | Start state; pot on the break continues with open table; legal break without pot passes; illegal break is a foul; cue ball in on the break is a foul; black on the break re-racks with the same breaker. |
+| Rules: break | Start state; one colour potted on the break gives the breaker that colour (either breaker); both colours keep the table open and the turn; a pot with a foul on the break decides nothing; legal break without pot passes; illegal break is a foul; cue ball in on the break is a foul; black on the break re-racks with the same breaker. |
 | Rules: open table | One colour claims it (either player); hitting one colour and potting the other claims the potted one; both colours keep it open; black first is a foul; fouls never assign groups; no pot passes; black on an open table loses. |
 | Rules: groups | Own pot continues; opponent ball first is a foul with ball in hand anywhere; potting an opponent ball is a foul; miss, no cushion, cue ball in are fouls; ball in hand passes to the right player and clears after a clean shot. |
 | Rules: black | Must hit the black first when on it; legal pot wins; with the cue ball or an opponent ball it loses; last own ball and black together loses; foul on the black is only a foul; no shots after the match ends. |
@@ -42,7 +42,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Stats | Games per computer level and two-player games counted, wins only for the person; round trip with the last opponent; rejected: more wins than games, a missing level, fractional counts, a bad last opponent. Opponent validation accepts only known opponents. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 37 scenarios x 3 screen sizes = 111 runs
+### Browser tests (`npm run test:e2e`): 38 scenarios x 3 screen sizes = 114 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -72,7 +72,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Background mid-shot | Hidden: the simulation stops advancing. Shown again: the shot finishes with exactly the same ball positions as an uninterrupted shot. |
 | Slow CPU | A full break at 6x CPU throttle: average CPU time per frame under 8 ms; balls settle without overlapping. |
 
-#### Pool match (6 scenarios, `match.spec.ts`)
+#### Pool match (7 scenarios, `match.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Break placement | Player 1 breaks; dragging the cue ball past the baulk line keeps it behind the line. |
@@ -81,6 +81,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Winning | Set up on the black (test-only layout), aim and shoot by touch: the black drops, player 1 wins, the game-over panel shows, shooting is disabled, New game starts a match with player 2 breaking. |
 | New game confirm | One tap mid-match changes nothing; a second tap restarts. |
 | Potted-ball trays | No trays while the table is open; once colours are set, each player's tray shows 7 slots with their potted balls filled (checked with 1 and 3 potted). |
+| First pot fills the tray | On an open table, a real shot that pots one red gives the shooter reds and their tray shows 1 of 7 at once. |
 
 #### Computer opponent (5 scenarios, `computer.spec.ts`)
 | Scenario | Checks |
