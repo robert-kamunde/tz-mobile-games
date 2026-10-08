@@ -36,6 +36,7 @@ import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
 import { OpponentPicker } from './OpponentPicker';
 import { getPoolSlots } from './poolSlots';
+import type { MenuStart } from './MenuScene';
 import { SCENE_KEYS } from './sceneKeys';
 import { addButton } from './ui';
 import { PowerBar } from './PowerBar';
@@ -164,7 +165,7 @@ export class TableScene extends Phaser.Scene {
     }
     // The menu offers Continue only when a game is saved, so this means the save went bad since.
     this.logger.warn('no saved game to continue; back to the menu');
-    this.scene.start(SCENE_KEYS.menu);
+    this.openMenu();
   }
 
   override update(_time: number, deltaMs: number): void {
@@ -247,7 +248,15 @@ export class TableScene extends Phaser.Scene {
     this.computer.cancel();
     this.picker.hide();
     this.saveMatch();
-    this.scene.start(SCENE_KEYS.menu);
+    this.openMenu();
+  }
+
+  /**
+   * Phaser keeps the data a scene was last started with when none is passed, so the menu would
+   * reopen whatever panel it last restarted with (Settings after a language change). Always pass it.
+   */
+  private openMenu(): void {
+    this.scene.start(SCENE_KEYS.menu, {} satisfies MenuStart);
   }
 
   private snapshot(): SavedMatch {

@@ -187,3 +187,19 @@ test('the computer resumes its own turn after the game is reopened', async ({ pa
   await expect.poll(async () => (await state(page)).shots, { timeout: 15_000 }).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test('after changing the language, Menu from the table opens the main menu, not Settings', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await tap(page, 'menu-settings', MENU_SCENE);
+  await tap(page, 'language-en', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).locale).toBe('en');
+  await tap(page, 'settings-back', MENU_SCENE);
+  await tap(page, 'menu-play', MENU_SCENE);
+  await tap(page, 'opponent-two', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  expect((await menuState(page)).panel).toBeNull();
+  expect(errors).toEqual([]);
+});

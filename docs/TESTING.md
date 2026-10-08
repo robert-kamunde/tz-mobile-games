@@ -43,7 +43,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Spin and fine aim controls | Centre is a centre hit; up, down and right give topspin, backspin and right side, reaching the largest offset at the edge; touches beyond the edge are pulled onto it; bad input gives a centre hit; the dot is drawn where the touch was; the control's top and bottom give follow and draw in the simulation. Fine aim: positive angle turns clockwise on screen, exact angle there and back over 1000 small turns, unit length kept, non-number angle ignored. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 41 scenarios x 3 screen sizes = 123 runs
+### Browser tests (`npm run test:e2e`): 42 scenarios x 3 screen sizes = 126 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -100,7 +100,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Fine aim | 200 design pixels turn the aim clockwise by 190 to 210 times the per-pixel angle; dragging back returns it; a cancelled touch never shoots and the strip still works after it. |
 | Computer's turn | Spin and fine aim drags change nothing while the computer thinks, and it plays a centre-ball shot. |
 
-#### Menu and saving (7 scenarios, `menu.spec.ts`)
+#### Menu and saving (8 scenarios, `menu.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Menu first | The game opens on the menu in Kiswahili with Play, Stats, Rules, Settings and the placeholder label, and no Continue; Rules opens with the rules text and Back closes it; Back on the picker returns to the menu without starting a game. |
@@ -109,6 +109,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Finished game | Winning on the black against Easy removes the saved game; the menu shows no Continue; Stats reads "Kompyuta (Rahisi): umeshinda 1 kati ya 1" and zero for the others; the picker marks Easy. |
 | Language | Settings, English: the menu redraws in English with Settings still open and English marked; kept after reopening; the table is in English too. |
 | Damaged save | A broken saved game and unreadable stats in storage: the menu opens with no Continue, the stats show zero, both values are in `.backup` keys, a new game saves over them, no errors. |
+| Menu after a language change | Change to English, play, tap Menu: the main menu opens with no panel (failed before the fix). |
 | Computer resumes | A game saved on the computer's turn: after reopening and Continue, the computer plays its shot by itself. |
 
 All pool scenarios start from the menu: Play, then the opponent, with real taps.

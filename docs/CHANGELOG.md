@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.1 (unreleased) - Fix: Menu reopened Settings
+- After changing the language, tapping Menu on the table opened the Settings panel instead of the main menu (reported by Robert). Phaser reuses a scene's last start data when none is given; the table now always passes it.
+
 ## 0.6.0 (unreleased) - Milestone 5: spin and fine aim
 - Spin control above the power bar: drag the dot on the cue-ball face for topspin, backspin or side spin. Resets after every shot; off during the computer's turn.
 - Fine-aim strip under the table: drag along it to turn the aim slowly.
