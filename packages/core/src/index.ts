@@ -6,3 +6,4 @@ export * from './i18n';
 export * from './fixedStep';
 export * from './lifecycle';
 export * from './settings';
+export * from './random';

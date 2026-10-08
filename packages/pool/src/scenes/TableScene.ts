@@ -1,6 +1,8 @@
 import * as Phaser from 'phaser';
-import { FixedStepper, type Logger, type Translator } from '@tzg/core';
+import { FixedStepper, createRandom, type Logger, type Translator } from '@tzg/core';
 import { getServices, registerTestProbe } from '@tzg/shell';
+import { ShotPlanner } from '../ai/planner';
+import { AI_LEVELS } from '../config/ai';
 import { AIM_GUIDE, BALL_IN_HAND, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
@@ -9,8 +11,9 @@ import { buildTableGeometry } from '../physics/geometry';
 import { respawnCueBall } from '../physics/placement';
 import { countInRack, rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
-import type { TableGeometry, Vec2 } from '../physics/types';
+import type { Shot, TableGeometry, Vec2 } from '../physics/types';
 import {
+  countGroups,
   isOnBlack,
   opponentOf,
   resolveShot,
@@ -22,16 +25,22 @@ import {
 } from '../rules/blackball';
 import { summarizeShot } from '../rules/shotSummary';
 import { AimView } from './AimView';
+import { ComputerTurn } from './ComputerTurn';
 import { MatchHud } from './MatchHud';
+import { OpponentPicker, type Opponent } from './OpponentPicker';
 import { PowerBar } from './PowerBar';
 import { TableView } from './TableView';
 
 /** Straight at the rack: the default aim for a fresh rack. */
 const BREAK_AIM: Vec2 = { x: 1, y: 0 };
 
+/** Against the computer, the computer is player 2 and the person always breaks the first game. */
+const COMPUTER_PLAYER: PlayerId = 1;
+
 /**
- * A two-player (pass-and-play) Blackball match on one table. Phaser is used only for drawing and
- * input: the simulation is src/physics and the rules are src/rules.
+ * A Blackball match on one table, against another person on the same phone or the computer.
+ * Phaser is used only for drawing and input: the simulation is src/physics, the rules src/rules
+ * and the computer's thinking src/ai.
  */
 export class TableScene extends Phaser.Scene {
   static readonly KEY = 'Table';
@@ -43,6 +52,12 @@ export class TableScene extends Phaser.Scene {
   private aimView!: AimView;
   private powerBar!: PowerBar;
   private hud!: MatchHud;
+  private picker!: OpponentPicker;
+  private computer!: ComputerTurn;
+  private opponent: Opponent = { kind: 'human' };
+  private opponentChosen = false;
+  /** Varies the computer's aiming error between matches; each shot's seed adds the shot count. */
+  private computerSeed = 0;
   private stepper!: FixedStepper;
   private logger!: Logger;
   private t!: Translator;
@@ -70,7 +85,24 @@ export class TableScene extends Phaser.Scene {
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view);
     this.powerBar = new PowerBar(this, this.t.t('pool.power'));
-    this.hud = new MatchHud(this, this.t, () => this.startNewMatch(opponentOf(this.match.breaker)));
+    this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
+    this.picker = new OpponentPicker(this, this.t, (opponent) => this.onOpponentPicked(opponent));
+    this.computer = new ComputerTurn(
+      {
+        place: (spot) => this.placeCueBallAt(spot),
+        aim: () => this.aim,
+        setAim: (direction) => {
+          this.aim = direction;
+          this.refresh();
+        },
+        showPower: (power) => {
+          this.powerBar.showValue(power);
+          this.refresh();
+        },
+        shoot: (shot) => this.shootComputer(shot),
+      },
+      () => performance.now(),
+    );
     this.stepper = new FixedStepper({ stepMs: DEFAULT_PHYSICS.stepSeconds * 1000, maxStepsPerFrame: SIMULATION_LOOP.maxStepsPerFrame });
 
     this.input.on('pointerdown', this.onPointerDown, this);
@@ -88,9 +120,11 @@ export class TableScene extends Phaser.Scene {
 
     this.registerProbes();
     this.startNewMatch(0);
+    this.picker.show();
   }
 
   override update(_time: number, deltaMs: number): void {
+    if (this.computer.active) this.computer.update(deltaMs);
     if (!this.sim.isMoving) return;
     this.stepper.advance(deltaMs, () => this.sim.step());
     this.view.syncBalls(this.sim.balls);
@@ -99,8 +133,28 @@ export class TableScene extends Phaser.Scene {
 
   // ---- Match flow -------------------------------------------------------------------------
 
+  /** New game: choose the opponent first. The current table stays behind the picker until then. */
+  private askForOpponent(): void {
+    if (this.sim.isMoving) return;
+    this.computer.cancel();
+    this.cancelGestures();
+    this.picker.show();
+    this.refresh();
+  }
+
+  private onOpponentPicked(opponent: Opponent): void {
+    // A first game or a new opponent starts with player 1 breaking; a rematch alternates the break as before.
+    const rematch = this.opponentChosen && opponentKey(opponent) === opponentKey(this.opponent);
+    this.opponentChosen = true;
+    this.opponent = opponent;
+    this.hud.setComputerPlayer(opponent.kind === 'computer' ? COMPUTER_PLAYER : null);
+    this.startNewMatch(rematch ? opponentOf(this.match.breaker) : 0);
+  }
+
   private startNewMatch(breaker: PlayerId): void {
     if (this.sim.isMoving) return;
+    this.computer.cancel();
+    this.computerSeed = Date.now() >>> 0;
     this.cancelGestures();
     this.sim = this.newSimulation();
     this.match = startMatch(breaker);
@@ -110,12 +164,35 @@ export class TableScene extends Phaser.Scene {
     this.view.syncBalls(this.sim.balls);
     this.hud.setStatus(this.turnMessage());
     this.refresh();
-    this.logger.info(`new match, player ${breaker + 1} breaks`);
+    this.logger.info(`new match against ${this.opponent.kind === 'computer' ? `the computer (${this.opponent.level})` : 'a person'}, player ${breaker + 1} breaks`);
+    this.startComputerTurnIfDue();
+  }
+
+  private isComputerTurn(): boolean {
+    return this.opponent.kind === 'computer' && this.match.phase !== 'over' && this.match.current === COMPUTER_PLAYER;
+  }
+
+  private startComputerTurnIfDue(): void {
+    if (this.opponent.kind !== 'computer' || !this.isComputerTurn() || this.picker.visible || this.sim.isMoving || this.computer.active) return;
+    const planner = new ShotPlanner(
+      { balls: this.sim.balls, table: this.geometry, tableConfig: UK_7FT_TABLE, physics: DEFAULT_PHYSICS, match: this.match },
+      AI_LEVELS[this.opponent.level],
+      createRandom(this.computerSeed + this.shots),
+    );
+    // A finger still down from the player's last shot must not steer the computer's cue.
+    this.cancelGestures();
+    this.computer.start(planner);
+  }
+
+  private shootComputer(shot: Shot): void {
+    this.aim = shot.direction;
+    this.powerBar.cancel();
+    this.shoot(shot.power);
   }
 
   private shoot(power: number): void {
     if (this.match.phase === 'over') return;
-    this.countsBeforeShot = this.groupCounts();
+    this.countsBeforeShot = countGroups(this.sim.balls);
     const result = this.sim.strike({ direction: this.aim, power, side: 0, height: 0 });
     if (result !== 'ok') {
       this.logger.warn(`shot refused: ${result}`);
@@ -174,10 +251,12 @@ export class TableScene extends Phaser.Scene {
       this.hud.setStatus(messages.join('\n'));
     }
     this.refresh();
+    this.startComputerTurnIfDue();
   }
 
   private turnMessage(): string {
     const player = this.hud.playerName(this.match.current);
+    if (this.isComputerTurn()) return this.t.t('status.computer', { player });
     if (this.match.phase === 'break') return this.t.t('status.break', { player });
     if (this.match.ballInHand) return this.t.t('status.ballInHand', { player });
     if (this.lastResult?.verdict.kind === 'continue') return this.t.t('status.continue', { player });
@@ -187,7 +266,8 @@ export class TableScene extends Phaser.Scene {
   // ---- Input ------------------------------------------------------------------------------
 
   private onPointerDown(pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
-    if (this.sim.isMoving || over.length > 0 || this.match.phase === 'over') return; // buttons handle their own input
+    // Buttons handle their own input; nothing on the table responds while the computer plays or the picker is open.
+    if (this.sim.isMoving || over.length > 0 || this.match.phase === 'over' || this.picker.visible || this.isComputerTurn()) return;
     if (this.powerPointerId === null && this.powerBar.hitTest(pointer.x, pointer.y)) {
       this.powerPointerId = pointer.id;
       this.powerBar.begin(pointer.y);
@@ -247,10 +327,15 @@ export class TableScene extends Phaser.Scene {
     const target = this.view.toTable(designX, designY);
     // Before the break the cue ball must stay behind the baulk line; it slides along the line instead of stopping.
     const x = this.match.ballInHand === 'baulk' ? Math.min(target.x, UK_7FT_TABLE.baulkLine) : target.x;
-    if (this.sim.placeCueBall(x, target.y) === 'ok') {
-      this.view.syncBalls(this.sim.balls);
-      this.refresh();
-    }
+    this.placeCueBallAt({ x, y: target.y });
+  }
+
+  private placeCueBallAt(spot: Vec2): boolean {
+    if (!this.match.ballInHand || (this.match.ballInHand === 'baulk' && spot.x > UK_7FT_TABLE.baulkLine)) return false;
+    if (this.sim.placeCueBall(spot.x, spot.y) !== 'ok') return false;
+    this.view.syncBalls(this.sim.balls);
+    this.refresh();
+    return true;
   }
 
   private aimAt(designX: number, designY: number): void {
@@ -279,21 +364,10 @@ export class TableScene extends Phaser.Scene {
     return new PoolSimulation(this.geometry, DEFAULT_PHYSICS, rackBalls(UK_7FT_TABLE), this.logger.child('physics'));
   }
 
-  private groupCounts(): GroupCounts {
-    let red = 0;
-    let yellow = 0;
-    for (const b of this.sim.balls) {
-      if (b.pocketed) continue;
-      if (b.kind === 'red') red += 1;
-      else if (b.kind === 'yellow') yellow += 1;
-    }
-    return { red, yellow };
-  }
-
   /** Redraws everything that depends on the match state while the table is still. */
   private refresh(): void {
     if (this.sim.isMoving) return;
-    const counts = this.groupCounts();
+    const counts = countGroups(this.sim.balls);
     const panel = (player: PlayerId) => {
       const group = this.match.groups[player];
       return {
@@ -304,11 +378,12 @@ export class TableScene extends Phaser.Scene {
       };
     };
     this.hud.showPlayers(this.match, [panel(0), panel(1)]);
-    this.hud.setHint(this.match.ballInHand !== null);
-
     const over = this.match.phase === 'over';
-    this.powerBar.setEnabled(!over);
-    if (over) {
+    // While the computer plays or the picker is open, the player has no controls to explain.
+    const playerIdle = this.isComputerTurn() || this.picker.visible;
+    this.hud.setHint(playerIdle || over ? 'none' : this.match.ballInHand ? 'ballInHand' : 'aim');
+    this.powerBar.setEnabled(!over && !playerIdle);
+    if (over || this.picker.visible) {
       this.aimView.hide();
       return;
     }
@@ -331,6 +406,9 @@ export class TableScene extends Phaser.Scene {
       status: this.hud.statusText,
       gameOverShown: this.hud.gameOverVisible,
       trays: this.hud.trayState,
+      opponent: this.opponent,
+      computer: this.computer.currentPhase,
+      pickerShown: this.picker.visible,
     }));
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
     // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game
@@ -348,9 +426,15 @@ export class TableScene extends Phaser.Scene {
       this.match = { ...this.match, ...(match as Partial<MatchState>) };
       this.lastResult = null;
       this.view.syncBalls(this.sim.balls);
+      this.computer.cancel();
       this.hud.setStatus(this.turnMessage());
       this.refresh();
+      this.startComputerTurnIfDue();
       return true;
     });
   }
+}
+
+function opponentKey(o: Opponent): string {
+  return o.kind === 'computer' ? `computer-${o.level}` : o.kind;
 }

@@ -50,14 +50,30 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 | The black | On the black once all own balls are down; must hit it first. Legally potting it in any pocket wins (R2). Potting it at any other time, or with a foul, loses. Potting the last own ball and the black in one shot loses. A foul while on the black is only a foul. |
 | Black on the break | Re-rack; the same player breaks again (R3). |
 
-### Controls as built (Milestones 1-2)
+### Controls as built (Milestones 1-3)
 - Drag anywhere on the table: the cue points from the cue ball towards the finger. A guide line shows the path, the ghost ball at first contact, and the predicted object-ball and cue-ball directions.
 - Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
 - Aiming and power can use two fingers at once. Controls are disabled while balls move.
 - Ball in hand: a ring shows round the cue ball; drag it to place it. It follows the finger only over free cloth (never onto a ball, cushion or pocket) and stays behind the baulk line before the break.
 - Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip and balls left, and a tray under each name that fills with that player's potted balls once colours are decided. The status line says what happened (foul, colours decided) and who plays next.
-- New game: bottom right. During a match it needs a second tap within 3 seconds.
-- Not yet built: AI, menus, settings screen, stats, rules screen, spin control, fine aim adjustment, sound.
+- Opponent picker: shown when the game opens and after New game. Choices: two players on one phone, or the computer at Easy (Rahisi), Medium (Wastani) or Hard (Ngumu). The player breaks the first game against a new opponent; a rematch against the same opponent alternates the break.
+- New game: bottom right. During a match it needs a second tap within 3 seconds, then opens the opponent picker.
+- Computer's turn: the status line says "Kompyuta inacheza…", the controls hint disappears and the power bar is dimmed; the player's touches do nothing. The computer thinks briefly, places the cue ball if it has ball in hand, swings the cue to its line and fills the power bar before shooting, so the player can follow what it does.
+- Not yet built: menus, settings screen, stats, rules screen, spin control, fine aim adjustment, sound.
+
+### Computer opponent as built (Milestone 3)
+- One computer opponent with three levels. It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.
+- What it looks for: pots of each legal ball into each pocket with clear paths, plain hits on a legal ball as a fallback, and, when nothing legal is found, shots in every direction (to escape snookers). Hard also replays its best few shots with the aim slightly off either way and prefers shots that still work, which cut its fouls from about 9% to 4% of its shots.
+- Ball in hand: it puts the cue ball straight behind a ball it can pot. On the break it breaks hard from behind the baulk line.
+- Levels differ in aiming error, power error, how many shots it considers, and whether it plans where the cue ball stops:
+
+| Level | Aim error (1 sd) | Power error | Shots considered | Cue ball position | Robustness check |
+|---|---|---|---|---|---|
+| Easy (Rahisi) | about 1.7° | 20% | 6 | no | no |
+| Medium (Wastani) | about 0.6° | 10% | 16 | yes | no |
+| Hard (Ngumu) | about 0.2° | 5% | 30 | yes | best 5 |
+
+- Pacing: it thinks for at least 0.7 s (so the turn change is readable) and at most 4 s on screen; on a slow phone the time limit ends the thinking and it plays the best shot found so far.
 
 ### Core loop
 Aim, set power and spin, shoot, balls settle, rules engine decides the outcome (continue, change turn, foul, win, loss), repeat. A match ends on a legal or illegal pot of the black.
@@ -102,6 +118,6 @@ More routes, vehicle upgrades, paint and slogan customisation, events, leaderboa
 ---
 
 ## Future improvements backlog (not approved, not scheduled)
-- Pool: online 1v1, more venues (Sinza, Kariakoo, Zanzibar beach), cosmetic cues and cloths, weekly tournaments, rewarded ad for an extra aiming guide, Pyramid mode.
+- Pool: computer that uses spin and plays safeties on purpose; remember the last opponent chosen; named computer opponents with personalities; online 1v1, more venues (Sinza, Kariakoo, Zanzibar beach), cosmetic cues and cloths, weekly tournaments, rewarded ad for an extra aiming guide, Pyramid mode.
 - Daladala: new cities, upgradeable daladala, custom paint and slogans, daily events, city leaderboards, rewarded ad for a revive.
 - Both: optional analytics (retention), carrier-billing and mobile-money purchases, iOS build.

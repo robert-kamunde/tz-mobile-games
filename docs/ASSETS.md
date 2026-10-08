@@ -14,5 +14,6 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Cue stick | Line | Shows aim and pull-back | Placeholder | `AimView.ts` | Cue sprite. |
 | Power bar | Rectangles | Power control | Placeholder | `PowerBar.ts` | Styled bar and handle. |
 | Match HUD | Text, circles, rectangle | Player panels, potted-ball trays, status line, game-over panel, New game button | Placeholder styling | `MatchHud.ts` | Styled panels and buttons; a font chosen for Kiswahili readability. |
+| Opponent picker | Text buttons on a dark rectangle | "Unacheza na nani?" panel with four choices | Placeholder styling | `OpponentPicker.ts` | Styled panel and buttons; possibly an icon per level. |
 | Ball-in-hand ring | Circle outline | Shows the cue ball can be dragged | Placeholder | `AimView.ts` | Could become a hand icon. |
 | Sounds | Audio | Cue strike, ball clicks, cushion, pocket | Missing | n/a | Short, small files; needed before release. Not in Milestone 1 scope. |

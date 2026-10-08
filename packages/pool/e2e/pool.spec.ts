@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { setHidden, touchDrag, trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { SCENE, boot, overlaps, pullPower, state, tablePoint, waitUntilSettled } from './poolPage';
+import { SCENE, boot, overlaps, pickOpponent, pullPower, state, tablePoint, waitUntilSettled } from './poolPage';
 
 test('opens on a racked table in Kiswahili with no errors', async ({ page }) => {
   const errors = trackErrors(page);
@@ -78,6 +78,8 @@ test('controls are ignored while balls are moving', async ({ page }) => {
 });
 
 test('going to the background mid-shot freezes the table and gives the same result after returning', async ({ page }) => {
+  // Plays two full breaks; slow when the other browser tests run alongside.
+  test.setTimeout(60_000);
   const errors = trackErrors(page);
   // Reference: the same break with no interruption.
   await boot(page);
@@ -86,6 +88,7 @@ test('going to the background mid-shot freezes the table and gives the same resu
 
   await page.reload();
   await page.waitForFunction((k) => window.__tzg?.activeScenes().includes(k), SCENE);
+  await pickOpponent(page, 'two');
   await pullPower(page, 0.9);
   await expect.poll(async () => (await state(page)).steps).toBeGreaterThan(200);
   await setHidden(page, true);

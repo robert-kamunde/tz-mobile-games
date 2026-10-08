@@ -1,3 +1,4 @@
+import { createRandom } from '@tzg/core';
 import { DEFAULT_PHYSICS, type PhysicsConfig } from '../src/config/physics';
 import { UK_7FT_TABLE } from '../src/config/table';
 import { buildTableGeometry } from '../src/physics/geometry';
@@ -8,16 +9,10 @@ import type { Ball, BallKind } from '../src/physics/types';
 export const TABLE = UK_7FT_TABLE;
 export const GEOMETRY = buildTableGeometry(TABLE);
 
-/** Small seeded PRNG (mulberry32) so "random" tests are repeatable. */
+/** Seeded uniform random numbers so "random" tests are repeatable. */
 export function seededRandom(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+  const r = createRandom(seed);
+  return () => r.next();
 }
 
 export function objectBall(id: number, x: number, y: number, kind: BallKind = 'red'): Ball {

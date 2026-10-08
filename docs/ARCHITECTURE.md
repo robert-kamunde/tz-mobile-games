@@ -31,10 +31,11 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A8 | Canvas renders at design resolution (1280x720), scaled to fit, letterboxed | Low-end GPUs. Higher device pixel ratio is not used. Revisit if text looks soft on real devices. | 2026-10-07 |
 | A9 | Exact dependency versions, no `^` ranges | Reproducible builds. Playwright is pinned to 1.56.1 to match the Chromium build installed in the dev environment. | 2026-10-07 |
 | A10 | Pool physics: 1 ms fixed step, discrete collisions, sliding/rolling ball model with top/back and side spin | At the 7 m/s maximum a ball moves 7 mm per step, under a third of its radius, so it cannot pass through a ball or cushion without continuous collision code. About 4 µs per step for 16 balls in tests. Spin is in the model now (MVP needs it) so adding the spin control later needs no physics rewrite. | 2026-10-07 |
-| A11 | No trigonometry, `hypot`, `pow`, `exp`, `log` or random numbers in `src/physics` | These can return different last bits on different JavaScript engines, which would make the same shot end differently on two phones (and break AI planning and any future online play). Enforced by `test/purity.test.ts`. | 2026-10-07 |
+| A11 | No trigonometry, `hypot`, `pow`, `exp`, `log`, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai` | These can return different last bits on different JavaScript engines, which would make the same shot end differently on two phones (and break AI planning and any future online play). Enforced by `test/purity.test.ts`. | 2026-10-07 |
 | A12 | Static art (table, balls) is drawn once into textures instead of live Phaser Graphics | Phaser rebuilds Graphics geometry on the CPU every frame; a texture is one quad. In the test browser this changed idle fps only slightly (24 to 26), because that browser's software renderer is limited by fill rate, but it removes avoidable CPU work on phones. | 2026-10-07 |
 | A14 | Rules are pure functions over plain data (`resolveShot(state, summary, countsBefore)`), fed by a summary of the physics event log | Every rule is unit-testable without the physics or a browser; the AI can reuse it to judge simulated shots. Covered by the same purity test as the physics. | 2026-10-07 |
 | A15 | Browser tests may set up a position through an e2e-only probe (`pool.testLayout`) | Late-game situations (on the black, ball in hand) cannot be reached reliably by playing shots in a test. The probe exists only in e2e builds; the release build is checked to contain no test hooks. | 2026-10-07 |
+| A16 | The computer opponent (`src/ai`) chooses shots by playing candidates out on copies of the simulation and judging them with the rules engine, in resumable slices | Reuses the exact physics and rules, so its predictions are exact (a unit test checks this) and it cannot disagree with the referee. Slicing (`ShotPlanner.work(maxSteps)`) lets the scene spread thinking over frames within a time budget; the decision does not depend on how the work is sliced. Seeded randomness (`createRandom` in core) for its aiming error keeps tests repeatable. Same purity rules as physics and rules. | 2026-10-08 |
 | A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
@@ -47,6 +48,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `save.ts` | `createSaveSlot` reads/writes one versioned value. `load()` returns `{ data, outcome }` where outcome is `loaded`, `migrated`, `missing`, `corrupt`, `invalid` or `unsupported-version`; anything but loaded/migrated returns defaults. |
 | `i18n.ts` | `createTranslator` with `{name}` placeholders and fallback; `findMissingKeys` for tests. |
 | `fixedStep.ts` | `FixedStepper.advance(elapsedMs)` returns how many fixed steps to run, the interpolation alpha, and dropped time. |
+| `random.ts` | `createRandom(seed)`: seeded uniform and roughly normal random numbers (mulberry32), the same sequence on every device. Used for the computer's aiming error. |
 | `lifecycle.ts` | `AppLifecycle` turns `visibilitychange` and `pagehide` into idempotent `pause`/`resume` events. |
 | `settings.ts` | Player settings (locale, sound volume, music volume), validation, and the save slot `"<gameId>.settings"`. |
 
@@ -68,11 +70,17 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `physics/geometry.ts` | Builds cushion segments and pocket jaws from the table config. Pocket ids 0-5 clockwise from top-left. |
 | `physics/rack.ts` | Blackball rack (black in the middle of row 3, different colours on the back corners). Cue ball is id 0. |
 | `physics/simulation.ts` | `PoolSimulation`: `strike`, `step`, `runUntilSettled`, `placeCueBall`, `shotEvents`. Shot events (ball contacts in order, cushions, pockets) are what the Milestone 2 rules engine will read. |
-| `physics/aim.ts` | `computeAimGuide`: sweeps the cue ball to the first ball, cushion or pocket; ghost ball and predicted directions. Reusable by the AI. |
+| `physics/aim.ts` | `computeAimGuide`: sweeps the cue ball to the first ball, cushion or pocket; ghost ball and predicted directions. Also used by the AI to check the cue ball reaches the intended ball first. |
 | `physics/placement.ts` | Finds a free spot for a potted cue ball, before the player drags it (ball in hand). |
 | `rules/shotSummary.ts` | Turns the physics event log into what the rules need: first ball hit, balls potted, cue ball potted, cushion after contact, balls to a cushion (break). |
 | `rules/blackball.ts` | Blackball rules: `startMatch`, `resolveShot`, `legalFirstContacts`, `isOnBlack`. Returns the next match state and a verdict (continue, turn over, foul with reason, re-rack, game over with reason). |
-| `scenes/TableScene.ts` | The match: input (aim, power, ball in hand), simulation loop, applying verdicts, new game. |
+| `ai/potLines.ts` | Straight-line pot geometry: which pots are on from a cue ball spot (clear paths, cut angle), how easy each looks, and the strike speed that reaches the pocket. |
+| `ai/candidates.ts` | Candidate shots: pots at each level's speeds, plain contacts, a sweep of directions, break shots, and ball-in-hand spots. |
+| `ai/planner.ts` | `ShotPlanner`: plays candidates out on copies of the table, scores outcomes (win, pot and position, miss and what it leaves, foul, loss), Hard's robustness check, then applies the level's aim and power error. |
+| `config/ai.ts` | Levels, search settings, outcome scores and on-screen pacing of a computer turn. |
+| `scenes/TableScene.ts` | The match: opponent choice, input (aim, power, ball in hand), simulation loop, applying verdicts, starting computer turns, new game. |
+| `scenes/ComputerTurn.ts` | Paces a computer turn on screen: thinking in slices within the frame budget and time limits, then placing, aiming and power animation, then the shot. |
+| `scenes/OpponentPicker.ts` | "Unacheza na nani?" panel: two players or the computer at one of three levels. |
 | `scenes/MatchHud.ts` | Player panels, status line, controls hint, New game button (two-tap confirm mid-match), game-over panel. |
 | `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing (table, balls, aim guide, cue stick, ball-in-hand ring) and the power control. |
 

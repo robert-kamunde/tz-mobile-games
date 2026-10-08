@@ -27,11 +27,28 @@ export interface PoolState {
   status: string;
   gameOverShown: boolean;
   trays: { potted: number; slots: number }[];
+  opponent: { kind: 'human' } | { kind: 'computer'; level: string };
+  computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
+  pickerShown: boolean;
 }
 
 export const SCENE = 'Table';
-export const boot = (page: Page) => bootTo(page, SCENE);
 export const state = (page: Page) => page.evaluate(() => window.__tzg!.probe('pool.state') as PoolState);
+
+export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard';
+
+/** Picks an opponent on the picker with a real tap. */
+export async function pickOpponent(page: Page, choice: OpponentChoice): Promise<void> {
+  await expect.poll(async () => (await state(page)).pickerShown).toBe(true);
+  await tap(page, `opponent-${choice}`);
+  await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
+}
+
+/** Opens the game and picks the opponent (two players unless told otherwise). */
+export async function boot(page: Page, choice: OpponentChoice = 'two'): Promise<void> {
+  await bootTo(page, SCENE);
+  await pickOpponent(page, choice);
+}
 
 /** A table point (metres) in page pixels. */
 export async function tablePoint(page: Page, x: number, y: number): Promise<PagePoint> {
@@ -48,6 +65,11 @@ export async function elementCenter(page: Page, name: string): Promise<PagePoint
   const p = await page.evaluate((n) => window.__tzg!.elementCenter('Table', n), name);
   expect(p, `element ${name}`).not.toBeNull();
   return p!;
+}
+
+export async function tap(page: Page, name: string): Promise<void> {
+  const p = await elementCenter(page, name);
+  await page.touchscreen.tap(p.x, p.y);
 }
 
 /** Drags the power bar down by a fraction of its length and lets go. */

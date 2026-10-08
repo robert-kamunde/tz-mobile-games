@@ -1,12 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { boot, dragOnTable, elementCenter, layout, pullPower, state, waitUntilSettled } from './poolPage';
-
-const tap = async (page: Page, name: string) => {
-  const p = await elementCenter(page, name);
-  await page.touchscreen.tap(p.x, p.y);
-};
+import { boot, dragOnTable, layout, pickOpponent, pullPower, state, tap, waitUntilSettled } from './poolPage';
 
 test('player 1 breaks, and the cue ball stays behind the baulk line while placing it', async ({ page }) => {
   await boot(page);
@@ -75,6 +70,7 @@ test('potting the black when on it wins, and New game starts a match with the ot
   expect((await state(page)).shots).toBe(1);
 
   await tap(page, 'newGameButton');
+  await pickOpponent(page, 'two');
   await expect.poll(async () => (await state(page)).match).toMatchObject({ phase: 'break', breaker: 1, current: 1 });
   const fresh = await state(page);
   expect(fresh.gameOverShown).toBe(false);
@@ -92,6 +88,7 @@ test('New game during a match needs a second tap', async ({ page }) => {
   expect(s.balls[1]!.pocketed).toBe(true);
 
   await tap(page, 'newGameButton');
+  await pickOpponent(page, 'two');
   await expect.poll(async () => (await state(page)).match.phase).toBe('break');
   s = await state(page);
   expect(s.balls[1]!.pocketed).toBe(false);

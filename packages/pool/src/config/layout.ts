@@ -57,6 +57,22 @@ export const HUD = {
   confirmMs: 3000,
 } as const;
 
+/** Opponent picker: a panel over the middle of the table with one button per choice. */
+export const PICKER = {
+  x: 570,
+  y: 360,
+  width: 600,
+  height: 400,
+  alpha: 0.92,
+  titleOffsetY: -150,
+  firstButtonOffsetY: -75,
+  buttonSpacing: 72,
+  buttonWidth: 440,
+  buttonPadding: { x: 14, y: 10 },
+  /** Above the table and the HUD. */
+  depth: 20,
+} as const;
+
 export const BALL_IN_HAND = {
   /** A touch this close to the cue ball (design pixels) picks it up instead of aiming. */
   grabRadius: 44,

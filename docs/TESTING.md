@@ -4,9 +4,9 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 113 tests
+### Unit tests (`npm test`): 136 tests
 
-#### Core, `packages/core/test` (38)
+#### Core, `packages/core/test` (41)
 | Area | What is covered |
 |---|---|
 | Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained. |
@@ -14,8 +14,9 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (74)
+#### Pool, `packages/pool/test` (95)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -33,9 +34,12 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Rules: black | Must hit the black first when on it; legal pot wins; with the cue ball or an opponent ball it loses; last own ball and black together loses; foul on the black is only a foul; no shots after the match ends. |
 | Shot summary | First contact, cushion after contact, pots in order, break cushion count; cushion before contact ignored; empty shot; unknown ball id throws. |
 | Rules + physics | A real full-power break is judged legal. |
-| Source rules | No Phaser, DOM, trigonometry, pow/exp/log, random or clock calls in `src/physics` and `src/rules`. |
+| AI: pot lines | A straight pot is found and aimed at the ghost ball and ranks easiest; a ball in the object ball's path or the cue ball's path removes the pot; only legal balls offered; longer pots need more speed; power clamped. |
+| AI: planner | Pots a simple ball and expects to; same decision and step count however the thinking is sliced; each level stays within its step limit; a decision taken early (time limit) is still a valid shot; breaks from behind the baulk line with a legal break; with ball in hand places the cue ball on a legal spot and pots; when its only ball is hidden behind a wall of opponent balls, still finds a legal hit (direction sweep); on the black, plays the winning pot; its prediction of each intended shot matches what the shot really does over 8 shots of a game; refuses to plan after the match ends. |
+| AI: whole game | Two Easy computers play a full game to a winner. |
+| Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 25 scenarios x 3 screen sizes = 75 runs
+### Browser tests (`npm run test:e2e`): 30 scenarios x 3 screen sizes = 90 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -75,6 +79,20 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | New game confirm | One tap mid-match changes nothing; a second tap restarts. |
 | Potted-ball trays | No trays while the table is open; once colours are set, each player's tray shows 7 slots with their potted balls filled (checked with 1 and 3 potted). |
 
+#### Computer opponent (5 scenarios, `computer.spec.ts`)
+| Scenario | Checks |
+|---|---|
+| Picker first | The game opens on the opponent picker; pulling the power bar meanwhile does nothing; choosing Easy starts a match with the player to break. |
+| Computer's turn | It thinks and shoots with no input; a power-bar pull during its turn does not shoot (the shot log shows only player 1's break and the computer's shot); balls settle with no overlaps or escapes. |
+| Ball in hand | With ball in hand anywhere, Medium places the cue ball and shoots; the table is sound afterwards. |
+| New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; choosing two players restores "Mchezaji" names. |
+| Frame budget | 6x CPU throttle: average CPU per frame while Hard thinks minus the same table while the player aims stays under the 6 ms thinking budget plus 6 ms; Hard still shoots (time limit). |
+
+All earlier pool scenarios now start by picking "two players" on the picker with a real tap.
+
+### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
+Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
+
 ### Release build check
 `npm run build -w @tzg/shell`, then confirm `__tzg` does not appear in `packages/shell/dist/assets/*.js`.
 
@@ -85,6 +103,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | 2026-10-07 | 0 | pass | 38/38 | 33/33 | fps at 6x CPU throttle: 28.5 to 32.0 across runs (headless Chromium, software rendering in a cloud container, not a phone). Release build has no test hooks. First browser run failed 3/30: frames kept running in the background (fixed, see ARCHITECTURE A7). |
 | 2026-10-07 | 2 | pass | 112/112 | shell 33/33, pool 39/39 | All new tests passed on the first full run. Layout reviewed on 640x360 screenshots: text sizes raised so nothing renders under 10 CSS px on a 360-px-tall phone; status line overlapped a player panel at first (fixed); the aim guide ran off the table through a pocket (fixed: it now stops at pockets). |
 | 2026-10-07 | 2.1 | pass | 113/113 | pool 42/42 | Potted-ball trays. Checked on a 640x360 screenshot: the trays fit between the player names and the top rail. |
+| 2026-10-08 | 3 | pass | 136/136 (+2 ladder tests skipped) | shell 33/33, pool 57/57 | Ladder, 40 games each: Medium beat Easy 32/40, Hard beat Medium 36/40, every game finished (average 39 and 21 shots). Fouls per shot: Easy 14%, Medium 9 to 10%, Hard 4% (9% before the robustness check was added). Hard's longest decision: 213 824 physics steps. 6x throttle: frames while Hard thinks cost 1 to 9 ms more than frames while the player aims (12 to 25 ms, software renderer). Found and fixed: Phaser's frame delta undercounts on slow frames, so the thinking time limit now uses the clock (capped per frame for backgrounding); the controls hint showed during the computer's turn (now hidden); a slow background test hit the 30 s limit with more tests running alongside (limit raised for that test). |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)

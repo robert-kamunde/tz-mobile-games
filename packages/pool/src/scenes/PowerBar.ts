@@ -71,6 +71,11 @@ export class PowerBar {
     return power >= POWER_BAR.cancelBelow ? power : null;
   }
 
+  /** Shows a power the computer has chosen. Not a drag: release() ignores it and cancel() clears it. */
+  showValue(value: number): void {
+    this.setValue(value);
+  }
+
   /** Abandons a drag without shooting, e.g. when the game is backgrounded. */
   cancel(): void {
     this.dragStartY = null;

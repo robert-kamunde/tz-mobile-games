@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 (unreleased) - Milestone 3: computer opponent
+- Opponent picker when the game opens and after New game: two players on one phone, or the computer at Easy, Medium or Hard.
+- Computer opponent (`src/ai`): finds pots, plain hits and escape shots, plays them out on a copy of the table with the real physics and rules, places the cue ball for ball in hand, breaks, and shoots with level-dependent aim and power error. Hard double-checks its best shots against small aiming errors.
+- Computer turns are paced on screen (thinking, placing, aiming, power) and its thinking runs in small slices each frame within a time limit. The player's controls are off during its turn.
+- Core: seeded random numbers (`createRandom`).
+- Strength ladder command: `npm run ai:ladder -w @tzg/pool`.
+
 ## 0.3.1 (unreleased) - Potted-ball trays
 - Under each player's name, a row of 7 slots fills with their colour as their balls are potted (Robert's request). Hidden while the table is open.
 

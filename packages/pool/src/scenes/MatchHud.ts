@@ -38,6 +38,7 @@ export class MatchHud {
   private readonly overTitle: Phaser.GameObjects.Text;
   private readonly overDetail: Phaser.GameObjects.Text;
   private confirmUntil = 0;
+  private computerPlayer: PlayerId | null = null;
   private matchActive = true;
 
   constructor(
@@ -113,8 +114,13 @@ export class MatchHud {
     for (const o of all) o.setDepth(HUD_DEPTH);
   }
 
+  /** Marks which player is the computer (named "Kompyuta"), or none. */
+  setComputerPlayer(player: PlayerId | null): void {
+    this.computerPlayer = player;
+  }
+
   playerName(player: PlayerId): string {
-    return this.t.t('player.name', { n: player + 1 });
+    return player === this.computerPlayer ? this.t.t('player.computer') : this.t.t('player.name', { n: player + 1 });
   }
 
   groupName(group: Group): string {
@@ -155,9 +161,9 @@ export class MatchHud {
     this.trays[player] = { potted, slots };
   }
 
-  /** Bottom line: how to use the controls right now. */
-  setHint(ballInHand: boolean): void {
-    this.hint.setText(this.t.t(ballInHand ? 'pool.hintBallInHand' : 'pool.hint'));
+  /** Bottom line: how to use the controls right now, or nothing when the player has nothing to do. */
+  setHint(hint: 'aim' | 'ballInHand' | 'none'): void {
+    this.hint.setText(hint === 'none' ? '' : this.t.t(hint === 'ballInHand' ? 'pool.hintBallInHand' : 'pool.hint'));
   }
 
   get statusText(): string {

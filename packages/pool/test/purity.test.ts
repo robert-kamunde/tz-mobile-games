@@ -5,13 +5,13 @@ import { describe, expect, it } from 'vitest';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '../src');
 /** Folders that must stay engine-independent and deterministic. */
-const PURE_DIRS = ['physics', 'rules'];
+const PURE_DIRS = ['physics', 'rules', 'ai'];
 
 /**
  * The simulation and rules must stay deterministic and engine-independent. These are the rules
  * from src/physics/types.ts, checked so a later change cannot quietly break them.
  */
-describe('physics and rules source rules', () => {
+describe('physics, rules and AI source rules', () => {
   const files = PURE_DIRS.flatMap((dir) => readdirSync(join(SRC, dir)).filter((f) => f.endsWith('.ts')).map((f) => join(dir, f)));
 
   it('finds the sources', () => {

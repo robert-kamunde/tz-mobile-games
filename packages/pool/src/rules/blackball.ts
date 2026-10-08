@@ -1,4 +1,4 @@
-import type { BallKind } from '../physics/types';
+import type { Ball, BallKind } from '../physics/types';
 import type { ShotSummary } from './shotSummary';
 
 /*
@@ -57,6 +57,18 @@ export interface GroupCounts {
 export interface BlackballConfig {
   /** A break is legal if it pots an object ball or drives at least this many object balls to a cushion. */
   readonly breakCushionBalls: number;
+}
+
+/** Counts the red and yellow balls still on the table. */
+export function countGroups(balls: readonly Ball[]): GroupCounts {
+  let red = 0;
+  let yellow = 0;
+  for (const b of balls) {
+    if (b.pocketed) continue;
+    if (b.kind === 'red') red += 1;
+    else if (b.kind === 'yellow') yellow += 1;
+  }
+  return { red, yellow };
 }
 
 export const BLACKBALL_RULES: BlackballConfig = { breakCushionBalls: 2 };
