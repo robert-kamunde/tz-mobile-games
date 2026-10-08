@@ -13,6 +13,8 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Balls (cue, red, yellow, black) | Generated textures (flat circles) | Balls | Placeholder | `TableView.ts` | Shaded ball sprites, about 28 px across at design size; red and yellow must be told apart by colour-blind players (add a marking). |
 | Cue stick | Line | Shows aim and pull-back | Placeholder | `AimView.ts` | Cue sprite. |
 | Power bar | Rectangles | Power control | Placeholder | `PowerBar.ts` | Styled bar and handle. |
+| Spin control | White circle, cross lines, red dot | Shows where the cue strikes the cue ball | Placeholder | `SpinControl.ts`, `SPIN_CONTROL` in `config/layout.ts` | A shaded cue-ball face and a tip marker. |
+| Fine-aim strip | Rounded dark bar with sliding ticks | Turns the aim slowly | Placeholder | `FineAim.ts`, `FINE_AIM` in `config/layout.ts` | A styled wheel or ridged strip. |
 | Match HUD | Text, circles, rectangle | Player panels, potted-ball trays, status line, game-over panel, New game button | Placeholder styling | `MatchHud.ts` | Styled panels and buttons; a font chosen for Kiswahili readability. |
 | Opponent picker | Text buttons on a dark rectangle | "Unacheza na nani?" panel with four choices; the last choice is yellow | Placeholder styling | `OpponentPicker.ts`, `ui.ts` | Styled panel and buttons; possibly an icon per level. |
 | Main menu | Title text and text buttons on the background colour | "Pool ya Mtaani" title, Continue, Play, Stats, Rules, Settings | Placeholder | `MenuScene.ts`, `MENU` in `config/layout.ts` | Title logo, a background picture of a local bar, styled buttons. |

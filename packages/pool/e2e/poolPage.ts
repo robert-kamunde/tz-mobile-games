@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { bootTo, touchDrag, type PagePoint } from '../../../tooling/e2eHelpers';
-import { POWER_BAR } from '../src/config/layout';
+import { FINE_AIM, POWER_BAR, SPIN_CONTROL } from '../src/config/layout';
 import type { MatchState, ShotVerdict } from '../src/rules/blackball';
 
 /** Helpers for driving the pool table in browser tests, through real touch input where a player would. */
@@ -30,6 +30,8 @@ export interface PoolState {
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
+  spin: { side: number; height: number };
+  lastShot: { direction: { x: number; y: number }; power: number; side: number; height: number } | null;
 }
 
 export interface MenuState {
@@ -160,3 +162,22 @@ export async function potTheBlack(page: Page): Promise<void> {
   await pullPower(page, 0.3);
   await expect.poll(async () => (await state(page)).shots).toBe(shots + 1);
 }
+
+/** Design pixels to page pixels (the canvas is scaled to fit the screen). */
+async function designPoint(page: Page, x: number, y: number): Promise<PagePoint> {
+  return page.evaluate(([dx, dy]) => window.__tzg!.designToPage(dx, dy), [x, y] as const);
+}
+
+/** Drags on the spin control from its centre to a point given in control radii (x right, y down). */
+export async function dragSpin(page: Page, x: number, y: number): Promise<void> {
+  const c = SPIN_CONTROL;
+  await touchDrag(page, await designPoint(page, c.x, c.y), await designPoint(page, c.x + x * c.radius, c.y + y * c.radius));
+}
+
+/** Drags along the fine-aim strip by a distance in design pixels (+ right), starting at its centre. */
+export async function dragFineAim(page: Page, designDx: number, options: { cancel?: boolean } = {}): Promise<void> {
+  const f = FINE_AIM;
+  await touchDrag(page, await designPoint(page, f.x, f.y), await designPoint(page, f.x + designDx, f.y), { steps: 12, ...options });
+}
+
+export const aimAngle = (aim: { x: number; y: number }) => Math.atan2(aim.y, aim.x);

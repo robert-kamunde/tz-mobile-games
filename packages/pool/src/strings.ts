@@ -5,6 +5,7 @@ export const poolStrings: StringTables = {
   sw: {
     'shell.rotate': 'Zungusha simu yako ilale ili ucheze',
     'pool.power': 'Nguvu',
+    'pool.spin': 'Mzunguko',
     'pool.hint': 'Buruta mezani kulenga. Vuta kipimo cha nguvu chini kisha achia kupiga.',
     'pool.hintBallInHand': 'Buruta mpira mweupe kuuweka, kisha lenga na upige.',
     'pool.placeholder': 'MICHORO YA MUDA',
@@ -58,6 +59,7 @@ export const poolStrings: StringTables = {
   en: {
     'shell.rotate': 'Turn your phone sideways to play',
     'pool.power': 'Power',
+    'pool.spin': 'Spin',
     'pool.hint': 'Drag on the table to aim. Pull the power bar down and let go to shoot.',
     'pool.hintBallInHand': 'Drag the cue ball to place it, then aim and shoot.',
     'pool.placeholder': 'PLACEHOLDER ART',

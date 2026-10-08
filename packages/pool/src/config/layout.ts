@@ -28,6 +28,10 @@ export const COLORS = {
   powerTrack: 0x2a2f36,
   powerFill: 0xf2994a,
   powerHandle: 0xffffff,
+  spinDot: 0xc62828,
+  spinCross: 0x101418,
+  fineAimTrack: 0x2a2f36,
+  fineAimTick: 0xb8c2bd,
   text: '#ffffff',
   textDim: '#b8c2bd',
   ballInHandRing: 0xf2c94c,
@@ -55,7 +59,8 @@ export const HUD = {
   placeholder: { x: 1190, y: 626, wrapWidth: 150 },
   /** Menu button, bottom left (anchored by its left edge). */
   menu: { left: 12, y: DESIGN.height - 30 },
-  hint: { x: 570, y: DESIGN.height - 22 },
+  /** Between the bottom rail (ends at y 650) and the fine-aim strip. */
+  hint: { x: 570, y: 668 },
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
   newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
   /** Game-over panel over the middle of the table. */
@@ -107,14 +112,46 @@ export const BALL_IN_HAND = {
 
 export const POWER_BAR = {
   x: 1190,
-  top: 150,
-  height: 440,
+  top: 250,
+  height: 340,
   width: 44,
   handleHeight: 26,
   /** Releasing below this fraction cancels the shot instead of playing a feeble one. */
   cancelBelow: 0.04,
   /** Extra touch area around the bar, so it is easy to grab on a small phone. */
   touchPadding: 30,
+} as const;
+
+/** Spin control: a cue-ball face above the power bar. Its edge is the physics' largest tip offset. */
+export const SPIN_CONTROL = {
+  x: 1190,
+  y: 142,
+  radius: 44,
+  dotRadius: 9,
+  /** Extra touch area around the face. */
+  touchPadding: 18,
+  /** Label above the face. */
+  labelGap: 22,
+  crossAlpha: 0.35,
+  disabledAlpha: 0.35,
+} as const;
+
+/**
+ * Fine aim: a strip under the table, between the Menu and New game buttons. Dragging along it turns
+ * the aim by `radiansPerPixel` per design pixel (the whole strip turns it about 17 degrees).
+ */
+export const FINE_AIM = {
+  x: 570,
+  y: 702,
+  width: 600,
+  height: 30,
+  radiansPerPixel: 0.0005,
+  /** Moving tick marks show the strip turning. */
+  tickSpacing: 18,
+  tickHeight: 14,
+  tickWidth: 2,
+  touchPadding: 14,
+  disabledAlpha: 0.35,
 } as const;
 
 export const AIM_GUIDE = {

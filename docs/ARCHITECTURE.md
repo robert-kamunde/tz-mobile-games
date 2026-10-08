@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-08 (Milestone 4)
+Last updated: 2026-10-08 (Milestone 5)
 
 ## Overview
 
@@ -86,6 +86,9 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `progress/slots.ts` | The two save slots, `pool.match` and `pool.progress`. |
 | `scenes/MenuScene.ts` | Main menu (first scene): Continue, Play (picker), Stats, Rules and Settings (language) panels. |
 | `scenes/TableScene.ts` | The match: starting a new game or resuming the saved one, input (aim, power, ball in hand), simulation loop, applying verdicts, saving, counting stats, starting computer turns, New game and Menu. |
+| `controls/spin.ts` | Spin control maths: a point on the cue-ball face to a tip offset (clamped to the physics' largest offset) and back. |
+| `controls/fineAim.ts` | `rotateAim`: turns the aim by a small angle (clockwise on screen for a positive angle). |
+| `scenes/SpinControl.ts`, `scenes/FineAim.ts` | The spin face with its dot, and the fine-aim strip with sliding ticks. The scene routes touches to them, each on its own finger. |
 | `scenes/ui.ts` | `addButton` (fires on release, never on a cancelled touch) and `Panel` (title, text, buttons, Back), shared by the menu, picker and HUD. |
 | `scenes/poolSlots.ts`, `sceneKeys.ts` | The save slots shared through the registry, and the scene keys. |
 | `scenes/ComputerTurn.ts` | Paces a computer turn on screen: thinking in slices within the frame budget and time limits, then placing, aiming and power animation, then the shot. |

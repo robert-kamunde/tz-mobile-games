@@ -6,12 +6,14 @@ import { AI_LEVELS } from '../config/ai';
 import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
+import { rotateAim } from '../controls/fineAim';
 import { computeAimGuide } from '../physics/aim';
 import { buildTableGeometry } from '../physics/geometry';
 import { respawnCueBall } from '../physics/placement';
 import { countInRack, rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
 import type { Shot, TableGeometry, Vec2 } from '../physics/types';
+import type { TipOffset } from '../controls/spin';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { recordGame } from '../progress/progress';
 import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
@@ -30,12 +32,14 @@ import {
 import { summarizeShot } from '../rules/shotSummary';
 import { AimView } from './AimView';
 import { ComputerTurn } from './ComputerTurn';
+import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
 import { OpponentPicker } from './OpponentPicker';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import { addButton } from './ui';
 import { PowerBar } from './PowerBar';
+import { SpinControl } from './SpinControl';
 import { TableView } from './TableView';
 
 /** Straight at the rack: the default aim for a fresh rack. */
@@ -61,6 +65,8 @@ export class TableScene extends Phaser.Scene {
   private view!: TableView;
   private aimView!: AimView;
   private powerBar!: PowerBar;
+  private spin!: SpinControl;
+  private fineAim!: FineAim;
   private hud!: MatchHud;
   private picker!: OpponentPicker;
   private computer!: ComputerTurn;
@@ -78,6 +84,10 @@ export class TableScene extends Phaser.Scene {
   private aimPointerId: number | null = null;
   private powerPointerId: number | null = null;
   private placePointerId: number | null = null;
+  private spinPointerId: number | null = null;
+  private fineAimPointerId: number | null = null;
+  /** The last shot played, for tests and the log. */
+  private lastShot: Shot | null = null;
   private countsBeforeShot: GroupCounts = { red: 0, yellow: 0 };
   private lastResult: ShotResult | null = null;
   private shots = 0;
@@ -102,6 +112,8 @@ export class TableScene extends Phaser.Scene {
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view);
     this.powerBar = new PowerBar(this, this.t.t('pool.power'));
+    this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset);
+    this.fineAim = new FineAim(this);
     this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
     this.picker = new OpponentPicker(this, this.t, PANEL.overTable, (opponent) => this.onOpponentPicked(opponent));
     addButton(this, HUD.menu.left, HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: 0 }).setDepth(HUD.depth);
@@ -274,25 +286,29 @@ export class TableScene extends Phaser.Scene {
   private shootComputer(shot: Shot): void {
     this.aim = shot.direction;
     this.powerBar.cancel();
-    this.shoot(shot.power);
+    this.shoot(shot.power, { side: shot.side, height: shot.height });
   }
 
-  private shoot(power: number): void {
+  private shoot(power: number, tip: TipOffset): void {
     if (this.match.phase === 'over') return;
     this.countsBeforeShot = countGroups(this.sim.balls);
     const before = this.snapshot();
-    const result = this.sim.strike({ direction: this.aim, power, side: 0, height: 0 });
+    const shot: Shot = { direction: this.aim, power, side: tip.side, height: tip.height };
+    const result = this.sim.strike(shot);
     if (result !== 'ok') {
       this.logger.warn(`shot refused: ${result}`);
       this.refresh();
       return;
     }
     this.beforeShot = before;
+    this.lastShot = shot;
+    // Spin is chosen for one shot at a time, so a forgotten setting never spoils the next one.
+    this.spin.reset();
     this.shots += 1;
     this.stepper.reset();
     this.aimView.hide();
     this.powerBar.setEnabled(false);
-    this.logger.info(`shot ${this.shots}: player ${this.match.current + 1}, power ${power.toFixed(2)}`);
+    this.logger.info(`shot ${this.shots}: player ${this.match.current + 1}, power ${power.toFixed(2)}, tip ${tip.side.toFixed(2)}/${tip.height.toFixed(2)}`);
   }
 
   private onShotSettled(): void {
@@ -372,6 +388,17 @@ export class TableScene extends Phaser.Scene {
       this.refresh();
       return;
     }
+    if (this.spinPointerId === null && this.spin.hitTest(pointer.x, pointer.y)) {
+      this.spinPointerId = pointer.id;
+      this.spin.setFromPoint(pointer.x, pointer.y);
+      this.refresh();
+      return;
+    }
+    if (this.fineAimPointerId === null && this.fineAim.hitTest(pointer.x, pointer.y)) {
+      this.fineAimPointerId = pointer.id;
+      this.fineAim.begin(pointer.x);
+      return;
+    }
     if (this.match.ballInHand && this.placePointerId === null && this.isNearCueBall(pointer.x, pointer.y)) {
       this.placePointerId = pointer.id;
       return;
@@ -386,6 +413,12 @@ export class TableScene extends Phaser.Scene {
     if (pointer.id === this.powerPointerId) {
       this.powerBar.move(pointer.y);
       this.refresh();
+    } else if (pointer.id === this.spinPointerId) {
+      this.spin.setFromPoint(pointer.x, pointer.y);
+      this.refresh();
+    } else if (pointer.id === this.fineAimPointerId) {
+      this.aim = rotateAim(this.aim, this.fineAim.move(pointer.x));
+      this.refresh();
     } else if (pointer.id === this.placePointerId) {
       this.placeCueBall(pointer.x, pointer.y);
     } else if (pointer.id === this.aimPointerId) {
@@ -396,6 +429,11 @@ export class TableScene extends Phaser.Scene {
   private onPointerUp(pointer: Phaser.Input.Pointer): void {
     if (pointer.id === this.aimPointerId) this.aimPointerId = null;
     if (pointer.id === this.placePointerId) this.placePointerId = null;
+    if (pointer.id === this.spinPointerId) this.spinPointerId = null;
+    if (pointer.id === this.fineAimPointerId) {
+      this.fineAimPointerId = null;
+      this.fineAim.end();
+    }
     if (pointer.id !== this.powerPointerId) return;
     this.powerPointerId = null;
     // A cancelled touch (system gesture, notification shade, incoming call) must never fire a shot.
@@ -409,7 +447,7 @@ export class TableScene extends Phaser.Scene {
       this.refresh();
       return;
     }
-    this.shoot(power);
+    this.shoot(power, this.spin.tip);
   }
 
   private isNearCueBall(designX: number, designY: number): boolean {
@@ -452,6 +490,9 @@ export class TableScene extends Phaser.Scene {
     this.aimPointerId = null;
     this.powerPointerId = null;
     this.placePointerId = null;
+    this.spinPointerId = null;
+    this.fineAimPointerId = null;
+    this.fineAim.end();
     this.powerBar.cancel();
     if (this.match && !this.sim.isMoving) this.refresh();
   }
@@ -481,13 +522,17 @@ export class TableScene extends Phaser.Scene {
     const playerIdle = this.isComputerTurn() || this.picker.visible;
     this.hud.setHint(playerIdle || over ? 'none' : this.match.ballInHand ? 'ballInHand' : 'aim');
     this.powerBar.setEnabled(!over && !playerIdle);
+    this.spin.setEnabled(!over && !playerIdle);
+    this.fineAim.setEnabled(!over && !playerIdle);
     if (over || this.picker.visible) {
       this.aimView.hide();
       return;
     }
     const cue = this.sim.cueBall;
     const guide = computeAimGuide(cue, this.aim, this.sim.balls, this.sim.table.cushions, this.sim.table.pockets, AIM_GUIDE.maxDistance);
-    this.aimView.draw(cue, this.aim, guide, this.powerBar.power, this.match.ballInHand !== null);
+    // The guide's cue-ball line after contact is right only without top or back spin; with it, the line is left out rather than drawn wrong.
+    const showCuePath = this.spin.tip.height === 0;
+    this.aimView.draw(cue, this.aim, guide, this.powerBar.power, this.match.ballInHand !== null, showCuePath);
   }
 
   private registerProbes(): void {
@@ -507,6 +552,8 @@ export class TableScene extends Phaser.Scene {
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.picker.visible,
+      spin: this.spin.tip,
+      lastShot: this.lastShot,
     }));
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
     // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game

@@ -50,7 +50,7 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 | The black | On the black once all own balls are down; must hit it first. Legally potting it in any pocket wins (R2). Potting it at any other time, or with a foul, loses. Potting the last own ball and the black in one shot loses. A foul while on the black is only a foul. |
 | Black on the break | Re-rack; the same player breaks again (R3). |
 
-### Controls as built (Milestones 1-4)
+### Controls as built (Milestones 1-5)
 - Drag anywhere on the table: the cue points from the cue ball towards the finger. A guide line shows the path, the ghost ball at first contact, and the predicted object-ball and cue-ball directions.
 - Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
 - Aiming and power can use two fingers at once. Controls are disabled while balls move.
@@ -62,7 +62,9 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Opponent picker: shown from Play on the menu and after New game (with Back to return to the current game). The last choice is marked in yellow. Choices: two players on one phone, or the computer at Easy (Rahisi), Medium (Wastani) or Hard (Ngumu). The player breaks the first game against a new opponent; a rematch against the same opponent alternates the break.
 - New game: bottom right. During a match it needs a second tap within 3 seconds, then opens the opponent picker.
 - Computer's turn: the status line says "Kompyuta inacheza…", the controls hint disappears and the power bar is dimmed; the player's touches do nothing. The computer thinks briefly, places the cue ball if it has ball in hand, swings the cue to its line and fills the power bar before shooting, so the player can follow what it does.
-- Not yet built: spin control, fine aim adjustment, sound.
+- Spin (Milestone 5): a cue-ball face labelled "Mzunguko" above the power bar. Drag the red dot to where the cue should strike: up for topspin (follow), down for backspin (draw), left or right for side spin (bends cushion rebounds). The edge of the face is the largest offset allowed. The dot goes back to the centre after every shot. With top or back spin set, the guide does not draw the cue ball's path after contact, because that line assumes no spin.
+- Fine aim (Milestone 5): a strip under the table. Dragging along it turns the aim slowly, about 0.03 degrees per design pixel (the whole strip is about 17 degrees); right turns clockwise. Tick marks slide with the finger.
+- Not yet built: sound.
 
 ### Computer opponent as built (Milestone 3)
 - One computer opponent with three levels. It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.
@@ -121,6 +123,6 @@ More routes, vehicle upgrades, paint and slogan customisation, events, leaderboa
 ---
 
 ## Future improvements backlog (not approved, not scheduled)
-- Pool: computer that uses spin and plays safeties on purpose; remember the last opponent chosen; named computer opponents with personalities; online 1v1, more venues (Sinza, Kariakoo, Zanzibar beach), cosmetic cues and cloths, weekly tournaments, rewarded ad for an extra aiming guide, Pyramid mode.
+- Pool: guide line that shows the cue ball's path with top or back spin; computer that uses spin and plays safeties on purpose; remember the last opponent chosen; named computer opponents with personalities; online 1v1, more venues (Sinza, Kariakoo, Zanzibar beach), cosmetic cues and cloths, weekly tournaments, rewarded ad for an extra aiming guide, Pyramid mode.
 - Daladala: new cities, upgradeable daladala, custom paint and slogans, daily events, city leaderboards, rewarded ad for a revive.
 - Both: optional analytics (retention), carrier-billing and mobile-money purchases, iOS build.

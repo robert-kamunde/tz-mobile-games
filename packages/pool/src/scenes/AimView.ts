@@ -19,9 +19,12 @@ export class AimView {
     this.cueGraphics.clear();
   }
 
-  /** `ballInHand` adds a ring round the cue ball to show it can be dragged. */
-  draw(cue: Ball, direction: Vec2, guide: AimGuide | null, power: number, ballInHand: boolean): void {
-    this.drawGuide(cue, guide);
+  /**
+   * `ballInHand` adds a ring round the cue ball to show it can be dragged. `showCuePath` draws the
+   * cue ball's direction after contact (only right for a shot with no top or back spin).
+   */
+  draw(cue: Ball, direction: Vec2, guide: AimGuide | null, power: number, ballInHand: boolean, showCuePath: boolean): void {
+    this.drawGuide(cue, guide, showCuePath);
     this.drawCue(cue, direction, power);
     if (ballInHand) {
       const c = this.table.toDesign(cue.x, cue.y);
@@ -30,7 +33,7 @@ export class AimView {
     }
   }
 
-  private drawGuide(cue: Ball, guide: AimGuide | null): void {
+  private drawGuide(cue: Ball, guide: AimGuide | null, showCuePath: boolean): void {
     const g = this.guideGraphics;
     g.clear();
     if (!guide) return;
@@ -48,7 +51,7 @@ export class AimView {
       const objectEnd = t.toDesign(guide.contact.x + o.x * (follow + cue.radius), guide.contact.y + o.y * (follow + cue.radius));
       const objectStart = t.toDesign(guide.contact.x + o.x * cue.radius, guide.contact.y + o.y * cue.radius);
       g.lineBetween(objectStart.x, objectStart.y, objectEnd.x, objectEnd.y);
-      if (c.x !== 0 || c.y !== 0) {
+      if (showCuePath && (c.x !== 0 || c.y !== 0)) {
         const cueEnd = t.toDesign(guide.contact.x + c.x * follow, guide.contact.y + c.y * follow);
         g.lineStyle(AIM_GUIDE.lineWidth, COLORS.aimLine, AIM_GUIDE.alpha / 2);
         g.lineBetween(contact.x, contact.y, cueEnd.x, cueEnd.y);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0 (unreleased) - Milestone 5: spin and fine aim
+- Spin control above the power bar: drag the dot on the cue-ball face for topspin, backspin or side spin. Resets after every shot; off during the computer's turn.
+- Fine-aim strip under the table: drag along it to turn the aim slowly.
+- With top or back spin set, the guide hides the cue ball's path after contact (it would be wrong; TD9).
+- The power bar is shorter to make room for the spin control, and the controls hint sits just under the table.
+
 ## 0.5.1 (unreleased) - Break pot decides colours
 - Rule change (Robert, 2026-10-08): potting only one colour on the break gives the breaker that colour, so their tray fills straight away. Before, the table stayed open after the break and the tray stayed empty until the next pot, which looked like a bug. Potting both colours on the break still leaves the table open.
 - Rules screen text updated in both languages.
