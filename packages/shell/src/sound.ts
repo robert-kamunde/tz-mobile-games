@@ -8,12 +8,14 @@ export interface PlayedSound {
 
 /** Most sounds playing at once; more are dropped (a slow phone must not choke on a busy break). */
 const MAX_VOICES = 8;
+/** Gestures that may count as permission to start sound, depending on the browser. */
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'] as const;
 /** Plays kept for tests. */
 const LOG_LENGTH = 200;
 
 /**
- * Plays short sound effects through Web Audio. Phones block sound until the first touch, so the
- * board unlocks on the first pointer-down; until then, and while the app is in the background,
+ * Plays short sound effects through Web Audio. Phones block sound until the player touches the
+ * screen, so the board tries to start on every touch until sound runs; until then, and while the app is in the background,
  * sounds are skipped rather than queued (a late burst would be worse than silence). If the device
  * has no Web Audio, or it fails, the game simply plays silently.
  */
@@ -33,15 +35,25 @@ export class SoundBoard {
   ) {
     this.context = this.tryCreate(createContext);
     if (!this.context) return;
+    const ctx = this.context;
+    // Browsers differ on which touch event counts as permission to start sound (Chrome on Android
+    // accepts the finger lifting, not landing; iOS can also interrupt sound after a call), so every
+    // gesture tries again until the sound is actually running.
     const unlock = () => {
-      document.removeEventListener('pointerdown', unlock, true);
       this.unlocked = true;
-      if (!lifecycle.isPaused) this.resumeContext();
+      if (ctx.state !== 'running' && !lifecycle.isPaused) this.startFromGesture();
     };
-    document.addEventListener('pointerdown', unlock, true);
-    lifecycle.on('pause', () => void this.context!.suspend().catch((e: unknown) => logger.warn('audio suspend failed', e)));
+    for (const type of UNLOCK_EVENTS) document.addEventListener(type, unlock, true);
+    ctx.addEventListener('statechange', () => {
+      if (ctx.state !== 'running') return;
+      for (const type of UNLOCK_EVENTS) document.removeEventListener(type, unlock, true);
+    });
+    lifecycle.on('pause', () => void ctx.suspend().catch((e: unknown) => logger.warn('audio suspend failed', e)));
     lifecycle.on('resume', () => {
-      if (this.unlocked) this.resumeContext();
+      if (!this.unlocked) return;
+      this.resumeContext();
+      // If the system took the sound away meanwhile, the next touch brings it back.
+      for (const type of UNLOCK_EVENTS) document.addEventListener(type, unlock, true);
     });
   }
 
@@ -99,6 +111,20 @@ export class SoundBoard {
   /** Recent plays, oldest first (browser tests). */
   get log(): readonly PlayedSound[] {
     return this.played;
+  }
+
+  /** Inside a touch: resume, and play one silent sample, which older iOS needs to start output. */
+  private startFromGesture(): void {
+    const ctx = this.context!;
+    this.resumeContext();
+    try {
+      const source = ctx.createBufferSource();
+      source.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+      source.connect(ctx.destination);
+      source.start();
+    } catch (error) {
+      this.logger.warn('could not prime audio', error);
+    }
   }
 
   private resumeContext(): void {

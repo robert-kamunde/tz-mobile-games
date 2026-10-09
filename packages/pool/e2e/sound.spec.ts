@@ -97,6 +97,11 @@ test('a phone without Web Audio plays the game silently with no errors', async (
 test('if the phone refuses to start sound, the game still plays silently', async ({ page }) => {
   await page.addInitScript(() => {
     AudioContext.prototype.resume = () => Promise.reject(new Error('blocked by the browser'));
+    // Nor does playing a sound start it.
+    const start = AudioBufferSourceNode.prototype.start;
+    AudioBufferSourceNode.prototype.start = function (this: AudioBufferSourceNode, ...args: [number?, number?, number?]) {
+      if (this.context.state === 'running') start.apply(this, args);
+    };
   });
   const errors = trackErrors(page);
   await boot(page);
@@ -104,5 +109,41 @@ test('if the phone refuses to start sound, the game still plays silently', async
   expect((await sound(page)).state).toBe('suspended');
   expect(s).toEqual([]);
   expect((await waitUntilSettled(page)).shots).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('sound starts on browsers that only allow it when the finger lifts (iPhone)', async ({ page }) => {
+  await page.addInitScript(() => {
+    const resume = AudioContext.prototype.resume;
+    AudioContext.prototype.resume = function (this: AudioContext) {
+      const type = window.event?.type;
+      if (type === 'pointerdown' || type === 'touchstart') return Promise.reject(new Error('not allowed on touch down'));
+      return resume.call(this);
+    };
+  });
+  const errors = trackErrors(page);
+  await boot(page);
+  await expect.poll(async () => (await sound(page)).state).toBe('running');
+  expect((await breakAndListen(page, 1)).length).toBeGreaterThan(0);
+  expect(errors).toEqual([]);
+});
+
+test('if the phone takes sound away while the game is away, the next touch brings it back', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  await expect.poll(async () => (await sound(page)).state).toBe('running');
+  // Coming back, the system refuses to restart sound until the player touches the screen.
+  await page.evaluate(() => {
+    const resume = AudioContext.prototype.resume;
+    AudioContext.prototype.resume = function (this: AudioContext) {
+      const gesture = ['pointerup', 'touchend', 'click'].includes(window.event?.type ?? '');
+      return gesture ? resume.call(this) : Promise.reject(new Error('not now'));
+    };
+  });
+  await setHidden(page, true);
+  await expect.poll(async () => (await sound(page)).state).toBe('suspended');
+  await setHidden(page, false);
+  expect((await sound(page)).state).toBe('suspended');
+  expect((await breakAndListen(page, 1)).length).toBeGreaterThan(0);
   expect(errors).toEqual([]);
 });

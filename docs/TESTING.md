@@ -45,7 +45,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Sound | Every recipe renders short, never clips, never silent; loudness is silent below the threshold, full at the cap and grows with speed; cue gain grows with power; the mixer drops close repeats but keeps a clearly louder one, sorts loudest first, caps sounds per frame and resets between shots; a real break gives fewer sounds than contacts; ball and cushion events carry the right impact speed. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 47 scenarios x 3 screen sizes = 141 runs
+### Browser tests (`npm run test:e2e`): 49 scenarios x 3 screen sizes = 147 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -116,13 +116,15 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 
 All pool scenarios start from the menu: Play, then the opponent, with real taps.
 
-#### Sound (5 scenarios, `sound.spec.ts`)
+#### Sound (7 scenarios, `sound.spec.ts`)
 Sounds are read through the `sound()` test hook (sound state and the sounds actually started, with their level); the headless browser has no speakers.
 - A full break starts with the cue strike and plays ball and cushion sounds, all at levels in (0, 1]; a soft shot's cue strike is quieter.
 - Sound off in Settings is marked, kept after reopening, and a break then plays nothing; turning it on again brings the sounds back.
 - In the background the sound is suspended; back in the foreground it runs and plays again.
 - With no Web Audio at all, the game plays silently with no errors.
 - If the browser refuses to start sound, the game plays silently with no errors.
+- On a browser that only allows sound when the finger lifts (as iPhone does), sound still starts and the break is heard.
+- If the system will not restart sound when the game comes back from the background, the next touch restarts it.
 
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
@@ -141,6 +143,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-08 | 5 | pass | 177/177 (+2 ladder tests skipped) | pool 90/90 (shell unchanged) | A planted bug that ignored the spin setting was caught by the spin browser test. The first follow-and-draw check failed for real reasons: on a 0.4 m straight shot backspin wears off before contact and follow carries the cue ball to the far cushion and back, so the test now uses a short pot into a pocket. Chrome logs a notice for a cancelled touch it cannot stop; the fine-aim test ignores that one message. Screenshot at 640x360 checked: spin face, shorter power bar, hint and strip all fit. |
 | 2026-10-08 | 4 | pass | 166/166 (+2 ladder tests skipped) | shell 33/33, pool 78/78 | All new browser tests passed on their first run, so two bugs were planted to check them: saving the moving table mid-shot and keeping the save after a finished game. The tests caught both. Screenshots at 640x360 and 915x412: the menu showed through the Stats, Rules and Settings panels and made them hard to read (those panels are now opaque). The pool suite took 3.6 minutes. Release build has no test hooks. |
 | 2026-10-09 | 6 | pass | 192/192 (+2 ladder tests skipped) | shell 33/33, pool 108/108 | The new sound tests passed first time, so two bugs were planted: ignoring the Sound setting, and not suspending sound in the background. The tests caught both. Settings panel checked on screenshots at 640x360 and 915x412 in both languages. The pool suite took 9.5 minutes in this run (TD5). Sound itself was not heard (U11). |
+| 2026-10-09 | 6.1 | pass | 192/192 | shell 33/33, pool 114/114 | Robert heard no sound on an iPhone 15. Cause: sound was only started on the first finger-down, which iPhones do not accept. The two new tests fail on the old code and pass on the fix. Not verified on an iPhone here (U11). |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)

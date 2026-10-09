@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 (unreleased) - Fix: no sound on iPhone
+- Sound never started on iPhone (reported by Robert). The game tried to start sound only once, when the finger first touched the screen, but iPhones only allow it when the finger lifts. It now tries on every touch (down, up, tap or key) until sound is running, and plays one silent sample inside the touch, which older iPhones need.
+- If the phone takes sound away while the game is in the background (a call, another app), the next touch brings it back.
+
 ## 0.7.0 (unreleased) - Milestone 6: sound
 - Sounds for the cue strike, ball on ball, ball on cushion and a ball dropping into a pocket. Loudness follows how hard the hit was; a burst of contacts (the break) is thinned to at most 4 sounds per frame and 8 playing at once.
 - Placeholder sounds are synthesised by the game at start-up (no audio files); see ASSETS.md.
