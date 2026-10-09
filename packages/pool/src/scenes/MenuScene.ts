@@ -11,6 +11,9 @@ import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 
 /** Which menu panel is open, if any. Settings reopens itself after a language change. */
+/** Sound is on or off for now; a volume slider can come with real sounds. */
+const SOUND_ON_VOLUME = 1;
+
 type MenuPanel = 'stats' | 'rules' | 'settings';
 
 export interface MenuStart {
@@ -89,20 +92,40 @@ export class MenuScene extends Phaser.Scene {
       this.panel = new Panel(this, { ...common, body: t.t('rules.body') });
     } else {
       const services = getServices(this);
+      // Each change is saved at once; the menu is redrawn (in the new language) with Settings still open.
+      const change = (update: Parameters<typeof services.updateSettings>[0]) => {
+        services.updateSettings(update);
+        this.scene.restart({ panel: 'settings' } satisfies MenuStart);
+      };
+      const soundOn = services.getSettings().soundVolume > 0;
       this.panel = new Panel(this, {
         ...common,
-        body: t.t('settings.language'),
-        buttons: SUPPORTED_LOCALES.map((locale) => ({
-          name: `language-${locale}`,
-          label: t.t(`language.${locale}`),
-          highlighted: locale === t.locale,
-          onTap: () => {
-            if (locale === t.locale) return;
-            services.updateSettings({ locale });
-            // Redraw every label in the new language, with Settings still open.
-            this.scene.restart({ panel: 'settings' } satisfies MenuStart);
+        rows: [
+          {
+            label: t.t('settings.language'),
+            choices: SUPPORTED_LOCALES.map((locale) => ({
+              name: `language-${locale}`,
+              label: t.t(`language.${locale}`),
+              highlighted: locale === t.locale,
+              onTap: () => {
+                if (locale !== t.locale) change({ locale });
+              },
+            })),
           },
-        })),
+          {
+            label: t.t('settings.sound'),
+            choices: [
+              { name: 'sound-on', label: t.t('settings.on'), highlighted: soundOn, onTap: () => {
+                  if (!soundOn) change({ soundVolume: SOUND_ON_VOLUME });
+                },
+              },
+              { name: 'sound-off', label: t.t('settings.off'), highlighted: !soundOn, onTap: () => {
+                  if (soundOn) change({ soundVolume: 0 });
+                },
+              },
+            ],
+          },
+        ],
       });
     }
     this.openPanel = kind;

@@ -4,9 +4,9 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 177 tests
+### Unit tests (`npm test`): 192 tests
 
-#### Core, `packages/core/test` (42)
+#### Core, `packages/core/test` (46)
 | Area | What is covered |
 |---|---|
 | Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained; an unreadable value is copied to `<key>.backup`, a missing or good one is not. |
@@ -14,9 +14,10 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Sound synth | Each layer kind makes a short, non-silent sound peaking exactly at the recipe level with a silent last sample; the same seed gives the same samples; bad sample rates and lengths are refused. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (135)
+#### Pool, `packages/pool/test` (146)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -41,9 +42,10 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Match state check | A fresh match and one in play pass; rejected: finished, unknown phase, bad player, the same colour twice, half-decided colours, colours during the break, the wrong breaker, baulk ball in hand after the break, not an object. |
 | Stats | Games per computer level and two-player games counted, wins only for the person; round trip with the last opponent; rejected: more wins than games, a missing level, fractional counts, a bad last opponent. Opponent validation accepts only known opponents. |
 | Spin and fine aim controls | Centre is a centre hit; up, down and right give topspin, backspin and right side, reaching the largest offset at the edge; touches beyond the edge are pulled onto it; bad input gives a centre hit; the dot is drawn where the touch was; the control's top and bottom give follow and draw in the simulation. Fine aim: positive angle turns clockwise on screen, exact angle there and back over 1000 small turns, unit length kept, non-number angle ignored. |
+| Sound | Every recipe renders short, never clips, never silent; loudness is silent below the threshold, full at the cap and grows with speed; cue gain grows with power; the mixer drops close repeats but keeps a clearly louder one, sorts loudest first, caps sounds per frame and resets between shots; a real break gives fewer sounds than contacts; ball and cushion events carry the right impact speed. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 42 scenarios x 3 screen sizes = 126 runs
+### Browser tests (`npm run test:e2e`): 47 scenarios x 3 screen sizes = 141 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -114,6 +116,14 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 
 All pool scenarios start from the menu: Play, then the opponent, with real taps.
 
+#### Sound (5 scenarios, `sound.spec.ts`)
+Sounds are read through the `sound()` test hook (sound state and the sounds actually started, with their level); the headless browser has no speakers.
+- A full break starts with the cue strike and plays ball and cushion sounds, all at levels in (0, 1]; a soft shot's cue strike is quieter.
+- Sound off in Settings is marked, kept after reopening, and a break then plays nothing; turning it on again brings the sounds back.
+- In the background the sound is suspended; back in the foreground it runs and plays again.
+- With no Web Audio at all, the game plays silently with no errors.
+- If the browser refuses to start sound, the game plays silently with no errors.
+
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
 
@@ -130,6 +140,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-08 | 3 | pass | 136/136 (+2 ladder tests skipped) | shell 33/33, pool 57/57 | Ladder, 40 games each: Medium beat Easy 32/40, Hard beat Medium 36/40, every game finished (average 39 and 21 shots). Fouls per shot: Easy 14%, Medium 9 to 10%, Hard 4% (9% before the robustness check was added). Hard's longest decision: 213 824 physics steps. 6x throttle: frames while Hard thinks cost 1 to 9 ms more than frames while the player aims (12 to 25 ms, software renderer). Found and fixed: Phaser's frame delta undercounts on slow frames, so the thinking time limit now uses the clock (capped per frame for backgrounding); the controls hint showed during the computer's turn (now hidden); a slow background test hit the 30 s limit with more tests running alongside (limit raised for that test). |
 | 2026-10-08 | 5 | pass | 177/177 (+2 ladder tests skipped) | pool 90/90 (shell unchanged) | A planted bug that ignored the spin setting was caught by the spin browser test. The first follow-and-draw check failed for real reasons: on a 0.4 m straight shot backspin wears off before contact and follow carries the cue ball to the far cushion and back, so the test now uses a short pot into a pocket. Chrome logs a notice for a cancelled touch it cannot stop; the fine-aim test ignores that one message. Screenshot at 640x360 checked: spin face, shorter power bar, hint and strip all fit. |
 | 2026-10-08 | 4 | pass | 166/166 (+2 ladder tests skipped) | shell 33/33, pool 78/78 | All new browser tests passed on their first run, so two bugs were planted to check them: saving the moving table mid-shot and keeping the save after a finished game. The tests caught both. Screenshots at 640x360 and 915x412: the menu showed through the Stats, Rules and Settings panels and made them hard to read (those panels are now opaque). The pool suite took 3.6 minutes. Release build has no test hooks. |
+| 2026-10-09 | 6 | pass | 192/192 (+2 ladder tests skipped) | shell 33/33, pool 108/108 | The new sound tests passed first time, so two bugs were planted: ignoring the Sound setting, and not suspending sound in the background. The tests caught both. Settings panel checked on screenshots at 640x360 and 915x412 in both languages. The pool suite took 9.5 minutes in this run (TD5). Sound itself was not heard (U11). |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
@@ -138,6 +149,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 - How the physics feels (speed, friction, break spread) to real players.
 - Real app backgrounding (home button, incoming call, screen lock) inside the Capacitor wrapper.
 - Kiswahili wording reviewed by a native speaker.
+- Sound as heard on a phone: quality, balance and behaviour in the Android WebView (U11).
 
 ## Manual device checklist (run on each release candidate)
 Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android version and result in the results log.
@@ -148,6 +160,7 @@ Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android 
 5. Rotate to portrait: rotate prompt shows; back to landscape: prompt clears.
 6. Play 10 minutes: no stutter worth noting, phone not hot, no crash. Note the frame rate during a full-power break.
 6a. Pool: aim with one finger, pull power with another; aim lands where the finger is; a pull-and-swipe-down of the notification shade does not shoot.
+6d. Pool: sound. The first shot after opening is heard; harder shots are louder; Sound off in Settings silences it; the phone's own volume and silent mode behave as expected; press home mid-shot, no sound continues; a phone call stops it.
 6c. Pool: set spin with a thumb (top, back, each side) and check the dot is easy to place and returns to the centre after the shot; turn the aim with the fine-aim strip onto a thin cut and check it is precise enough without being slow.
 6b. Pool: play a full two-player game to the black; check every foul message reads correctly in Kiswahili; ball in hand drag is easy with a thumb; all text is readable without squinting.
 7. Turn on airplane mode mid-session: nothing changes.

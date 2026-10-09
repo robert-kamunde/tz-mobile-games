@@ -272,7 +272,7 @@ export class PoolSimulation {
         a.vy -= impulse * invA * ny;
         b.vx += impulse * invB * nx;
         b.vy += impulse * invB * ny;
-        this.events.push({ type: 'ball', step: this.stepIndex, a: a.id, b: b.id });
+        this.events.push({ type: 'ball', step: this.stepIndex, a: a.id, b: b.id, speed: approach });
       }
     }
   }
@@ -319,7 +319,7 @@ export class PoolSimulation {
       ball.sx = newSn * nx + st * tx;
       ball.sy = newSn * ny + st * ty;
 
-      this.events.push({ type: 'cushion', step: this.stepIndex, ball: ball.id });
+      this.events.push({ type: 'cushion', step: this.stepIndex, ball: ball.id, speed: -vn });
     }
   }
 

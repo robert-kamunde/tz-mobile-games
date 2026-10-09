@@ -1,9 +1,9 @@
 # Project Status
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Current milestone
-**None in progress.** Milestone 5 (spin control and fine aim) is complete and waits for Robert's review. Next milestone to be agreed with Robert.
+None in progress. Milestone 6 (sound) finished on 2026-10-09. Proposed next: Milestone 7, waiting on Robert.
 
 ## Completed
 - Market research (project folder `/research/`).
@@ -17,10 +17,11 @@ Last updated: 2026-10-08
 - Milestone 3 (2026-10-08): computer opponent at three levels, opponent picker. 136 unit tests and 90 browser test runs pass; ladder Hard 36/40 over Medium, Medium 32/40 over Easy.
 - Break pot decides colours (Robert's rule, 2026-10-08, 0.5.1).
 - Milestone 5 (2026-10-08): spin control and fine aim (TD4). 177 unit tests and 123 browser test runs pass. Report: project folder `reports/milestone-5-report.md`.
+- Milestone 6 (2026-10-09): sound. Cue, ball, cushion and pocket sounds that follow impact speed, synthesised placeholders, Sound on/off in Settings, first-touch unlock, silent in the background, silent fallback. 192 unit tests and 141 browser test runs pass. Report: project folder `reports/milestone-6-report.md`.
 - Milestone 4 (2026-10-08): main menu (Continue, Play, Stats, Rules, Settings), Menu button on the table, game in progress saved and resumed (TD6), stats per computer level, last opponent marked (TD8), language setting, rules screen, save backups (TD2). 166 unit tests and 111 browser test runs pass. Report: project folder `reports/milestone-4-report.md`.
 
 ## Next (order to confirm with Robert)
-- Proposed Milestone 6: sound (cue strike, ball clicks, cushions, pockets) with sound and music settings, using clearly marked placeholder sounds until real ones exist.
+- Proposed Milestone 7: release readiness for Pool without a device. App icon and splash placeholders, the Capacitor Android project and build scripts (built on Robert's computer while B1 holds), an offline check, the store listing draft, and a first-play pass on what the player sees (first-launch hint, the rules text) so the device test can start as soon as a build exists.
 - Later: art; Android build and device testing (blocked, B1).
 
 ## Blockers / decisions needed
@@ -33,4 +34,4 @@ None open.
 See KNOWN_ISSUES.md (TD1, TD5, TD7, TD8, TD9; TD2, TD4 and TD6 resolved).
 
 ## Architectural decisions
-See ARCHITECTURE.md (A1 to A18).
+See ARCHITECTURE.md (A1 to A20).

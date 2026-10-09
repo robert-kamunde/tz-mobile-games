@@ -1,6 +1,6 @@
 # Asset Inventory
 
-No art, audio or font files exist yet. Everything on screen is a labelled placeholder (the pool table shows "MEZA YA MAZOEZI: michoro ya muda" / "PRACTICE TABLE: placeholder art").
+No art, audio or font files exist yet. Everything on screen is a labelled placeholder, and every sound is synthesised by the game as a placeholder (the pool table shows "MEZA YA MAZOEZI: michoro ya muda" / "PRACTICE TABLE: placeholder art").
 
 | Name | Type | Purpose | Status | Location | Replacement requirements |
 |---|---|---|---|---|---|
@@ -21,4 +21,8 @@ No art, audio or font files exist yet. Everything on screen is a labelled placeh
 | Menu panels (Stats, Rules, Settings) | Text and buttons on a dark rectangle | Stats lines, rules text, language buttons, Back | Placeholder styling | `MenuScene.ts`, `ui.ts` (`Panel`) | Styled panels; the rules screen may need small diagrams. |
 | Menu button on the table | Text button | Back to the main menu, bottom left | Placeholder styling | `TableScene.ts` | Styled button, possibly an icon. |
 | Ball-in-hand ring | Circle outline | Shows the cue ball can be dragged | Placeholder | `AimView.ts` | Could become a hand icon. |
-| Sounds | Audio | Cue strike, ball clicks, cushion, pocket | Missing | n/a | Short, small files; needed before release. Not in Milestone 1 scope. |
+| Cue strike (`cue`) | Synthesised sound | Cue tip hitting the cue ball; louder with more power | Placeholder | Recipe in `packages/pool/src/config/sound.ts` | Recorded cue strike, mono, under 0.3 s, a few kB as OGG/AAC. |
+| Ball click (`ball`) | Synthesised sound | Ball on ball; louder for harder hits | Placeholder | `config/sound.ts` | Recorded ball click (phenolic or the cheaper balls used in local bars), mono, under 0.2 s. |
+| Cushion thud (`cushion`) | Synthesised sound | Ball on cushion | Placeholder | `config/sound.ts` | Recorded cushion hit, mono, under 0.3 s. |
+| Pocket drop (`pocket`) | Synthesised sound | Ball falling into a pocket | Placeholder | `config/sound.ts` | Recorded drop into a pocket (net or wooden box, whichever local tables use), mono, under 0.5 s. |
+| Music, menu clicks, bar ambience | Audio | | Missing, not in scope | n/a | Backlog. |

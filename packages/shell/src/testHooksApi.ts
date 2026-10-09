@@ -23,6 +23,8 @@ export interface TestHooks {
    * CPU time per frame (game update + render submission) since the last reset, in ms. GPU raster time
    * is not included: the test browser renders in software, so only the CPU side is meaningful there.
    */
+  /** Sound state ("running", "suspended", "unavailable"…) and the sounds actually started. */
+  sound(): { state: string; played: { name: string; gain: number }[] };
   frameCpuStats(): { frames: number; averageMs: number; maxMs: number };
   resetFrameCpuStats(): void;
   /** Converts a point in design pixels (e.g. 1280x720 space) to page (CSS) pixels. */

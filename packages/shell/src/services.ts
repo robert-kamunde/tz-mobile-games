@@ -13,6 +13,7 @@ import {
   type StringTables,
   type Translator,
 } from '@tzg/core';
+import { SoundBoard } from './sound';
 
 /**
  * Everything a scene needs from outside Phaser. Created once per game and shared through the registry,
@@ -24,6 +25,8 @@ export interface Services {
   readonly store: KeyValueStore;
   readonly translator: Translator;
   readonly lifecycle: AppLifecycle;
+  /** Sound effects; follows the sound volume setting. */
+  readonly sound: SoundBoard;
   getSettings(): Readonly<Settings>;
   /** Applies a partial change, persists it, and returns the new settings. */
   updateSettings(change: Partial<Settings>): Readonly<Settings>;
@@ -49,6 +52,8 @@ export function createServices(options: CreateServicesOptions): Services {
   const translator = createTranslator(options.strings, settings.locale, logger.child('i18n'));
   const lifecycle = new AppLifecycle(document, window, logger.child('lifecycle'));
 
+  const sound = new SoundBoard(lifecycle, logger.child('sound'), () => settings.soundVolume);
+
   // Persist on every pause: Android may kill a backgrounded app without further notice.
   lifecycle.on('pause', () => settingsSlot.save(settings));
 
@@ -58,6 +63,7 @@ export function createServices(options: CreateServicesOptions): Services {
     store,
     translator,
     lifecycle,
+    sound,
     getSettings: () => settings,
     updateSettings(change) {
       settings = { ...settings, ...change };

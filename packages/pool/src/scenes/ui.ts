@@ -45,6 +45,8 @@ export interface PanelSpec {
   readonly title: string;
   readonly body?: string;
   readonly buttons?: readonly ButtonSpec[];
+  /** Labelled rows of side-by-side choices (e.g. Language: Kiswahili | English), after the buttons. */
+  readonly rows?: readonly { readonly label: string; readonly choices: readonly ButtonSpec[] }[];
   /** Back button at the bottom, if the panel can be closed. */
   readonly back?: ButtonSpec;
 }
@@ -79,7 +81,22 @@ export class Panel {
       const button = addButton(scene, x, 0, b, { width: Math.min(BUTTON.width, width - 2 * PANEL.sideMargin) });
       button.setY(nextY + button.height / 2 + i * PANEL.buttonSpacing);
       this.objects.push(button);
+      if (i === (spec.buttons ?? []).length - 1) nextY = button.y + button.height / 2 + PANEL.gap;
     });
+    for (const row of spec.rows ?? []) {
+      const label = scene.add.text(x, nextY, row.label, textStyle(TEXT_STYLE.bodySize)).setOrigin(0.5, 0);
+      this.objects.push(label);
+      const n = row.choices.length;
+      const span = n * BUTTON.rowWidth + (n - 1) * BUTTON.rowGap;
+      let bottom = label.y + label.height;
+      row.choices.forEach((c, i) => {
+        const button = addButton(scene, x - span / 2 + BUTTON.rowWidth / 2 + i * (BUTTON.rowWidth + BUTTON.rowGap), 0, c, { width: BUTTON.rowWidth });
+        button.setY(label.y + label.height + PANEL.rowLabelGap + button.height / 2);
+        bottom = button.y + button.height / 2;
+        this.objects.push(button);
+      });
+      nextY = bottom + PANEL.gap;
+    }
     if (spec.back) this.objects.push(addButton(scene, x, top + height - PANEL.backBottom, spec.back));
     for (const o of this.objects) o.setDepth(PANEL.depth);
   }

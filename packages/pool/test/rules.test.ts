@@ -214,12 +214,12 @@ describe('shot summary from physics events', () => {
 
   it('records first contact, cushions after contact, pots and break cushions', () => {
     const events: ShotEvent[] = [
-      { type: 'cushion', step: 1, ball: 0 },
-      { type: 'ball', step: 5, a: 0, b: 2 },
-      { type: 'ball', step: 6, a: 1, b: 2 },
-      { type: 'ball', step: 7, a: 0, b: 1 },
-      { type: 'cushion', step: 9, ball: 1 },
-      { type: 'cushion', step: 10, ball: 1 },
+      { type: 'cushion', step: 1, ball: 0, speed: 1 },
+      { type: 'ball', step: 5, a: 0, b: 2, speed: 1 },
+      { type: 'ball', step: 6, a: 1, b: 2, speed: 1 },
+      { type: 'ball', step: 7, a: 0, b: 1, speed: 1 },
+      { type: 'cushion', step: 9, ball: 1, speed: 1 },
+      { type: 'cushion', step: 10, ball: 1, speed: 1 },
       { type: 'pocket', step: 12, ball: 3, pocket: 2 },
       { type: 'pocket', step: 14, ball: 0, pocket: 4 },
     ];
@@ -234,8 +234,8 @@ describe('shot summary from physics events', () => {
 
   it('a cushion before the first contact does not count', () => {
     const events: ShotEvent[] = [
-      { type: 'cushion', step: 1, ball: 0 },
-      { type: 'ball', step: 5, a: 0, b: 1 },
+      { type: 'cushion', step: 1, ball: 0, speed: 1 },
+      { type: 'ball', step: 5, a: 0, b: 1, speed: 1 },
     ];
     expect(summarizeShot(events, balls)).toMatchObject({ firstContact: 'red', cushionAfterContact: false });
   });

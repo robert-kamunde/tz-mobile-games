@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-08 (Milestone 5)
+Last updated: 2026-10-09 (Milestone 6)
 
 ## Overview
 
@@ -38,6 +38,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A16 | The computer opponent (`src/ai`) chooses shots by playing candidates out on copies of the simulation and judging them with the rules engine, in resumable slices | Reuses the exact physics and rules, so its predictions are exact (a unit test checks this) and it cannot disagree with the referee. Slicing (`ShotPlanner.work(maxSteps)`) lets the scene spread thinking over frames within a time budget; the decision does not depend on how the work is sliced. Seeded randomness (`createRandom` in core) for its aiming error keeps tests repeatable. Same purity rules as physics and rules. | 2026-10-08 |
 | A17 | A game in progress is saved as ball spots, match state, opponent and shot count (`pool.match`); kinds, sizes and masses come from the rack on load. It is saved at the start of a game, after every shot and on every pause. While balls roll, the snapshot from before the shot is saved instead. The load is checked strictly (every ball once, on the table, no overlaps, a legal unfinished match), and anything else counts as no saved game. | A shot cut off half way cannot be judged, so resuming from before it is the only result that is always legal. Saving only what cannot be derived keeps a hand-edited or buggy save from changing the balls. Strict checks mean a bad save costs the player one game, never a crash or an impossible table. | 2026-10-08 |
 | A18 | `createSaveSlot` copies any unreadable stored value to `<key>.backup` before defaults replace it | Stats are the first data a player would miss. A backup lets a future fix recover them. Only the last unreadable value is kept. | 2026-10-08 |
+| A19 | Sound effects go through the shell's `SoundBoard` on raw Web Audio, with Phaser's audio turned off (`audio: { noAudio: true }`). Placeholder sounds are synthesised at start-up by core's `renderSound` from recipes in config, not loaded from files. | One small class covers what the game needs (unlock on first touch, suspend in the background, a voice limit, silent fallback) and is testable through the e2e hook; Phaser's sound manager would add a second unlock and pause path to keep in step with A7. Synthesised placeholders need no asset pipeline or download and are deterministic; recorded sounds can replace a recipe later without touching callers (`add(name, samples)`). | 2026-10-09 |
+| A20 | Sounds are chosen from the physics event log, which now carries the impact speed of each ball and cushion contact. `ShotSoundMixer` (pure) turns each frame's new events into at most 4 cues, dropping a repeat of the same sound within 25 ms unless it is clearly louder. | Sound follows exactly what the physics did, with no second collision detector in the scene. Thinning keeps a break from turning into noise or using too many voices on a slow phone. | 2026-10-09 |
 | A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
@@ -52,12 +54,14 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `fixedStep.ts` | `FixedStepper.advance(elapsedMs)` returns how many fixed steps to run, the interpolation alpha, and dropped time. |
 | `random.ts` | `createRandom(seed)`: seeded uniform and roughly normal random numbers (mulberry32), the same sequence on every device. Used for the computer's aiming error. |
 | `lifecycle.ts` | `AppLifecycle` turns `visibilitychange` and `pagehide` into idempotent `pause`/`resume` events. |
+| `synth.ts` | `renderSound(recipe, sampleRate, seed)`: mixes decaying tone sweeps and filtered noise into a mono sample buffer, normalised to the recipe's peak with a short fade-out. Seeded, so the same on every device. |
 | `settings.ts` | Player settings (locale, sound volume, music volume), validation, and the save slot `"<gameId>.settings"`. |
 
 ## Shell (`packages/shell/src`)
 
 - `createShellGame(options)` creates services, the Phaser game, the rotate overlay and (e2e builds only) test hooks.
 - `services.ts`: one `Services` object per game (logger, store, translator, lifecycle, settings get/update). It is put in Phaser's registry under `tzg.services` before boot; scenes read it with `getServices(scene)`, so no scene builds its own storage or translator. Settings are saved on every change and again on pause.
+- `sound.ts`: `SoundBoard` (A19). Unlocks on the first pointer-down, suspends on pause and resumes on resume, plays at most 8 sounds at once, scales by the sound setting, skips (never queues) sounds while locked or paused, and logs instead of throwing when Web Audio is missing or fails. Exposed as `Services.sound`.
 - `rotateOverlay.ts`: a DOM message (not canvas) asking the player to rotate the phone when the orientation is wrong.
 - `testHooks.ts` / `testHooksApi.ts`: `window.__tzg`, read-only state for browser tests (scenes, element positions, text and data of named objects, frame stats, game probes). Installed only when built with `--mode e2e`; the release build is checked to contain no `__tzg`.
 
@@ -68,7 +72,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `config/table.ts` | UK 7 ft table and ball sizes, in metres. |
 | `config/physics.ts` | Friction, restitution, step size, shot speed range, safety limits. Starting values, to be tuned in play-testing. |
 | `config/layout.ts` | Screen layout, colours (placeholders), power bar, aim guide, cue stick. |
-| `physics/types.ts` | Ball, table, shot and shot-event types. |
+| `physics/types.ts` | Ball, table, shot and shot-event types. Ball and cushion events carry the impact speed (m/s) for sound. |
 | `physics/geometry.ts` | Builds cushion segments and pocket jaws from the table config. Pocket ids 0-5 clockwise from top-left. |
 | `physics/rack.ts` | Blackball rack (black in the middle of row 3, different colours on the back corners). Cue ball is id 0. |
 | `physics/simulation.ts` | `PoolSimulation`: `strike`, `step`, `runUntilSettled`, `placeCueBall`, `shotEvents`. Shot events (ball contacts in order, cushions, pockets) are what the Milestone 2 rules engine will read. |
@@ -84,12 +88,15 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `progress/savedMatch.ts` | The saved game in progress (A17): `toSavedBalls`, `restoreBalls`, `validateSavedMatch`. |
 | `progress/progress.ts` | Stats and the last opponent: `recordGame`, `validateProgress`. |
 | `progress/slots.ts` | The two save slots, `pool.match` and `pool.progress`. |
-| `scenes/MenuScene.ts` | Main menu (first scene): Continue, Play (picker), Stats, Rules and Settings (language) panels. |
+| `scenes/MenuScene.ts` | Main menu (first scene): Continue, Play (picker), Stats, Rules and Settings (language and sound) panels. |
 | `scenes/TableScene.ts` | The match: starting a new game or resuming the saved one, input (aim, power, ball in hand), simulation loop, applying verdicts, saving, counting stats, starting computer turns, New game and Menu. |
 | `controls/spin.ts` | Spin control maths: a point on the cue-ball face to a tip offset (clamped to the physics' largest offset) and back. |
 | `controls/fineAim.ts` | `rotateAim`: turns the aim by a small angle (clockwise on screen for a positive angle). |
 | `scenes/SpinControl.ts`, `scenes/FineAim.ts` | The spin face with its dot, and the fine-aim strip with sliding ticks. The scene routes touches to them, each on its own finger. |
-| `scenes/ui.ts` | `addButton` (fires on release, never on a cancelled touch) and `Panel` (title, text, buttons, Back), shared by the menu, picker and HUD. |
+| `scenes/ui.ts` | `addButton` (fires on release, never on a cancelled touch) and `Panel` (title, text, labelled rows of choices, buttons, Back), shared by the menu, picker and HUD. |
+| `config/sound.ts` | Placeholder sound recipes, loudness curves for ball and cushion hits, and the mix limits. |
+| `audio/shotSounds.ts` | `loudness(speed)`, `cueGain(power)` and `ShotSoundMixer` (A20). Pure. |
+| `scenes/poolSounds.ts` | Renders the recipes once per app and adds them to the sound board. |
 | `scenes/poolSlots.ts`, `sceneKeys.ts` | The save slots shared through the registry, and the scene keys. |
 | `scenes/ComputerTurn.ts` | Paces a computer turn on screen: thinking in slices within the frame budget and time limits, then placing, aiming and power animation, then the shot. |
 | `scenes/OpponentPicker.ts` | "Unacheza na nani?" panel: two players or the computer at one of three levels, with the last choice marked. Used on the menu and after New game. |

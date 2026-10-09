@@ -73,6 +73,9 @@ export const HUD = {
 export const BUTTON = {
   padding: { x: 14, y: 10 },
   width: 440,
+  /** Side-by-side choices in a panel row. */
+  rowWidth: 260,
+  rowGap: 24,
 } as const;
 
 /** Panels (opponent picker, stats, rules, settings): dark box, title, optional text, buttons, optional Back. */
@@ -81,6 +84,8 @@ export const PANEL = {
   /** Space between the title, the text and the first button. */
   gap: 28,
   buttonSpacing: 72,
+  /** Between a row's label and its choices. */
+  rowLabelGap: 12,
   /** Back button's distance above the bottom edge. */
   backBottom: 46,
   bodyLineSpacing: 6,

@@ -61,8 +61,10 @@ export interface Shot {
 }
 
 export type ShotEvent =
-  | { readonly type: 'ball'; readonly step: number; readonly a: number; readonly b: number }
-  | { readonly type: 'cushion'; readonly step: number; readonly ball: number }
+  /** `speed`: how fast the two balls closed on each other along the line of centres, m/s (for sound). */
+  | { readonly type: 'ball'; readonly step: number; readonly a: number; readonly b: number; readonly speed: number }
+  /** `speed`: the ball's speed into the cushion, m/s (for sound). */
+  | { readonly type: 'cushion'; readonly step: number; readonly ball: number; readonly speed: number }
   | { readonly type: 'pocket'; readonly step: number; readonly ball: number; readonly pocket: number }
   | { readonly type: 'escaped'; readonly step: number; readonly ball: number }
   | { readonly type: 'timeout'; readonly step: number };

@@ -48,6 +48,8 @@ export function createShellGame(options: ShellOptions): ShellGame {
       height: options.design.height,
     },
     input: { activePointers: 2 },
+    // Sound goes through the shell's SoundBoard; Phaser's own audio would open a second audio context.
+    audio: { noAudio: true },
     disableContextMenu: true,
     banner: false,
     scene: options.scenes,

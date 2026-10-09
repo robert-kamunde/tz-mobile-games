@@ -55,6 +55,7 @@ export function installTestHooks(game: Phaser.Game, services: Services, rotateOv
       const obj = game.scene.getScene(sceneKey)?.children.getByName(name);
       return (obj?.getData(key) as unknown) ?? null;
     },
+    sound: () => ({ state: services.sound.state, played: [...services.sound.log] }),
     frameCpuStats: () => ({ frames: cpu.frames, averageMs: cpu.frames ? cpu.totalMs / cpu.frames : 0, maxMs: cpu.maxMs }),
     resetFrameCpuStats() {
       cpu.frames = 0;

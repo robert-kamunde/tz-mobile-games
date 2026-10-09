@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
 import { FixedStepper, createRandom, type Logger, type Translator } from '@tzg/core';
+import type { SoundBoard } from '@tzg/shell';
 import { getServices, registerTestProbe } from '@tzg/shell';
 import { ShotPlanner } from '../ai/planner';
+import { ShotSoundMixer, cueGain } from '../audio/shotSounds';
 import { AI_LEVELS } from '../config/ai';
 import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
@@ -36,6 +38,7 @@ import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
 import { OpponentPicker } from './OpponentPicker';
 import { getPoolSlots } from './poolSlots';
+import { loadPoolSounds } from './poolSounds';
 import type { MenuStart } from './MenuScene';
 import { SCENE_KEYS } from './sceneKeys';
 import { addButton } from './ui';
@@ -89,6 +92,10 @@ export class TableScene extends Phaser.Scene {
   private fineAimPointerId: number | null = null;
   /** The last shot played, for tests and the log. */
   private lastShot: Shot | null = null;
+  private sfx!: SoundBoard;
+  private soundMixer = new ShotSoundMixer();
+  /** Shot events already turned into sounds. */
+  private soundedEvents = 0;
   private countsBeforeShot: GroupCounts = { red: 0, yellow: 0 };
   private lastResult: ShotResult | null = null;
   private shots = 0;
@@ -105,6 +112,8 @@ export class TableScene extends Phaser.Scene {
     this.shots = 0;
     this.t = services.translator;
     this.logger = services.logger.child('table');
+    this.sfx = services.sound;
+    loadPoolSounds(this);
 
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
     this.view = new TableView(this, this.geometry, UK_7FT_TABLE);
@@ -172,6 +181,7 @@ export class TableScene extends Phaser.Scene {
     if (this.computer.active) this.computer.update(deltaMs);
     if (!this.sim.isMoving) return;
     this.stepper.advance(deltaMs, () => this.sim.step());
+    this.playShotSounds();
     this.view.syncBalls(this.sim.balls);
     if (!this.sim.isMoving) this.onShotSettled();
   }
@@ -311,6 +321,9 @@ export class TableScene extends Phaser.Scene {
     }
     this.beforeShot = before;
     this.lastShot = shot;
+    this.soundMixer = new ShotSoundMixer();
+    this.soundedEvents = 0;
+    this.sfx.play('cue', cueGain(power));
     // Spin is chosen for one shot at a time, so a forgotten setting never spoils the next one.
     this.spin.reset();
     this.shots += 1;
@@ -318,6 +331,15 @@ export class TableScene extends Phaser.Scene {
     this.aimView.hide();
     this.powerBar.setEnabled(false);
     this.logger.info(`shot ${this.shots}: player ${this.match.current + 1}, power ${power.toFixed(2)}, tip ${tip.side.toFixed(2)}/${tip.height.toFixed(2)}`);
+  }
+
+  /** Sounds for the contacts made since the last frame. */
+  private playShotSounds(): void {
+    const events = this.sim.shotEvents();
+    if (events.length === this.soundedEvents) return;
+    const fresh = events.slice(this.soundedEvents);
+    this.soundedEvents = events.length;
+    for (const cue of this.soundMixer.frame(fresh)) this.sfx.play(cue.sound, cue.gain);
   }
 
   private onShotSettled(): void {

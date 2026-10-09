@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.7.0 (unreleased) - Milestone 6: sound
+- Sounds for the cue strike, ball on ball, ball on cushion and a ball dropping into a pocket. Loudness follows how hard the hit was; a burst of contacts (the break) is thinned to at most 4 sounds per frame and 8 playing at once.
+- Placeholder sounds are synthesised by the game at start-up (no audio files); see ASSETS.md.
+- Settings: Sauti (Sound) Washa / Zima, kept between sessions.
+- Sound starts on the first touch, stops in the background and comes back with the game. A phone with no Web Audio, or one that refuses to start it, plays silently.
+- Physics: ball and cushion contact events carry the impact speed.
+- Core: `renderSound` (seeded, deterministic synth). Shell: `SoundBoard` (Web Audio), Phaser's own audio turned off.
+- Panels can hold labelled rows of choices (`scenes/ui.ts`).
+
 ## 0.6.1 (unreleased) - Fix: Menu reopened Settings
 - After changing the language, tapping Menu on the table opened the Settings panel instead of the main menu (reported by Robert). Phaser reuses a scene's last start data when none is given; the table now always passes it.
 
