@@ -1,6 +1,6 @@
 {
   "name": "@tzg/pool",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "description": "Bongo Pool Table. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",

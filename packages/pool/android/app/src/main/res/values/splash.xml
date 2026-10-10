@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind the splash screen and the game while it loads. Same as the game's background
+         (src/config/layout.ts) and the splash images (scripts/makeAppIcons.mjs). -->
+    <color name="splash_background">#101418</color>
+</resources>

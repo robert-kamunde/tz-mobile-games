@@ -9,6 +9,8 @@ const config: CapacitorConfig = {
   appId: 'com.fardatasolutions.bongopooltable',
   appName: 'Bongo Pool Table',
   webDir: 'dist',
+  // Shown while the game loads, instead of a white flash. Same colour as the game (src/config/layout.ts).
+  backgroundColor: '#101418',
   android: {
     // The game makes no network requests (offline test); mixed content and remote debugging stay off.
     allowMixedContent: false,

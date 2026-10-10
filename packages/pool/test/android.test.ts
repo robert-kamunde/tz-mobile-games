@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import capacitorConfig from '../capacitor.config';
+import { COLORS } from '../src/config/layout';
 import { defaultTips, validateTips } from '../src/progress/tips';
 
 const root = path.resolve(__dirname, '..');
@@ -53,6 +54,16 @@ describe('Android project', () => {
       expect(pngSize(`${res}/drawable-port-${d}/splash.png`)).toEqual([h, w]);
     }
     expect(pngSize('store/icon-512.png')).toEqual([512, 512]);
+  });
+
+  it('opens on the game background colour, with the icon on Android 12 and newer', () => {
+    // Android 12+ ignores the splash image: the theme's background and icon are what players see.
+    const launch = read(`${res}/values/styles.xml`).split('name="AppTheme.NoActionBarLaunch"')[1]!.split('</style>')[0]!;
+    expect(launch).toContain('<item name="windowSplashScreenBackground">@color/splash_background</item>');
+    expect(launch).toContain('<item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>');
+    expect(read(`${res}/values/splash.xml`)).toContain(`<color name="splash_background">${COLORS.background}</color>`);
+    expect(capacitorConfig.backgroundColor).toBe(COLORS.background);
+    expect(read('scripts/makeAppIcons.mjs')).toContain(`const DARK = '${COLORS.background}';`);
     expect(pngSize('store/feature-graphic-1024x500.png')).toEqual([1024, 500]);
   });
 });
