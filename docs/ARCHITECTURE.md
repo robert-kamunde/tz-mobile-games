@@ -1,6 +1,6 @@
 # Architecture
 
-Last updated: 2026-10-09 (Milestone 6)
+Last updated: 2026-10-10 (Milestone 7)
 
 ## Overview
 
@@ -12,6 +12,7 @@ packages/
   shell/   Phaser app shell: boot, scaling, lifecycle wiring, settings, language, rotate prompt.
            Contains no gameplay. demo/ is a placeholder app used only by the shell's browser tests.
   pool/    The pool game. src/physics is plain TS (no Phaser); src/scenes draws and handles input.
+           android/ is the Capacitor Android project (A21); scripts/ draws the placeholder icons.
 tooling/   Shared Vite and Playwright setup and browser-test helpers (Node side only).
 ```
 
@@ -40,6 +41,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A18 | `createSaveSlot` copies any unreadable stored value to `<key>.backup` before defaults replace it | Stats are the first data a player would miss. A backup lets a future fix recover them. Only the last unreadable value is kept. | 2026-10-08 |
 | A19 | Sound effects go through the shell's `SoundBoard` on raw Web Audio, with Phaser's audio turned off (`audio: { noAudio: true }`). Placeholder sounds are synthesised at start-up by core's `renderSound` from recipes in config, not loaded from files. | One small class covers what the game needs (unlock on first touch, suspend in the background, a voice limit, silent fallback) and is testable through the e2e hook; Phaser's sound manager would add a second unlock and pause path to keep in step with A7. Synthesised placeholders need no asset pipeline or download and are deterministic; recorded sounds can replace a recipe later without touching callers (`add(name, samples)`). | 2026-10-09 |
 | A20 | Sounds are chosen from the physics event log, which now carries the impact speed of each ball and cushion contact. `ShotSoundMixer` (pure) turns each frame's new events into at most 4 cues, dropping a repeat of the same sound within 25 ms unless it is clearly louder. | Sound follows exactly what the physics did, with no second collision detector in the scene. Thinning keeps a break from turning into noise or using too many voices on a slow phone. | 2026-10-09 |
+| A21 | Android app through Capacitor 8.5; the Android project (`packages/pool/android`) is committed, with the copied web build and generated plugin files ignored. App ID in `capacitor.config.ts`; version only in `packages/pool/package.json`, read by Gradle (versionCode = major*10000 + minor*100 + patch). | One place for each value that must agree, checked by `test/android.test.ts`. Committing the project keeps the manifest, activity and icon changes reviewable. | 2026-10-10 |
+| A22 | Android's back button goes to a core `BackButton`: scenes add a handler while showing (`onBackButton`), newest first; when none handles it the app is minimised, not closed. The shell connects the phone's button only inside the app (`@capacitor/app`). | Without a listener, Capacitor's default closes the app from any screen, losing the player's place. Minimising matches Android 12+ behaviour for an app's first screen and keeps the game warm. Routing through core keeps it testable in the browser (`__tzg.back()`). | 2026-10-10 |
 | A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
@@ -55,6 +58,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `random.ts` | `createRandom(seed)`: seeded uniform and roughly normal random numbers (mulberry32), the same sequence on every device. Used for the computer's aiming error. |
 | `lifecycle.ts` | `AppLifecycle` turns `visibilitychange` and `pagehide` into idempotent `pause`/`resume` events. |
 | `synth.ts` | `renderSound(recipe, sampleRate, seed)`: mixes decaying tone sweeps and filtered noise into a mono sample buffer, normalised to the recipe's peak with a short fade-out. Seeded, so the same on every device. |
+| `backButton.ts` | `BackButton` (A22): handlers newest first, `leave` when none handles a press; a throwing handler is logged and never leaves the app. |
 | `settings.ts` | Player settings (locale, sound volume, music volume), validation, and the save slot `"<gameId>.settings"`. |
 
 ## Shell (`packages/shell/src`)
@@ -62,6 +66,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 - `createShellGame(options)` creates services, the Phaser game, the rotate overlay and (e2e builds only) test hooks.
 - `services.ts`: one `Services` object per game (logger, store, translator, lifecycle, settings get/update). It is put in Phaser's registry under `tzg.services` before boot; scenes read it with `getServices(scene)`, so no scene builds its own storage or translator. Settings are saved on every change and again on pause.
 - `sound.ts`: `SoundBoard` (A19). Tries to start sound on every gesture (pointer down and up, touch end, click, key) until it is running, because browsers differ on which one counts (iPhone: the finger lifting); after a resume from the background it listens again in case the system took sound away. It suspends on pause and resumes on resume, plays at most 8 sounds at once, scales by the sound setting, skips (never queues) sounds while locked or paused, and logs instead of throwing when Web Audio is missing or fails. Exposed as `Services.sound`.
+- `nativeApp.ts`: inside the Android app only, routes the back button to `Services.back` and minimises the app on leave (A22). `onBackButton(scene, handler)` in `services.ts` adds a handler for as long as the scene runs.
 - `rotateOverlay.ts`: a DOM message (not canvas) asking the player to rotate the phone when the orientation is wrong.
 - `testHooks.ts` / `testHooksApi.ts`: `window.__tzg`, read-only state for browser tests (scenes, element positions, text and data of named objects, frame stats, game probes). Installed only when built with `--mode e2e`; the release build is checked to contain no `__tzg`.
 
@@ -87,7 +92,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `progress/opponent.ts` | `Opponent` (two players or the computer at a level), its short id and validation. |
 | `progress/savedMatch.ts` | The saved game in progress (A17): `toSavedBalls`, `restoreBalls`, `validateSavedMatch`. |
 | `progress/progress.ts` | Stats and the last opponent: `recordGame`, `validateProgress`. |
-| `progress/slots.ts` | The two save slots, `pool.match` and `pool.progress`. |
+| `progress/tips.ts` | One-time help already shown (`howToPlaySeen`). |
+| `progress/slots.ts` | The save slots `pool.match`, `pool.progress` and `pool.tips`. |
 | `scenes/MenuScene.ts` | Main menu (first scene): Continue, Play (picker), Stats, Rules and Settings (language and sound) panels. |
 | `scenes/TableScene.ts` | The match: starting a new game or resuming the saved one, input (aim, power, ball in hand), simulation loop, applying verdicts, saving, counting stats, starting computer turns, New game and Menu. |
 | `controls/spin.ts` | Spin control maths: a point on the cue-ball face to a tip offset (clamped to the physics' largest offset) and back. |
@@ -118,6 +124,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `<gameId>.settings` | shell | 1 | `{ locale, soundVolume, musicVolume }` |
 | `pool.match` | pool | 1 | The game in progress (A17): `{ opponent, match, balls: [{ id, x, y, pocketed }], shots }`. Removed when the game ends. |
 | `pool.progress` | pool | 1 | `{ vsComputer: { easy, medium, hard: { played, won } }, twoPlayerGames, lastOpponent }` |
+| `pool.tips` | pool | 1 | `{ howToPlaySeen }` |
 | `<key>.backup` | core | n/a | The last unreadable value of that key, as stored (A18). |
 
 Pool's `gameId` is `pool`.

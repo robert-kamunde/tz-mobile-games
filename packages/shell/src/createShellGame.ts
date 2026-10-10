@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import type { LogLevel, StringTables } from '@tzg/core';
 import { createServices, registerServices, type Services } from './services';
+import { routeNativeBackButton } from './nativeApp';
 import { installTestHooks } from './testHooks';
 import { RotateOverlay } from './rotateOverlay';
 
@@ -64,6 +65,8 @@ export function createShellGame(options: ShellOptions): ShellGame {
   services.lifecycle.on('pause', () => game.pause());
   services.lifecycle.on('resume', () => game.resume());
   if (services.lifecycle.isPaused) game.pause();
+
+  routeNativeBackButton(services.back, services.logger.child('back'));
 
   const rotateOverlay = new RotateOverlay(options.orientation, services.translator, options.rotateMessageKey);
   installTestHooks(game, services, rotateOverlay);

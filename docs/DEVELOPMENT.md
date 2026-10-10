@@ -15,10 +15,13 @@
 | `npm run check` | All of the above. Run before every commit. |
 | `npm run dev:pool` | Dev server for the pool game (open the printed URL on a phone on the same Wi-Fi to try it). |
 | `npm run dev:shell` | Dev server for the shell demo. |
+| `npm run android:sync -w @tzg/pool` | Release build of the pool game, copied into the Android project (RELEASE.md). |
+| `npm run android:open -w @tzg/pool` | Opens the Android project in Android Studio. |
+| `npm run icons -w @tzg/pool` | Redraws the placeholder app icon, splash screens and store graphics. |
 | `npm run build -w @tzg/shell` | Release build of the shell demo into `packages/shell/dist`. |
 
 ## Pinned versions
-TypeScript 7.0.2, Phaser 4.2.1, Vite 8.3.3, Vitest 5.0.3, @playwright/test 1.56.1, @types/node 22.20.5. Versions are exact (no `^`). Playwright is pinned to match the Chromium build available in the dev environment; upgrading it needs a matching browser.
+TypeScript 7.0.2, Phaser 4.2.1, Capacitor 8.5.3 (`@capacitor/app` 8.1.2), Vite 8.3.3, Vitest 5.0.3, @playwright/test 1.56.1, @types/node 22.20.5. Versions are exact (no `^`). Playwright is pinned to match the Chromium build available in the dev environment; upgrading it needs a matching browser.
 
 ## Conventions
 - Gameplay rules and physics: plain TypeScript in the game package, unit-tested, no Phaser imports. In `src/physics` use only `+ - * /` and `Math.sqrt` (see ARCHITECTURE A11); the purity test fails otherwise.

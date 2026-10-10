@@ -25,6 +25,9 @@ export interface TestHooks {
    */
   /** Sound state ("running", "suspended", "unavailable"…) and the sounds actually started. */
   sound(): { state: string; played: { name: string; gain: number }[] };
+  /** Presses Android's back button, and how many presses sent the app away. */
+  back(): void;
+  backLeaves(): number;
   frameCpuStats(): { frames: number; averageMs: number; maxMs: number };
   resetFrameCpuStats(): void;
   /** Converts a point in design pixels (e.g. 1280x720 space) to page (CSS) pixels. */

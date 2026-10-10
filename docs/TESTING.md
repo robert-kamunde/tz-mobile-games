@@ -4,9 +4,9 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 192 tests
+### Unit tests (`npm test`): 201 tests
 
-#### Core, `packages/core/test` (46)
+#### Core, `packages/core/test` (50)
 | Area | What is covered |
 |---|---|
 | Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained; an unreadable value is copied to `<key>.backup`, a missing or good one is not. |
@@ -15,9 +15,10 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 | Sound synth | Each layer kind makes a short, non-silent sound peaking exactly at the recipe level with a silent last sample; the same seed gives the same samples; bad sample rates and lengths are refused. |
+| Back button | No handler leaves the app; newest handler first, stopping at the first that handles it; a removed handler is not asked (removing twice is harmless); a throwing handler is logged and does not leave the app. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (146)
+#### Pool, `packages/pool/test` (151)
 | Area | What is covered |
 |---|---|
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
@@ -43,9 +44,10 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Stats | Games per computer level and two-player games counted, wins only for the person; round trip with the last opponent; rejected: more wins than games, a missing level, fractional counts, a bad last opponent. Opponent validation accepts only known opponents. |
 | Spin and fine aim controls | Centre is a centre hit; up, down and right give topspin, backspin and right side, reaching the largest offset at the edge; touches beyond the edge are pulled onto it; bad input gives a centre hit; the dot is drawn where the touch was; the control's top and bottom give follow and draw in the simulation. Fine aim: positive angle turns clockwise on screen, exact angle there and back over 1000 small turns, unit length kept, non-number angle ignored. |
 | Sound | Every recipe renders short, never clips, never silent; loudness is silent below the threshold, full at the cap and grows with speed; cue gain grows with power; the mixer drops close repeats but keeps a clearly louder one, sorts loudest first, caps sounds per frame and resets between shots; a real break gives fewer sounds than contacts; ball and cushion events carry the right impact speed. |
+| Android project | One app ID in the Capacitor config, Gradle, strings and the activity's package; version from package.json in x.y.z form; landscape only; icon, round icon, adaptive foreground and splash at every density at the right pixel sizes; store icon and feature graphic sizes. One-time tips save: default unseen, only a true/false flag accepted. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 49 scenarios x 3 screen sizes = 147 runs
+### Browser tests (`npm run test:e2e`): 53 scenarios x 3 screen sizes = 159 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -126,6 +128,12 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 - On a browser that only allows sound when the finger lifts (as iPhone does), sound still starts and the break is heard.
 - If the system will not restart sound when the game comes back from the background, the next touch restarts it.
 
+#### Release readiness (4 scenarios, `release.spec.ts`)
+- The first game shows "how to play" (Kiswahili text), the power bar does nothing meanwhile, OK closes it and the break works; it is not shown on a new game or after reopening.
+- Back on the menu closes Stats, then the picker, then leaves the app (counted through the test hook), with the menu still there.
+- Back on the table closes the help, is ignored while balls roll, closes the New game picker without changing the game, then goes to the menu with Continue offered and the app not left.
+- With every request outside the game's own server blocked and the browser set offline after loading, a shot, Menu and Continue all work and no outside request is attempted.
+
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
 
@@ -144,6 +152,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-08 | 4 | pass | 166/166 (+2 ladder tests skipped) | shell 33/33, pool 78/78 | All new browser tests passed on their first run, so two bugs were planted to check them: saving the moving table mid-shot and keeping the save after a finished game. The tests caught both. Screenshots at 640x360 and 915x412: the menu showed through the Stats, Rules and Settings panels and made them hard to read (those panels are now opaque). The pool suite took 3.6 minutes. Release build has no test hooks. |
 | 2026-10-09 | 6 | pass | 192/192 (+2 ladder tests skipped) | shell 33/33, pool 108/108 | The new sound tests passed first time, so two bugs were planted: ignoring the Sound setting, and not suspending sound in the background. The tests caught both. Settings panel checked on screenshots at 640x360 and 915x412 in both languages. The pool suite took 9.5 minutes in this run (TD5). Sound itself was not heard (U11). |
 | 2026-10-09 | 6.1 | pass | 192/192 | shell 33/33, pool 114/114 | Robert heard no sound on an iPhone 15. Cause: sound was only started on the first finger-down, which iPhones do not accept. The two new tests fail on the old code and pass on the fix. Not verified on an iPhone here (U11). |
+| 2026-10-10 | 7 | pass | 201/201 (+2 ladder tests skipped) | shell 33/33, pool 126/126 | Two bugs planted in the new code (the help not remembered as seen; back on the menu ignoring the picker and panels) were caught by the new tests. After the rename to Bongo Pool Table the menu and release tests were rerun (36/36). The Android project was synced (`cap sync`) but not built: Gradle cannot fetch the Android plugin here (B1). Splash, icons and store graphics checked by eye. Pool suite took 11.4 minutes. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
@@ -164,6 +173,8 @@ Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android 
 6. Play 10 minutes: no stutter worth noting, phone not hot, no crash. Note the frame rate during a full-power break.
 6a. Pool: aim with one finger, pull power with another; aim lands where the finger is; a pull-and-swipe-down of the notification shade does not shoot.
 6d. Pool: sound. The first shot after opening is heard; harder shots are louder; Sound off in Settings silences it; the phone's own volume and silent mode behave as expected; press home mid-shot, no sound continues; a phone call stops it.
+6e. Android app (Milestone 7): the icon and name on the home screen; the splash at start; the game fills the screen with no status or navigation bar (a swipe from the edge shows them briefly); it stays landscape when the phone turns; the back button closes panels, goes from the table to the menu, and on the menu sends the app away; reopening from recent apps returns to the same screen.
+6f. First install: the "how to play" panel appears on the first game only.
 6c. Pool: set spin with a thumb (top, back, each side) and check the dot is easy to place and returns to the centre after the shot; turn the aim with the fine-aim strip onto a thin cut and check it is precise enough without being slow.
 6b. Pool: play a full two-player game to the black; check every foul message reads correctly in Kiswahili; ball in hand drag is easy with a thumb; all text is readable without squinting.
 7. Turn on airplane mode mid-session: nothing changes.

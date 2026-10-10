@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { FixedStepper, createRandom, type Logger, type Translator } from '@tzg/core';
 import type { SoundBoard } from '@tzg/shell';
-import { getServices, registerTestProbe } from '@tzg/shell';
+import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { ShotPlanner } from '../ai/planner';
 import { ShotSoundMixer, cueGain } from '../audio/shotSounds';
 import { AI_LEVELS } from '../config/ai';
@@ -41,7 +41,7 @@ import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
 import type { MenuStart } from './MenuScene';
 import { SCENE_KEYS } from './sceneKeys';
-import { addButton } from './ui';
+import { Panel, addButton } from './ui';
 import { PowerBar } from './PowerBar';
 import { SpinControl } from './SpinControl';
 import { TableView } from './TableView';
@@ -73,6 +73,8 @@ export class TableScene extends Phaser.Scene {
   private fineAim!: FineAim;
   private hud!: MatchHud;
   private picker!: OpponentPicker;
+  /** The one-time "how to play" panel on the first game, while it shows. */
+  private howToPlay: Panel | null = null;
   private computer!: ComputerTurn;
   private opponent: Opponent = { kind: 'human' };
   private opponentChosen = false;
@@ -126,6 +128,8 @@ export class TableScene extends Phaser.Scene {
     this.fineAim = new FineAim(this);
     this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
     this.picker = new OpponentPicker(this, this.t, PANEL.overTable, (opponent) => this.onOpponentPicked(opponent));
+    // The scene object is reused between starts; a panel from last time was destroyed with it.
+    this.howToPlay = null;
     addButton(this, HUD.menu.left, HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: 0 }).setDepth(HUD.depth);
     this.computer = new ComputerTurn(
       {
@@ -163,6 +167,12 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.registerProbes();
+    // Back closes the picker, otherwise does what Menu does (nothing while balls roll).
+    onBackButton(this, () => {
+      if (this.howToPlay) this.closeHowToPlay();
+      else if (!this.picker.goBack()) this.goToMenu();
+      return true;
+    });
     if ('opponent' in start) {
       this.onOpponentPicked(start.opponent);
       return;
@@ -231,6 +241,7 @@ export class TableScene extends Phaser.Scene {
     this.refresh();
     this.logger.info(`new match against ${this.opponent.kind === 'computer' ? `the computer (${this.opponent.level})` : 'a person'}, player ${breaker + 1} breaks`);
     this.saveMatch();
+    this.showHowToPlayOnce();
     this.startComputerTurnIfDue();
   }
 
@@ -249,6 +260,7 @@ export class TableScene extends Phaser.Scene {
     this.hud.setStatus(this.turnMessage());
     this.refresh();
     this.logger.info(`resumed a saved match after ${saved.shots} shots`);
+    this.showHowToPlayOnce();
     this.startComputerTurnIfDue();
   }
 
@@ -286,12 +298,39 @@ export class TableScene extends Phaser.Scene {
     if (game) this.slots.match.save(game);
   }
 
+  /** A panel over the table (the picker or "how to play"): the table ignores the player meanwhile. */
+  private get overlayOpen(): boolean {
+    return this.picker.visible || this.howToPlay !== null;
+  }
+
+  /** Explains the controls on the player's first game; never again once dismissed. */
+  private showHowToPlayOnce(): void {
+    if (this.howToPlay || this.slots.tips.load().data.howToPlaySeen) return;
+    this.cancelGestures();
+    this.howToPlay = new Panel(this, {
+      name: 'howToPlay',
+      area: PANEL.overTable,
+      title: this.t.t('howTo.title'),
+      body: this.t.t('howTo.body'),
+      buttons: [{ name: 'howToPlay-ok', label: this.t.t('howTo.ok'), onTap: () => this.closeHowToPlay() }],
+    });
+    this.refresh();
+  }
+
+  private closeHowToPlay(): void {
+    this.howToPlay?.destroy();
+    this.howToPlay = null;
+    this.slots.tips.save({ howToPlaySeen: true });
+    this.refresh();
+    this.startComputerTurnIfDue();
+  }
+
   private isComputerTurn(): boolean {
     return this.opponent.kind === 'computer' && this.match.phase !== 'over' && this.match.current === COMPUTER_PLAYER;
   }
 
   private startComputerTurnIfDue(): void {
-    if (this.opponent.kind !== 'computer' || !this.isComputerTurn() || this.picker.visible || this.sim.isMoving || this.computer.active) return;
+    if (this.opponent.kind !== 'computer' || !this.isComputerTurn() || this.overlayOpen || this.sim.isMoving || this.computer.active) return;
     const planner = new ShotPlanner(
       { balls: this.sim.balls, table: this.geometry, tableConfig: UK_7FT_TABLE, physics: DEFAULT_PHYSICS, match: this.match },
       AI_LEVELS[this.opponent.level],
@@ -412,7 +451,7 @@ export class TableScene extends Phaser.Scene {
 
   private onPointerDown(pointer: Phaser.Input.Pointer, over: Phaser.GameObjects.GameObject[]): void {
     // Buttons handle their own input; nothing on the table responds while the computer plays or the picker is open.
-    if (this.sim.isMoving || over.length > 0 || this.match.phase === 'over' || this.picker.visible || this.isComputerTurn()) return;
+    if (this.sim.isMoving || over.length > 0 || this.match.phase === 'over' || this.overlayOpen || this.isComputerTurn()) return;
     if (this.powerPointerId === null && this.powerBar.hitTest(pointer.x, pointer.y)) {
       this.powerPointerId = pointer.id;
       this.powerBar.begin(pointer.y);
@@ -550,12 +589,12 @@ export class TableScene extends Phaser.Scene {
     this.hud.showPlayers(this.match, [panel(0), panel(1)]);
     const over = this.match.phase === 'over';
     // While the computer plays or the picker is open, the player has no controls to explain.
-    const playerIdle = this.isComputerTurn() || this.picker.visible;
+    const playerIdle = this.isComputerTurn() || this.overlayOpen;
     this.hud.setHint(playerIdle || over ? 'none' : this.match.ballInHand ? 'ballInHand' : 'aim');
     this.powerBar.setEnabled(!over && !playerIdle);
     this.spin.setEnabled(!over && !playerIdle);
     this.fineAim.setEnabled(!over && !playerIdle);
-    if (over || this.picker.visible) {
+    if (over || this.overlayOpen) {
       this.aimView.hide();
       return;
     }
@@ -583,6 +622,7 @@ export class TableScene extends Phaser.Scene {
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.picker.visible,
+      howToPlayShown: this.howToPlay !== null,
       spin: this.spin.tip,
       lastShot: this.lastShot,
     }));

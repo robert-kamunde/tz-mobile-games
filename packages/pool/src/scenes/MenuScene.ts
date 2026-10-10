@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
-import { getServices, registerTestProbe } from '@tzg/shell';
+import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { AI_LEVEL_IDS } from '../config/ai';
 import { BUTTON, COLORS, MENU, PANEL, TEXT_STYLE } from '../config/layout';
 import type { PoolSlots } from '../progress/slots';
@@ -66,6 +66,13 @@ export class MenuScene extends Phaser.Scene {
 
     this.picker = new OpponentPicker(this, t, PANEL.overMenu, (opponent) => this.startTable({ opponent }));
     if (data.panel) this.showPanel(data.panel);
+    // Back closes the picker or a panel; on the menu itself it leaves the app.
+    onBackButton(this, () => {
+      if (this.picker.goBack()) return true;
+      if (!this.panel) return false;
+      this.closePanel();
+      return true;
+    });
 
     registerTestProbe('pool.menu', () => ({
       continueShown: this.hasSavedGame,

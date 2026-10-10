@@ -1,6 +1,7 @@
 import type * as Phaser from 'phaser';
 import {
   AppLifecycle,
+  BackButton,
   createLogger,
   createSettingsSlot,
   createTranslator,
@@ -13,6 +14,7 @@ import {
   type StringTables,
   type Translator,
 } from '@tzg/core';
+import { leaveApp } from './nativeApp';
 import { SoundBoard } from './sound';
 
 /**
@@ -27,6 +29,8 @@ export interface Services {
   readonly lifecycle: AppLifecycle;
   /** Sound effects; follows the sound volume setting. */
   readonly sound: SoundBoard;
+  /** Android's back button: scenes add handlers with `onBackButton`. */
+  readonly back: BackButton;
   getSettings(): Readonly<Settings>;
   /** Applies a partial change, persists it, and returns the new settings. */
   updateSettings(change: Partial<Settings>): Readonly<Settings>;
@@ -54,6 +58,8 @@ export function createServices(options: CreateServicesOptions): Services {
 
   const sound = new SoundBoard(lifecycle, logger.child('sound'), () => settings.soundVolume);
 
+  const back = new BackButton(() => leaveApp(logger), logger.child('back'));
+
   // Persist on every pause: Android may kill a backgrounded app without further notice.
   lifecycle.on('pause', () => settingsSlot.save(settings));
 
@@ -64,6 +70,7 @@ export function createServices(options: CreateServicesOptions): Services {
     translator,
     lifecycle,
     sound,
+    back,
     getSettings: () => settings,
     updateSettings(change) {
       settings = { ...settings, ...change };
@@ -82,4 +89,13 @@ export function getServices(scene: Phaser.Scene): Services {
   const services = scene.registry.get(REGISTRY_KEY) as Services | undefined;
   if (!services) throw new Error('Services not registered. Create the game with createShellGame().');
   return services;
+}
+
+/**
+ * Handles Android's back button while the scene runs: the handler is removed when the scene shuts
+ * down. Return true when the press was used (or deliberately ignored), false to pass it on.
+ */
+export function onBackButton(scene: Phaser.Scene, handler: () => boolean): void {
+  const remove = getServices(scene).back.add(handler);
+  scene.events.once('shutdown', remove);
 }

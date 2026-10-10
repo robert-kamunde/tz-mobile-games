@@ -30,6 +30,7 @@ export interface PoolState {
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
+  howToPlayShown: boolean;
   spin: { side: number; height: number };
   lastShot: { direction: { x: number; y: number }; power: number; side: number; height: number } | null;
 }
@@ -68,6 +69,14 @@ export async function playFromMenu(page: Page, choice: OpponentChoice): Promise<
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   await tap(page, `opponent-${choice}`, MENU_SCENE);
   await waitForScene(page, SCENE);
+  await dismissHowToPlay(page);
+}
+
+/** Closes the one-time "how to play" panel if it shows (a player's first game). */
+export async function dismissHowToPlay(page: Page): Promise<void> {
+  if (!(await state(page)).howToPlayShown) return;
+  await tap(page, 'howToPlay-ok');
+  await expect.poll(async () => (await state(page)).howToPlayShown).toBe(false);
 }
 
 /** Opens the game and starts a new game from the menu (two players unless told otherwise). */

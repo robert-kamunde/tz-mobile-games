@@ -1,22 +1,29 @@
 {
   "name": "@tzg/pool",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
-  "description": "Pool ya Mtaani. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",
+  "description": "Bongo Pool Table. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:e2e": "vite build --mode e2e --outDir dist-e2e",
     "test:e2e": "npm run build:e2e && playwright test",
-    "ai:ladder": "AI_LADDER=1 vitest run test/aiLadder.test.ts --silent=false"
+    "ai:ladder": "AI_LADDER=1 vitest run test/aiLadder.test.ts --silent=false",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "icons": "node scripts/makeAppIcons.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
     "@tzg/core": "0.1.0",
     "@tzg/shell": "0.1.0",
     "phaser": "4.2.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.3",
     "vite": "8.3.3"
   }
 }

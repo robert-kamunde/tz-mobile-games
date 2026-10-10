@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 (unreleased) - Milestone 7: release readiness
+- The game is now called **Bongo Pool Table** (Robert, 2026-10-10; was "Pool ya Mtaani"). Saves are unaffected: their key prefix stays `pool`.
+- Android project (Capacitor 8.5) in `packages/pool/android`: app ID `com.fardatasolutions.bongopooltable`, landscape only, full screen with the system bars hidden, version taken from `package.json`. Not built yet (B1); build steps for Robert's computer in RELEASE.md.
+- Android back button: closes a panel or the picker, takes the table to the menu (not while balls roll), and on the main menu sends the app to the background. Shared `BackButton` in core, routed from the phone by the shell.
+- First game: a one-time "how to play" panel (aim, power, spin, fine aim). It is not shown again once closed (`pool.tips`).
+- Placeholder app icon (all densities, adaptive and round), splash screens, 512 px store icon and feature graphic, drawn by `npm run icons -w @tzg/pool`.
+- Store listing, privacy policy (Kiswahili and English) and store screenshots, as drafts.
+- Offline check: a browser test plays with outside network blocked and the network off.
+
 ## 0.7.1 (unreleased) - Fix: no sound on iPhone
 - Sound never started on iPhone (reported by Robert). The game tried to start sound only once, when the finger first touched the screen, but iPhones only allow it when the finger lifts. It now tries on every touch (down, up, tap or key) until sound is running, and plays one silent sample inside the touch, which older iPhones need.
 - If the phone takes sound away while the game is in the background (a call, another app), the next touch brings it back.

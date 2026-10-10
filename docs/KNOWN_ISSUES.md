@@ -1,11 +1,11 @@
 # Known Issues
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 ## Blockers
 | ID | Issue | Impact | Plan |
 |---|---|---|---|
-| B1 | Android SDK download blocked in the cloud dev environment (`dl.google.com` 403). | No APK can be built or tested on a phone from here. | Network allowlist change or a build on Robert's computer, before the first playable Pool build goes to a device. |
+| B1 | Android SDK download blocked in the cloud dev environment (`dl.google.com` 403). | No APK can be built or tested on a phone from here. Google's Maven repository (needed by Gradle for the Android plugin) is behind the same host, so even the Gradle configuration cannot be checked. | Build on Robert's computer (RELEASE.md, ready since Milestone 7) or allow the host in the environment's network settings. |
 
 ## Unverified
 | ID | Item |
@@ -16,10 +16,11 @@ Last updated: 2026-10-09
 | U6 | Text sizes were chosen from screenshots (nothing under 10 CSS px on a 360-px-tall phone), not checked on a real phone. |
 | U7 | Rule defaults beyond R1 (illegal break is a foul, both colours keep the table open) are Claude's choices from World Blackball, not confirmed against how Tanzanian bars play. |
 | U5 | Physics values (friction, restitution) are starting points. The break currently spreads the rack modestly; feel needs tuning by playing on a phone. |
-| U3 | Kiswahili strings not reviewed by a native speaker. This includes the Milestone 3 picker and computer wording ("Unacheza na nani?", "Kompyuta inacheza…", Rahisi/Wastani/Ngumu) and the Milestone 4 menu, stats and the Kiswahili rules text. |
+| U3 | Kiswahili strings not reviewed by a native speaker. This includes the Milestone 3 picker and computer wording ("Unacheza na nani?", "Kompyuta inacheza…", Rahisi/Wastani/Ngumu) and the Milestone 4 menu, stats and the Kiswahili rules text, the Milestone 7 "how to play" panel, the store listing and the privacy policy. |
 | U8 | Computer levels are tuned only by computer-against-computer games (TESTING.md ladder), not against people. Whether Easy is easy enough for a beginner and Hard is a challenge for a good bar player is unknown. |
 | U10 | Spin and fine aim have not been tried by a player. Whether the spin face is big enough for a thumb (88 design px, about 44 CSS px on a 360-px-tall phone), whether fine aim turns at a useful speed, and whether players find the strip without a label are unknown. Side spin only changes cushion rebounds; there is no swerve or squirt in the physics (U5). |
 | U11 | Sound has not been heard. The tests check which sounds start and how loud, through a test hook, in a headless browser with no speakers. Whether the placeholder sounds are pleasant, whether the loudness balance is right, how sound behaves on a real Android WebView (first-touch unlock, phone calls, Bluetooth headsets, the phone's silent mode) and its CPU cost on a slow phone are unknown. The placeholders are synthesised and will sound artificial. On iPhone, the ring/silent switch mutes web sound, so the game is silent in silent mode (by design for now; the Android app is the target). The first-touch fix of 0.7.1 is tested only in a desktop browser imitating iPhone's rule. |
+| U12 | The Android project has never been built (B1). Unverified: that it compiles (including the full-screen code in `MainActivity.java`), the splash screen, the icon on a launcher, the back button reaching the game, landscape lock, and saves surviving an app update. On Android 16 tablets and other large screens the system ignores the landscape lock; the game's rotate prompt then asks the player to turn the device. |
 | U9 | Computer thinking time on a phone is unknown. Hard spends up to about 210 000 physics steps on a decision (about 1 s of desktop CPU at full speed); at 6 ms of thinking per frame a slow phone may reach the 4 s limit, after which Hard plays the best shot found so far and is weaker. In the 6x-throttled test browser, frames while the player aims already cost 12 to 21 ms (software renderer); thinking added 1 to 9 ms on top. |
 
 ## Bugs

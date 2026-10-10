@@ -8,3 +8,4 @@ export * from './lifecycle';
 export * from './settings';
 export * from './random';
 export * from './synth';
+export * from './backButton';

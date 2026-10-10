@@ -9,6 +9,7 @@ import { Panel, type PanelSpec } from './ui';
  */
 export class OpponentPicker {
   private panel: Panel | null = null;
+  private onBack: (() => void) | undefined;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -24,6 +25,7 @@ export class OpponentPicker {
   /** `onBack` adds a Back button that closes the picker without choosing. */
   show(last: Opponent | null, onBack?: () => void): void {
     this.hide();
+    this.onBack = onBack;
     const t = this.t;
     const lastId = last ? opponentId(last) : null;
     this.panel = new Panel(this.scene, {
@@ -52,6 +54,15 @@ export class OpponentPicker {
           }
         : {}),
     });
+  }
+
+  /** The phone's back button: closes the picker as its Back button would. False when not showing. */
+  goBack(): boolean {
+    if (!this.visible) return false;
+    const onBack = this.onBack;
+    this.hide();
+    onBack?.();
+    return true;
   }
 
   hide(): void {
