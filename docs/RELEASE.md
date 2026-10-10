@@ -13,6 +13,7 @@ Status: no release yet. The Android project exists (Milestone 7) but has never b
 1. Install Node 22, Git and Android Studio (it installs the Android SDK and Java).
    - Check with `node -v` that it prints v22 or newer before going on.
    - **Windows:** if `node -v` prints "The system cannot find the path specified", another program's copy of Node is earlier on the PATH. Run `where.exe node` to see which. On Robert's computer it was the Firebase CLI's `AppData\Roaming\firebase\runtime` folder. Move that entry below `C:\Program Files\nodejs` in the user Path (Start > "environment variables"), or for one window only run `$env:Path = "C:\Program Files\nodejs;" + $env:Path`.
+   - **Windows PowerShell:** if `npm` says "running scripts is disabled on this system", type `npm.cmd` instead of `npm` in every command below, or allow local scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 2. Get the code and install:
    ```
    git clone https://github.com/robert-kamunde/tz-mobile-games.git
