@@ -1,6 +1,6 @@
 # Release
 
-Status: no release yet. The Android project exists (Milestone 7) but has never been built: the Android SDK cannot be downloaded in the cloud development environment (B1). The steps below are written for Robert's computer and have not been run.
+Status: no release yet. The Android project (Milestone 7) cannot be built in the cloud development environment (B1), but Robert followed the debug-build steps below on his Windows PC on 2026-10-10 and the app ran well on his Android phone. The release-build steps have not been run yet.
 
 ## What is ready
 - Android project (Capacitor 8.5) in `packages/pool/android`.
