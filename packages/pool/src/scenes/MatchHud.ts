@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
-import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
+import { COLORS, HUD, TEXT_STYLE, type ScreenSides } from '../config/layout';
 import { countInRack } from '../physics/rack';
 import { DEFAULT_PICKS } from '../config/characters';
 import { QUIPS } from '../config/quips';
@@ -55,9 +55,11 @@ export class MatchHud {
     private readonly scene: Phaser.Scene,
     private readonly t: Translator,
     onNewGame: () => void,
+    private readonly sides: ScreenSides,
   ) {
     const text = textStyle;
-    const p = HUD.players;
+    const p = this.panelEdges;
+    const dx = sides.tableDx;
     this.panels = PLAYERS.map((player) => {
       const left = player === 0;
       const chipX = left ? p.leftX + p.chipRadius : p.rightX - p.chipRadius;
@@ -78,7 +80,7 @@ export class MatchHud {
     });
 
     this.status = scene.add
-      .text(HUD.status.x, HUD.status.y, '', {
+      .text(HUD.status.x + dx, HUD.status.y, '', {
         ...text(TEXT_STYLE.statusSize),
         align: 'center',
         wordWrap: { width: HUD.status.wrapWidth },
@@ -86,9 +88,9 @@ export class MatchHud {
       })
       .setOrigin(0.5)
       .setName('status');
-    this.hint = scene.add.text(HUD.hint.x, HUD.hint.y, '', text(TEXT_STYLE.hintSize, COLORS.textDim)).setOrigin(0.5).setName('hint');
+    this.hint = scene.add.text(HUD.hint.x + dx, HUD.hint.y, '', text(TEXT_STYLE.hintSize, COLORS.textDim)).setOrigin(0.5).setName('hint');
     scene.add
-      .text(HUD.placeholder.x, HUD.placeholder.y, t.t('pool.placeholder'), {
+      .text(sides.controlX(HUD.placeholder.x), HUD.placeholder.y, t.t('pool.placeholder'), {
         ...text(TEXT_STYLE.labelSize, COLORS.textDim),
         align: 'center',
         wordWrap: { width: HUD.placeholder.wrapWidth },
@@ -96,7 +98,7 @@ export class MatchHud {
       .setOrigin(0.5)
       .setName('placeholderLabel');
 
-    const g = HUD.gameOver;
+    const g = { ...HUD.gameOver, x: HUD.gameOver.x + dx };
     this.overPanel = scene.add.rectangle(g.x, g.y, g.width, g.height, COLORS.overlay, g.alpha).setName('gameOverPanel').setVisible(false);
     this.overTitle = scene.add.text(g.x, g.y - 30, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
     this.overDetail = scene.add.text(g.x, g.y + 34, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
@@ -110,7 +112,7 @@ export class MatchHud {
 
     this.newGame = addButton(
       scene,
-      HUD.newGame.right,
+      sides.controlX(HUD.newGame.right),
       HUD.newGame.y,
       {
         name: 'newGameButton',
@@ -129,7 +131,7 @@ export class MatchHud {
           onNewGame();
         },
       },
-      { originX: 1 },
+      { originX: sides.controlOriginX(1) },
     );
     this.resetNewGameLabel();
 
@@ -137,6 +139,12 @@ export class MatchHud {
     const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.quipBox, this.quipLabel, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
+  }
+
+  /** Player panels sit at the table's top corners, wherever the table is. */
+  private get panelEdges(): Omit<typeof HUD.players, 'leftX' | 'rightX'> & { leftX: number; rightX: number } {
+    const p = HUD.players;
+    return { ...p, leftX: p.leftX + this.sides.tableDx, rightX: p.rightX + this.sides.tableDx };
   }
 
   /** Who plays: the opponent decides whether player 2 is the computer's character or a pick. */
@@ -200,7 +208,7 @@ export class MatchHud {
    */
   say(player: PlayerId, line: string): void {
     const q = HUD.quip;
-    const p = HUD.players;
+    const p = this.panelEdges;
     const left = player === 0;
     const label = this.quipLabel.setText(line).setVisible(true);
     const width = label.width + 2 * q.padX;

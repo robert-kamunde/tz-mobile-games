@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { COLORS, POWER_BAR, TEXT_STYLE } from '../config/layout';
+import { COLORS, HUD, POWER_BAR, TEXT_STYLE, type ScreenSides } from '../config/layout';
 import { powerFillTexture, powerHandleTexture, powerTrackTexture } from './art/controlsArt';
 
 /**
@@ -14,17 +14,22 @@ export class PowerBar {
   private readonly label: Phaser.GameObjects.Text;
   private dragStartY: number | null = null;
   private value = 0;
+  /** Centre line of the bar: right edge, or left for left-handed players. */
+  private readonly x: number;
 
-  constructor(scene: Phaser.Scene, labelText: string) {
-    const left = POWER_BAR.x - POWER_BAR.width / 2;
+  constructor(scene: Phaser.Scene, labelText: string, sides: ScreenSides) {
+    this.x = sides.controlX(POWER_BAR.x);
+    const left = this.x - POWER_BAR.width / 2;
     this.track = scene.add.image(left, POWER_BAR.top, powerTrackTexture(scene)).setOrigin(0, 0).setName('powerTrack');
     this.fill = scene.add.image(left, POWER_BAR.top, powerFillTexture(scene)).setOrigin(0, 0).setName('powerFill');
     this.handle = scene.add
-      .image(POWER_BAR.x, POWER_BAR.top, powerHandleTexture(scene, POWER_BAR.width + POWER_BAR.handleOverhang, POWER_BAR.handleHeight))
+      .image(this.x, POWER_BAR.top, powerHandleTexture(scene, POWER_BAR.width + POWER_BAR.handleOverhang, POWER_BAR.handleHeight))
       .setName('powerHandle');
     this.label = scene.add
-      .text(POWER_BAR.x, POWER_BAR.top - 30, labelText, { fontFamily: TEXT_STYLE.fontFamily, fontSize: TEXT_STYLE.labelSize, color: COLORS.text })
+      .text(this.x, POWER_BAR.top - 30, labelText, { fontFamily: TEXT_STYLE.fontFamily, fontSize: TEXT_STYLE.labelSize, color: COLORS.text })
       .setOrigin(0.5);
+    // Above the cue, which can reach across the controls when aiming towards them.
+    for (const o of [this.track, this.fill, this.handle, this.label]) o.setDepth(HUD.depth);
     this.redraw();
   }
 
@@ -49,7 +54,7 @@ export class PowerBar {
   hitTest(x: number, y: number): boolean {
     const halfWidth = POWER_BAR.width / 2 + POWER_BAR.touchPadding;
     return (
-      Math.abs(x - POWER_BAR.x) <= halfWidth &&
+      Math.abs(x - this.x) <= halfWidth &&
       y >= POWER_BAR.top - POWER_BAR.touchPadding &&
       y <= POWER_BAR.top + POWER_BAR.height + POWER_BAR.touchPadding
     );

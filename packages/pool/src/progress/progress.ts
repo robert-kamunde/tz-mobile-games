@@ -1,5 +1,6 @@
 import { AI_LEVEL_IDS, type AiLevel } from '../config/ai';
 import { DEFAULT_CUE, isCueId, type CueId } from '../config/cues';
+import { DEFAULT_HAND, isHand, type Hand } from '../config/layout';
 import { DEFAULT_TABLE, isTableId, type TableId } from '../config/tables';
 import type { PlayerId } from '../rules/blackball';
 import { validatePicks, type CharacterPicks } from './characters';
@@ -24,6 +25,8 @@ export interface PoolProgress {
   readonly table: TableId;
   /** The cue shown on the table (Fimbo on the menu). Saves from before 0.12 have none: Klasiki. */
   readonly cue: CueId;
+  /** Controls on the right or, for left-handed players, the left (Settings). Saves from before 0.14 have none: right. */
+  readonly hand: Hand;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -33,7 +36,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND };
 }
 
 /** Counts a finished game. */
@@ -67,5 +70,6 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   // Likewise a missing or unknown table (say, one removed in an update) falls back to Classic.
   const table = isTableId(r.table) ? r.table : DEFAULT_TABLE;
   const cue = isCueId(r.cue) ? r.cue : DEFAULT_CUE;
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue };
+  const hand = isHand(r.hand) ? r.hand : DEFAULT_HAND;
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand };
 }

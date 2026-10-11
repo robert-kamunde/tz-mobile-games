@@ -5,7 +5,7 @@ import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { ShotPlanner } from '../ai/planner';
 import { ShotSoundMixer, cueGain } from '../audio/shotSounds';
 import { AI_LEVELS } from '../config/ai';
-import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/layout';
+import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP, screenSides, type ScreenSides } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { tableTheme } from '../config/tables';
@@ -47,7 +47,7 @@ import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
 import type { MenuStart } from './MenuScene';
 import { SCENE_KEYS } from './sceneKeys';
-import { Panel, addButton } from './ui';
+import { Panel, addButton, type PanelSpec } from './ui';
 import { PowerBar } from './PowerBar';
 import { SpinControl } from './SpinControl';
 import { TableView } from './TableView';
@@ -84,6 +84,10 @@ export class TableScene extends Phaser.Scene {
   private computer!: ComputerTurn;
   private opponent: Opponent = { kind: 'human' };
   private picks: CharacterPicks = DEFAULT_PICKS;
+  /** Where the table and controls sit for the player's hand (Settings). */
+  private sides!: ScreenSides;
+  /** Panels over the table (opponent picker, how to play) follow it when it moves for left-handed players. */
+  private overTable: PanelSpec['area'] = PANEL.overTable;
   private opponentChosen = false;
   /** Varies the computer's aiming error between matches; each shot's seed adds the shot count. */
   private computerSeed = 0;
@@ -127,20 +131,23 @@ export class TableScene extends Phaser.Scene {
     loadPoolSounds(this);
 
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
-    this.view = new TableView(this, this.geometry, UK_7FT_TABLE);
     const looks = this.slots.progress.load().data;
+    const sides = screenSides(looks.hand, this.geometry.length);
+    this.overTable = { ...PANEL.overTable, x: PANEL.overTable.x + sides.tableDx };
+    this.view = new TableView(this, this.geometry, UK_7FT_TABLE, sides);
     this.view.drawTable(tableTheme(looks.table));
     this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view, CUE_STYLES[looks.cue]);
-    this.powerBar = new PowerBar(this, this.t.t('pool.power'));
-    this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset);
-    this.fineAim = new FineAim(this);
-    this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
-    this.setup = new MatchSetup(this, this.t, PANEL.overTable, (choice) => this.onMatchChosen(choice));
+    this.powerBar = new PowerBar(this, this.t.t('pool.power'), sides);
+    this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset, sides);
+    this.fineAim = new FineAim(this, sides);
+    this.hud = new MatchHud(this, this.t, () => this.askForOpponent(), sides);
+    this.sides = sides;
+    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
-    addButton(this, HUD.menu.left, HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: 0 }).setDepth(HUD.depth);
+    addButton(this, sides.controlX(HUD.menu.left), HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: sides.controlOriginX(0) }).setDepth(HUD.depth);
     this.computer = new ComputerTurn(
       {
         place: (spot) => this.placeCueBallAt(spot),
@@ -328,7 +335,7 @@ export class TableScene extends Phaser.Scene {
     this.cancelGestures();
     this.howToPlay = new Panel(this, {
       name: 'howToPlay',
-      area: PANEL.overTable,
+      area: this.overTable,
       title: this.t.t('howTo.title'),
       body: this.t.t('howTo.body'),
       buttons: [{ name: 'howToPlay-ok', label: this.t.t('howTo.ok'), onTap: () => this.closeHowToPlay() }],
@@ -642,6 +649,8 @@ export class TableScene extends Phaser.Scene {
       gameOverShown: this.hud.gameOverVisible,
       trays: this.hud.trayState,
       quip: this.hud.quip,
+      hand: this.sides.hand,
+      controls: { spin: { x: this.spin.x, y: this.spin.y }, fineAim: { x: this.fineAim.x, y: this.fineAim.y }, tableLeft: this.view.toDesign(0, 0).x },
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.setup.visible,

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.14.0 (unreleased) - Left-handed mode
+- From the personalisation list Robert approved (2026-10-11). Settings has a new row, "Mkono wa kuchezea" / "Playing hand": Kulia (Right, as before) or Kushoto (Left).
+- Left turns the table screen into a mirror image: the spin control and power bar move to the left edge, the table and everything on it (player panels, status, hint, fine-aim strip, game over, panels over the table) moves right by the same gap, and the Menu and New game buttons swap corners. Nothing changes in how the game plays.
+- The choice is saved with the pool progress (`hand`) and used from the next time the table opens. Older saves are right-handed.
+- The power bar, spin control and fine-aim strip are now drawn above the cue, which can reach across them when aiming towards them (in either hand).
+- Tests: a `boundsOf` test hook gives an element's box, so the tests can check that the controls, buttons and table never overlap, in both languages and with New game's wide "Gusa tena kuanza upya" label showing.
+
 ## 0.13.0 (unreleased) - Catchphrases
 - Robert asked for character catchphrases in Swahili or English to match the game's language (2026-10-11). Every character, the computer's three included, has lines for three moments: potting one of theirs and playing on, the other player fouling (a friendly tease), and winning. Examples: Fundi "Kazi ya fundi hiyo!" / "That's a craftsman's work!", Mama Ntilie "Moto kama chapati!" / "Hot like a fresh chapati!", Mzee Kobe "Haraka haraka haina baraka." / "Haste brings no blessing."
 - The line shows in a white speech bubble under the speaker's name, pointing at their face, for about 3 seconds.

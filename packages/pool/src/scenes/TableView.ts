@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { BALL_ART } from '../config/art';
-import { TABLE_DEPTH, TABLE_LAYOUT } from '../config/layout';
+import { TABLE_DEPTH, TABLE_LAYOUT, type ScreenSides } from '../config/layout';
 import type { TableConfig } from '../config/table';
 import type { TableTheme } from '../config/tables';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
@@ -18,14 +18,21 @@ export class TableView {
     private readonly scene: Phaser.Scene,
     private readonly geometry: TableGeometry,
     private readonly config: TableConfig,
+    /** Left-handed players have the table moved right (`ScreenSides`). */
+    private readonly sides: ScreenSides,
   ) {}
 
+  /** Left edge of the playing area in design pixels. */
+  private get originX(): number {
+    return TABLE_LAYOUT.originX + this.sides.tableDx;
+  }
+
   toDesign(x: number, y: number): Vec2 {
-    return { x: TABLE_LAYOUT.originX + x * TABLE_LAYOUT.scale, y: TABLE_LAYOUT.originY + y * TABLE_LAYOUT.scale };
+    return { x: this.originX + x * TABLE_LAYOUT.scale, y: TABLE_LAYOUT.originY + y * TABLE_LAYOUT.scale };
   }
 
   toTable(x: number, y: number): Vec2 {
-    return { x: (x - TABLE_LAYOUT.originX) / TABLE_LAYOUT.scale, y: (y - TABLE_LAYOUT.originY) / TABLE_LAYOUT.scale };
+    return { x: (x - this.originX) / TABLE_LAYOUT.scale, y: (y - TABLE_LAYOUT.originY) / TABLE_LAYOUT.scale };
   }
 
   /** Length in metres to design pixels. */
@@ -48,7 +55,7 @@ export class TableView {
   drawTable(theme: TableTheme): void {
     const texture = tableTexture(this.scene, this.geometry, this.config, theme);
     dropOtherTableTextures(this.scene, texture.key);
-    this.scene.add.image(texture.left, texture.top, texture.key).setOrigin(0, 0).setName('table').setData('theme', theme.id);
+    this.scene.add.image(texture.left + this.sides.tableDx, texture.top, texture.key).setOrigin(0, 0).setName('table').setData('theme', theme.id);
   }
 
   /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden. */

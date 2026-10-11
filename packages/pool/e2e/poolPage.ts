@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import { bootTo, touchDrag, type PagePoint } from '../../../tooling/e2eHelpers';
-import { FINE_AIM, POWER_BAR, SPIN_CONTROL } from '../src/config/layout';
+import { POWER_BAR, SPIN_CONTROL } from '../src/config/layout';
 import type { MatchState, ShotVerdict } from '../src/rules/blackball';
 
 /** Helpers for driving the pool table in browser tests, through real touch input where a player would. */
@@ -29,6 +29,9 @@ export interface PoolState {
   trays: { potted: number; slots: number }[];
   /** The catchphrase showing and whose it is. */
   quip: { speaker: number; text: string } | null;
+  hand: 'right' | 'left';
+  /** Design-pixel centres of the spin face and fine-aim strip, and the playing area's left edge: they move for left-handed players. */
+  controls: { spin: { x: number; y: number }; fineAim: { x: number; y: number }; tableLeft: number };
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
@@ -52,6 +55,8 @@ export interface MenuState {
   table: string;
   /** The saved cue choice. */
   cue: string;
+  /** The saved hand (Settings). */
+  hand: 'right' | 'left';
   locale: string;
 }
 
@@ -209,13 +214,14 @@ async function designPoint(page: Page, x: number, y: number): Promise<PagePoint>
 
 /** Drags on the spin control from its centre to a point given in control radii (x right, y down). */
 export async function dragSpin(page: Page, x: number, y: number): Promise<void> {
-  const c = SPIN_CONTROL;
-  await touchDrag(page, await designPoint(page, c.x, c.y), await designPoint(page, c.x + x * c.radius, c.y + y * c.radius));
+  const c = (await state(page)).controls.spin;
+  const r = SPIN_CONTROL.radius;
+  await touchDrag(page, await designPoint(page, c.x, c.y), await designPoint(page, c.x + x * r, c.y + y * r));
 }
 
 /** Drags along the fine-aim strip by a distance in design pixels (+ right), starting at its centre. */
 export async function dragFineAim(page: Page, designDx: number, options: { cancel?: boolean } = {}): Promise<void> {
-  const f = FINE_AIM;
+  const f = (await state(page)).controls.fineAim;
   await touchDrag(page, await designPoint(page, f.x, f.y), await designPoint(page, f.x + designDx, f.y), { steps: 12, ...options });
 }
 

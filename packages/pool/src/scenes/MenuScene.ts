@@ -3,7 +3,7 @@ import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { AI_LEVEL_IDS } from '../config/ai';
 import { COMPUTER_CHARACTERS } from '../config/characters';
-import { BUTTON, COLORS, LOOK_PICKER, MENU, PANEL, TEXT_STYLE } from '../config/layout';
+import { BUTTON, COLORS, HANDS, LOOK_PICKER, MENU, PANEL, TEXT_STYLE } from '../config/layout';
 import type { PoolSlots } from '../progress/slots';
 import { CUE_ART, TABLE_ART } from '../config/art';
 import { CUE_IDS, CUE_STYLES, isCueId } from '../config/cues';
@@ -114,6 +114,7 @@ export class MenuScene extends Phaser.Scene {
       selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
       table: this.slots.progress.load().data.table,
       cue: this.slots.progress.load().data.cue,
+      hand: this.slots.progress.load().data.hand,
       selectedCharacter: this.setup.selectedCharacter,
       locale: this.t.locale,
     }));
@@ -205,6 +206,21 @@ export class MenuScene extends Phaser.Scene {
                 },
               },
             ],
+          },
+          {
+            // Left-handed players get the power bar and spin on the left; kept with the pool progress.
+            label: t.t('settings.hand'),
+            choices: HANDS.map((hand) => ({
+              name: `hand-${hand}`,
+              label: t.t(`hand.${hand}`),
+              highlighted: hand === this.slots.progress.load().data.hand,
+              onTap: () => {
+                const progress = this.slots.progress.load().data;
+                if (hand === progress.hand) return;
+                this.slots.progress.save({ ...progress, hand });
+                this.scene.restart({ panel: 'settings' } satisfies MenuStart);
+              },
+            })),
           },
         ],
       });

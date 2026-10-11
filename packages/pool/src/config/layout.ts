@@ -14,6 +14,40 @@ export const TABLE_LAYOUT = {
   railWidth: 34,
 } as const;
 
+/** Which side the power bar and spin control sit on (Settings, Robert's request 2026-10-11). */
+export const HANDS = ['right', 'left'] as const;
+export type Hand = (typeof HANDS)[number];
+export const DEFAULT_HAND: Hand = 'right';
+
+export function isHand(value: unknown): value is Hand {
+  return typeof value === 'string' && (HANDS as readonly string[]).includes(value);
+}
+
+/**
+ * Where things go on the table screen for a hand. Right is the layout as written in this file. Left
+ * mirrors the controls column (power bar, spin, the placeholder label) to the left edge, swaps the Menu
+ * and New game corners, and moves the table, with everything drawn on, above or below it, right by the
+ * same gap, so the screen is a mirror image. New game then grows rightwards ("Gusa tena kuanza upya"
+ * is wide), clear of the fine-aim strip.
+ */
+export interface ScreenSides {
+  readonly hand: Hand;
+  /** Added to every x on or around the table: table, balls, player panels, status, hint, fine aim, game over, panels over the table. */
+  readonly tableDx: number;
+  /** Where something in the controls column or a bottom corner (Menu, New game) goes. */
+  controlX(x: number): number;
+  /** Horizontal origin for something anchored by one edge, so it grows away from the mirrored corner. */
+  controlOriginX(originX: number): number;
+}
+
+/** `tableLength` is the playing area's length in metres. */
+export function screenSides(hand: Hand, tableLength: number): ScreenSides {
+  if (hand === 'right') return { hand, tableDx: 0, controlX: (x) => x, controlOriginX: (o) => o };
+  // The playing area spans originX .. originX + length; mirrored it starts at width - that end.
+  const tableDx = DESIGN.width - 2 * TABLE_LAYOUT.originX - tableLength * TABLE_LAYOUT.scale;
+  return { hand, tableDx, controlX: (x) => DESIGN.width - x, controlOriginX: (o) => 1 - o };
+}
+
 /** Drawing order on the table: ball shadows, balls, then the aim guide and cue above them; the HUD is above all. */
 export const TABLE_DEPTH = { shadows: 1, balls: 2, aim: 3 } as const;
 

@@ -14,6 +14,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Left-handed layout (pool) | Right-handed is the layout as written; left-handed mirrors the table and the controls column exactly, keeps them on screen and apart. Progress keeps the hand; older saves and unknown values give right-handed. |
 | Catchphrases (pool) | Every character (player and computer) has a line for each moment in Swahili and English, none longer than the bubble allows, and no lines for characters that do not exist; string tables match. The shooter speaks after a pot, the other player after a foul, the winner at the end, nobody after a miss or re-rack. Lines come at the configured chance, stay quiet for the set number of shots after a line (a win still speaks), do not repeat straight away; over 3000 pots the share stays within bounds. |
 | Tables (pool) | Six tables, each with its own felt and rail style; every new felt differs from every ball by at least 25 (CIE76) in normal, deuteranopia and protanopia vision; the check catches a red felt; only known ids accepted. Progress keeps the table; older saves and unknown tables give Klasiki. |
 | App exit | Saves, then closes; does nothing where the game cannot close itself; still closes if saving fails. |
@@ -157,6 +158,10 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 - New game on the table: Back from the characters returns to the opponents, then to the same game; a new choice starts with the chosen character and Mama Ntilie.
 - In English the computer is "Dogo Mbishi (Easy)" and the picker says "Player 1" and "Next".
 - A saved game with its characters removed (as an older version wrote it) continues with the default characters.
+
+#### Left-handed mode (2 scenarios, `hand.spec.ts`)
+- Kushoto in Settings is highlighted and saved; on the table the spin control is on the left quarter, the table moved right, Menu at the right and New game at the left. Controls never overlap the rails, buttons never overlap the fine-aim strip, everything is on screen, also with New game's confirm label. Ball in hand, aiming, fine aim, spin and the power bar all work where they now are, and the shot carries the spin.
+- In English the layout holds too; switching back to Kulia puts everything back where it was.
 
 #### Catchphrases (2 scenarios, `quips.spec.ts`)
 - Fundi wins: "Kazi imekamilika!" shows in a bubble below player 1's name, on the left half of the screen, and is gone after `QUIPS.showMs`.

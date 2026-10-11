@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { CONTROLS_ART } from '../config/art';
-import { COLORS, FINE_AIM } from '../config/layout';
+import { COLORS, FINE_AIM, HUD, type ScreenSides } from '../config/layout';
 
 /**
  * Fine-aim strip: drag along it to turn the aim a little. Tick marks slide with the finger so the
@@ -11,9 +11,13 @@ export class FineAim {
   private lastX: number | null = null;
   /** Total drag in design pixels, for drawing the ticks. */
   private offset = 0;
+  /** Centre of the strip, under the table wherever it sits. */
+  readonly x: number;
+  readonly y = FINE_AIM.y;
 
-  constructor(scene: Phaser.Scene) {
-    this.graphics = scene.add.graphics().setName('fineAim');
+  constructor(scene: Phaser.Scene, sides: ScreenSides) {
+    this.x = FINE_AIM.x + sides.tableDx;
+    this.graphics = scene.add.graphics().setName('fineAim').setDepth(HUD.depth);
     this.redraw();
   }
 
@@ -23,7 +27,7 @@ export class FineAim {
 
   hitTest(x: number, y: number): boolean {
     const f = FINE_AIM;
-    return Math.abs(x - f.x) <= f.width / 2 + f.touchPadding && Math.abs(y - f.y) <= f.height / 2 + f.touchPadding;
+    return Math.abs(x - this.x) <= f.width / 2 + f.touchPadding && Math.abs(y - f.y) <= f.height / 2 + f.touchPadding;
   }
 
   begin(x: number): void {
@@ -51,7 +55,7 @@ export class FineAim {
   private redraw(): void {
     const f = FINE_AIM;
     const g = this.graphics;
-    const left = f.x - f.width / 2;
+    const left = this.x - f.width / 2;
     g.clear();
     g.fillStyle(COLORS.fineAimTrack, 1);
     g.fillRoundedRect(left, f.y - f.height / 2, f.width, f.height, f.height / 2);
