@@ -93,14 +93,6 @@ export class MatchHud {
       .setOrigin(0.5)
       .setName('status');
     this.hint = scene.add.text(HUD.hint.x + dx, HUD.hint.y, '', text(TEXT_STYLE.hintSize, COLORS.textDim)).setOrigin(0.5).setName('hint');
-    scene.add
-      .text(sides.controlX(HUD.placeholder.x), HUD.placeholder.y, t.t('pool.placeholder'), {
-        ...text(TEXT_STYLE.labelSize, COLORS.textDim),
-        align: 'center',
-        wordWrap: { width: HUD.placeholder.wrapWidth },
-      })
-      .setOrigin(0.5)
-      .setName('placeholderLabel');
 
     const g = { ...HUD.gameOver, x: HUD.gameOver.x + dx };
     this.overPanel = scene.add.image(g.x, g.y, panelTexture(scene, g.width, g.height)).setAlpha(g.alpha).setName('gameOverPanel').setVisible(false);

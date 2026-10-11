@@ -11,7 +11,7 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Stronger computer, Impossible level, random rack (done, 0.16.0, 2026-10-11; Robert's request):** every level stronger, Bingwa (Haiwezekani) added, a different rack every game. Your own name was dropped at Robert's request (2026-10-11): players use the character names. Tables and cues are all free (Robert's choice on the card).
 - **Part B, the screens (done, 0.17.0, 2026-10-11):** a portrait for each of the 12 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
 - **Potted-ball tube (done, 0.18.0, 2026-10-11; Robert's idea):** a glass tube beside the table that potted balls roll into; table about 4% smaller to fit it. Robert dropped the 8-ball (stripes and solids) game type.
-- **Part C, store and sound:** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
+- **Part C, store and sound (done, 0.19.0, 2026-10-11):** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
 - Waiting on Robert: whether "Bingwa" is a good name for the Impossible opponent, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)

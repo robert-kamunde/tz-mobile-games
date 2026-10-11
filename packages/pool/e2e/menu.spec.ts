@@ -41,7 +41,7 @@ test('the game opens on the menu, with no Continue before a game is played', asy
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   expect(await menuState(page)).toEqual({ continueShown: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw' });
-  for (const name of ['menu-play', 'menu-tables', 'menu-cues', 'menu-stats', 'menu-rules', 'menu-settings', 'placeholderLabel']) await elementCenter(page, name, MENU_SCENE);
+  for (const name of ['menu-play', 'menu-tables', 'menu-cues', 'menu-stats', 'menu-rules', 'menu-settings', 'menu-title', 'menu-background']) await elementCenter(page, name, MENU_SCENE);
   expect(await page.evaluate(() => window.__tzg!.elementCenter('Menu', 'menu-continue'))).toBeNull();
 
   // Rules open over the menu and Back closes them.

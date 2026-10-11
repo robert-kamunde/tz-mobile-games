@@ -96,10 +96,6 @@ export class MenuScene extends Phaser.Scene {
         addButton(this, x, MENU.firstButtonY + i * MENU.buttonSpacing, { name: `menu-${item.id}`, label: t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
       });
     });
-    this.add
-      .text(MENU.placeholder.right, MENU.placeholder.y, t.t('pool.placeholder'), textStyle(TEXT_STYLE.labelSize, COLORS.textDim))
-      .setOrigin(1, 0.5)
-      .setName('placeholderLabel');
 
     this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice));
     this.looks = new LookPicker(this, PANEL.overMenu);

@@ -5,7 +5,7 @@ import { SOUND_RECIPES, SOUND_SEED, type PoolSound } from '../config/sound';
 
 const REGISTRY_KEY = 'pool.soundsLoaded';
 
-/** Renders the placeholder sounds into the sound board once per game (a few milliseconds). */
+/** Renders the synthesised sounds into the sound board once per game (a few milliseconds). */
 export function loadPoolSounds(scene: Phaser.Scene): void {
   if (scene.registry.get(REGISTRY_KEY)) return;
   const sound = getServices(scene).sound;

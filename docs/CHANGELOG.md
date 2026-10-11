@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.19.0 (unreleased) - Art Part C: icon, splash, store pictures and better sounds
+- **App icon:** a shiny 8-ball in front of a red and a yellow ball on green felt, at every Android size (square, round, and the adaptive icon's foreground inside its safe area).
+- **Splash screen:** the menu's pool bar, a little darker, with the Bongo Pool Table logo, landscape and portrait at every size.
+- **Store pictures:** a new 512 px icon; a feature graphic with the bar, the logo, "Pool ya bar, mfukoni mwako" and Malkia, Fundi and Bingwa; four new 1920x1080 screenshots (menu, how to play, the break, a match with balls in the tube). All are drawn by the game's own art code (`scripts/makeAppIcons.mjs` runs `scenes/art/storeArt.ts` in a browser), so they always match the game.
+- **Sounds, version 2:** still synthesised, now built like the real sounds: the cue is a dull "tock" with the ball's ring; a ball hitting a ball is the bright, glassy click of resin balls; a cushion is a soft rubber thump with a knock from the wooden rail; a pocket is a hollow knock, the ball rolling down to the tube, and a click as it lands on the others. The synthesiser gained delays, soft starts, high-pass noise and a rattle. Not checked by ear by Claude (it cannot listen): Robert's ears decide.
+- The "MICHORO YA MUDA" / "PLACEHOLDER ART" labels on the menu and the table are gone: every picture in the game is now drawn art.
+
 ## 0.18.0 (unreleased) - The potted-ball tube
 - Robert's idea (2026-10-11): a see-through glass tube beside the table, on the side away from the power bar (left edge normally, right edge in left-handed mode), joined to the table by a short pipe near the top corner pocket. Every potted ball (not the cue ball) rolls in along the pipe and drops onto the stack with a small bounce, so the tube shows the balls in the order they went down. The name trays stay as they were.
 - To make room the table is about 4% smaller (539 pixels per metre instead of 560) and sits a little further right; the status line, hint, fine-aim strip and panels over the table moved with it.

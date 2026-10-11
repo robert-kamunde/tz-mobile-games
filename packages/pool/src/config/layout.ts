@@ -1,6 +1,6 @@
 /**
  * Screen layout and look, in design pixels (the game is drawn at 1280x720 and scaled to fit).
- * All colours are placeholders until the art pass (docs/ASSETS.md).
+ * Art settings (textures drawn at start-up) are in config/art.ts.
  */
 export const DESIGN = { width: 1280, height: 720 } as const;
 
@@ -28,7 +28,7 @@ export function isHand(value: unknown): value is Hand {
 
 /**
  * Where things go on the table screen for a hand. Right is the layout as written in this file. Left
- * mirrors the controls column (power bar, spin, the placeholder label) to the left edge, swaps the Menu
+ * mirrors the controls column (power bar, spin) to the left edge, swaps the Menu
  * and New game corners, and moves the table, with everything drawn on, above or below it, right by the
  * same gap, so the screen is a mirror image. New game then grows rightwards ("Gusa tena kuanza upya"
  * is wide), clear of the fine-aim strip.
@@ -84,8 +84,6 @@ export const HUD = {
    * are potted. Sits between the name and the top rail (rail starts at y 70).
    */
   tray: { y: 60, ballRadius: 9, spacing: 22, emptyAlpha: 0.35, outlineWidth: 1.5 },
-  /** "Placeholder art" label, in two lines under the power bar. */
-  placeholder: { x: 1190, y: 626, wrapWidth: 150 },
   /** Menu button, bottom left (anchored by its left edge). */
   menu: { left: 12, y: DESIGN.height - 30 },
   /** Between the bottom rail (ends at y 631) and the fine-aim strip. */
@@ -185,8 +183,6 @@ export const MENU = {
   pairGap: 16,
   /** A row of three (Meza, Fimbo, Mandhari) is wider than one button so each label fits. */
   tripleRowWidth: 620,
-  /** "Placeholder art" label, bottom right (anchored by its right edge). */
-  placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;
 
 /**

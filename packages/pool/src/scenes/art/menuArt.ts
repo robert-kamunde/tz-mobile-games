@@ -422,7 +422,7 @@ export function drawLogo(ctx: CanvasRenderingContext2D, w: number, title: string
   ctx.textAlign = 'start';
 }
 
-function eightBall(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
+export function eightBall(ctx: CanvasRenderingContext2D, x: number, y: number, r: number): void {
   const B = LOGO_ART.ball;
   ctx.fillStyle = LOGO_ART.word.stroke;
   ctx.beginPath();

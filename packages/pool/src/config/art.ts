@@ -200,3 +200,30 @@ export const TUBE_ART = {
   /** Pipe between the tube and the table rail runs this far into the rail. */
   pipeOverlap: 8,
 } as const;
+
+/**
+ * App icon, splash screens and store pictures (Part C), drawn by `scenes/art/storeArt.ts` with the
+ * game's own drawing code and saved by `scripts/makeAppIcons.mjs`.
+ */
+export const STORE_ART = {
+  /** Felt behind the icon's balls; the adaptive icon's background colour matches the edge. */
+  felt: { light: '#2a8f55', dark: '#1d5c3a' },
+  iconCorner: 0.18,
+  /** Balls on the icon, as fractions of its size: the 8-ball in front, a red and a yellow behind. */
+  iconBalls: { eight: { x: 0.5, y: 0.56, r: 0.25 }, red: { x: 0.27, y: 0.36, r: 0.17 }, yellow: { x: 0.73, y: 0.36, r: 0.17 } },
+  /** The adaptive icon's foreground must keep to the middle 66 of 108 dp. */
+  foregroundScale: 0.58,
+  ballShadow: 'rgba(0, 0, 0, 0.35)',
+  /** Splash: the menu's bar, darkened, with the logo over it. */
+  splashShade: 'rgba(0, 0, 0, 0.35)',
+  /** Logo box width as a fraction of the screen width (the lettering fills about two thirds of the box). */
+  splashLogoWidth: { landscape: 0.7, portrait: 1.25 },
+  feature: {
+    tagline: 'Pool ya bar, mfukoni mwako',
+    taglineColor: '#ffffff',
+    logoWidth: 0.52,
+    /** Characters shown on the right of the feature graphic. */
+    faces: ['malkia', 'fundi', 'bingwa'],
+    faceRadius: 0.17,
+  },
+} as const;

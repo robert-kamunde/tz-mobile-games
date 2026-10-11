@@ -1,48 +1,59 @@
 import type { SoundRecipe } from '@tzg/core';
 
 /**
- * Placeholder sound effects, synthesised at start-up (docs/ASSETS.md). Replace with recordings in
- * the sound pass; the names stay the same.
+ * Sound effects, synthesised at start-up (docs/ASSETS.md); recordings may replace them later under the
+ * same names. Version 2 (Part C, 0.19.0): each sound is built like the real thing, from a few short
+ * ringing modes, band-limited noise for the contact, and soft starts so nothing clicks harshly.
  */
 export type PoolSound = 'cue' | 'ball' | 'cushion' | 'pocket';
 
 export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
-  // Leather tip on the cue ball: a short dull tick.
+  // Leather tip on the cue ball: a dull "tock". A low wooden body, the ball's own ring, a soft scuff.
   cue: {
-    seconds: 0.05,
+    seconds: 0.07,
     peak: 0.7,
     layers: [
-      { kind: 'tone', startHz: 950, endHz: 700, decay: 0.008, level: 1 },
-      { kind: 'noise', cutoffHz: 3000, decay: 0.006, level: 0.8 },
+      { kind: 'tone', startHz: 760, endHz: 620, decay: 0.012, level: 1, attack: 0.0006 },
+      { kind: 'tone', startHz: 1480, endHz: 1400, decay: 0.006, level: 0.35, attack: 0.0006 },
+      { kind: 'tone', startHz: 3300, endHz: 3250, decay: 0.004, level: 0.25 },
+      { kind: 'noise', cutoffHz: 4000, highHz: 900, decay: 0.004, level: 0.7, attack: 0.0004 },
     ],
   },
-  // Ball on ball: a bright click.
+  // Ball on ball: the bright, glassy click of resin balls, a few ringing modes that die away fast.
   ball: {
-    seconds: 0.06,
+    seconds: 0.08,
     peak: 0.8,
     layers: [
-      { kind: 'tone', startHz: 2600, endHz: 2450, decay: 0.012, level: 1 },
-      { kind: 'tone', startHz: 4100, endHz: 4000, decay: 0.006, level: 0.4 },
-      { kind: 'noise', cutoffHz: 7000, decay: 0.003, level: 0.7 },
+      { kind: 'tone', startHz: 3650, endHz: 3600, decay: 0.014, level: 1 },
+      { kind: 'tone', startHz: 5900, endHz: 5850, decay: 0.008, level: 0.45 },
+      { kind: 'tone', startHz: 8300, endHz: 8250, decay: 0.004, level: 0.2 },
+      { kind: 'tone', startHz: 1150, endHz: 1100, decay: 0.005, level: 0.3 },
+      { kind: 'noise', cutoffHz: 9000, highHz: 2000, decay: 0.0018, level: 0.8 },
     ],
   },
-  // Ball on cushion: a soft low thud.
+  // Ball on cushion: a soft rubber thump with a little knock from the wooden rail behind it.
   cushion: {
-    seconds: 0.12,
+    seconds: 0.15,
     peak: 0.7,
     layers: [
-      { kind: 'tone', startHz: 150, endHz: 110, decay: 0.04, level: 1 },
-      { kind: 'noise', cutoffHz: 900, decay: 0.02, level: 0.6 },
+      { kind: 'tone', startHz: 190, endHz: 120, decay: 0.035, level: 1, attack: 0.002 },
+      { kind: 'tone', startHz: 410, endHz: 380, decay: 0.012, level: 0.4, attack: 0.001 },
+      { kind: 'noise', cutoffHz: 1300, highHz: 120, decay: 0.012, level: 0.6, attack: 0.001 },
     ],
   },
-  // Ball dropping into a pocket: a hollow knock and a short rumble.
+  // Into a pocket and the return: a hollow wooden knock, the ball rolling down the pipe, and the
+  // click as it lands on the balls already in the tube.
   pocket: {
-    seconds: 0.3,
+    seconds: 0.5,
     peak: 0.8,
     layers: [
-      { kind: 'tone', startHz: 230, endHz: 160, decay: 0.05, level: 1 },
-      { kind: 'tone', startHz: 95, endHz: 70, decay: 0.12, level: 0.8 },
-      { kind: 'noise', cutoffHz: 500, decay: 0.08, level: 0.5 },
+      { kind: 'tone', startHz: 270, endHz: 190, decay: 0.04, level: 1, attack: 0.001 },
+      { kind: 'tone', startHz: 540, endHz: 500, decay: 0.014, level: 0.4, attack: 0.001 },
+      { kind: 'noise', cutoffHz: 700, highHz: 80, decay: 0.03, level: 0.5, attack: 0.001 },
+      { kind: 'noise', cutoffHz: 900, highHz: 180, decay: 0.12, level: 0.28, delay: 0.07, attack: 0.04, tremoloHz: 26 },
+      { kind: 'tone', startHz: 3500, endHz: 3450, decay: 0.012, level: 0.45, delay: 0.36 },
+      { kind: 'tone', startHz: 5700, endHz: 5650, decay: 0.006, level: 0.2, delay: 0.36 },
+      { kind: 'noise', cutoffHz: 8000, highHz: 2000, decay: 0.0015, level: 0.35, delay: 0.36 },
     ],
   },
 };

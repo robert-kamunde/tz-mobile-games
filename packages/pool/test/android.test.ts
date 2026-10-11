@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import capacitorConfig from '../capacitor.config';
+import { STORE_ART } from '../src/config/art';
 import { COLORS } from '../src/config/layout';
 import { defaultTips, validateTips } from '../src/progress/tips';
 
@@ -39,7 +40,7 @@ describe('Android project', () => {
   it('is landscape only, with the game name', () => {
     expect(read('android/app/src/main/AndroidManifest.xml')).toContain('android:screenOrientation="sensorLandscape"');
     expect(capacitorConfig.appName).toBe('Bongo Pool Table');
-    expect(read('scripts/makeAppIcons.mjs')).toContain("const GAME_NAME = 'Bongo Pool Table';");
+    expect(read('src/scenes/art/storeArt.ts')).toContain("const GAME_NAME = 'Bongo Pool Table';");
     expect(read(`${res}/values/strings.xml`)).toContain('<string name="app_name">Bongo Pool Table</string>');
   });
 
@@ -63,7 +64,8 @@ describe('Android project', () => {
     expect(launch).toContain('<item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>');
     expect(read(`${res}/values/splash.xml`)).toContain(`<color name="splash_background">${COLORS.background}</color>`);
     expect(capacitorConfig.backgroundColor).toBe(COLORS.background);
-    expect(read('scripts/makeAppIcons.mjs')).toContain(`const DARK = '${COLORS.background}';`);
+    // The adaptive icon's background colour is the edge of the icon's felt.
+    expect(read(`${res}/values/ic_launcher_background.xml`).toLowerCase()).toContain(`>${STORE_ART.felt.dark}<`);
     expect(pngSize('store/feature-graphic-1024x500.png')).toEqual([1024, 500]);
   });
 });

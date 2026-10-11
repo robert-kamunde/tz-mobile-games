@@ -53,9 +53,9 @@ Made for everyday Android phones.
 
 | Asset | Requirement | File | Status |
 |---|---|---|---|
-| App icon | 512x512 PNG, 32-bit | `packages/pool/store/icon-512.png` | Placeholder (ASSETS.md) |
-| Feature graphic | 1024x500 PNG or JPG | `packages/pool/store/feature-graphic-1024x500.png` | Placeholder |
-| Phone screenshots | 2 to 8, 16:9, 320 to 3840 px per side | `packages/pool/store/screenshots/1-menu.png` … `4-match.png` (1920x1080) | Taken from the game with placeholder art; retake after the art pass |
+| App icon | 512x512 PNG, 32-bit | `packages/pool/store/icon-512.png` | Final v1 (Claude, 0.19.0): an 8-ball in front of a red and a yellow on felt |
+| Feature graphic | 1024x500 PNG or JPG | `packages/pool/store/feature-graphic-1024x500.png` | Final v1 (Claude, 0.19.0): the menu's bar, the logo, "Pool ya bar, mfukoni mwako" and three characters |
+| Phone screenshots | 2 to 8, 16:9, 320 to 3840 px per side | `packages/pool/store/screenshots/1-menu.png` … `4-match.png` (1920x1080) | Taken from the game with the final v1 art (0.19.0) by a temporary browser test at 1920x1080: menu, how to play, the break, mid-match with the tube |
 
 The icon and feature graphic are drawn by `npm run icons -w @tzg/pool`.
 

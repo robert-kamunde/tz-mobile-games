@@ -8,10 +8,11 @@ import { TABLE, cueAt, objectBall, rackedSim, simWith } from './helpers';
 const ball = (step: number, speed: number): ShotEvent => ({ type: 'ball', step, a: 0, b: 1, speed });
 const cushion = (step: number, speed: number): ShotEvent => ({ type: 'cushion', step, ball: 1, speed });
 
-describe('placeholder sounds', () => {
+describe('sound effects', () => {
   it.each(Object.keys(SOUND_RECIPES) as PoolSound[])('%s is short, audible, never clips and is the same every time', (name) => {
     const s = renderSound(SOUND_RECIPES[name], 44_100, SOUND_SEED);
-    expect(s.length / 44_100).toBeLessThanOrEqual(0.3);
+    // Short, so the sounds take little memory (the pocket sound holds the roll into the tube).
+    expect(s.length / 44_100).toBeLessThanOrEqual(name === 'pocket' ? 0.5 : 0.15);
     const peak = s.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
     expect(peak).toBeGreaterThan(0.5);
     expect(peak).toBeLessThanOrEqual(1);

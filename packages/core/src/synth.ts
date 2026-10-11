@@ -1,11 +1,19 @@
 import { createRandom } from './random';
 
 /**
- * Tiny sound synthesiser for placeholder sound effects: a sum of decaying tones and filtered noise
- * bursts, rendered once into samples. Deterministic (seeded noise), so a sound is identical on every
- * device and in tests. Placeholders only, until recorded sounds exist (docs/ASSETS.md).
+ * Tiny sound synthesiser for sound effects: a sum of decaying tones and filtered noise bursts,
+ * rendered once into samples. Deterministic (seeded noise), so a sound is identical on every device
+ * and in tests. Every layer can start late (`delay`) and fade in (`attack`), so one recipe can hold a
+ * short sequence, such as a knock, a roll and a click.
  */
-export interface ToneLayer {
+interface LayerTiming {
+  /** When the layer starts, seconds from the start of the sound. Default 0. */
+  readonly delay?: number;
+  /** Fade-in time, seconds; a hard start sounds like a click. Default 0. */
+  readonly attack?: number;
+}
+
+export interface ToneLayer extends LayerTiming {
   readonly kind: 'tone';
   /** Start and end frequency, Hz (a linear sweep; equal for a steady pitch). */
   readonly startHz: number;
@@ -15,10 +23,14 @@ export interface ToneLayer {
   readonly level: number;
 }
 
-export interface NoiseLayer {
+export interface NoiseLayer extends LayerTiming {
   readonly kind: 'noise';
   /** One-pole low-pass cut-off, Hz. */
   readonly cutoffHz: number;
+  /** Optional one-pole high-pass cut-off, Hz: removes the low rumble, for a crisper burst. */
+  readonly highHz?: number;
+  /** Optional wobble in loudness, Hz: a rolling ball's rattle. */
+  readonly tremoloHz?: number;
   readonly decay: number;
   readonly level: number;
 }
@@ -39,21 +51,35 @@ export function renderSound(recipe: SoundRecipe, sampleRate: number, seed: numbe
   const out = new Float32Array(length);
   const random = createRandom(seed);
   for (const layer of recipe.layers) {
+    const start = Math.round((layer.delay ?? 0) * sampleRate);
+    const attack = (layer.attack ?? 0) * sampleRate;
+    const envelope = (i: number, decay: number) => {
+      const t = i / sampleRate;
+      return Math.exp(-t / decay) * (attack > 0 && i < attack ? i / attack : 1);
+    };
     if (layer.kind === 'tone') {
       let phase = 0;
-      for (let i = 0; i < length; i++) {
-        const t = i / sampleRate;
+      for (let i = 0; i + start < length; i++) {
         const hz = layer.startHz + ((layer.endHz - layer.startHz) * i) / length;
         phase += (2 * Math.PI * hz) / sampleRate;
-        out[i]! += layer.level * Math.exp(-t / layer.decay) * Math.sin(phase);
+        out[i + start]! += layer.level * envelope(i, layer.decay) * Math.sin(phase);
       }
     } else {
       const a = 1 - Math.exp((-2 * Math.PI * layer.cutoffHz) / sampleRate);
+      const h = layer.highHz ? Math.exp((-2 * Math.PI * layer.highHz) / sampleRate) : 0;
       let filtered = 0;
-      for (let i = 0; i < length; i++) {
-        const t = i / sampleRate;
+      let lowPrev = 0;
+      let high = 0;
+      for (let i = 0; i + start < length; i++) {
         filtered += a * (random.next() * 2 - 1 - filtered);
-        out[i]! += layer.level * Math.exp(-t / layer.decay) * filtered;
+        let v = filtered;
+        if (layer.highHz) {
+          high = h * (high + filtered - lowPrev);
+          lowPrev = filtered;
+          v = high;
+        }
+        const wobble = layer.tremoloHz ? 0.5 + 0.5 * Math.sin((2 * Math.PI * layer.tremoloHz * i) / sampleRate) : 1;
+        out[i + start]! += layer.level * envelope(i, layer.decay) * wobble * v;
       }
     }
   }
