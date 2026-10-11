@@ -1,6 +1,8 @@
 import * as Phaser from 'phaser';
 import { COLORS, SPIN_CONTROL, TEXT_STYLE } from '../config/layout';
 import { CENTRE_TIP, controlFromTip, tipFromControl, type TipOffset } from '../controls/spin';
+import { ballTexture } from './art/ballArt';
+import { spinTipTexture } from './art/controlsArt';
 import { textStyle } from './ui';
 
 /**
@@ -8,9 +10,9 @@ import { textStyle } from './ui';
  * The scene routes touches here and reads `tip` when the shot is played.
  */
 export class SpinControl {
-  private readonly face: Phaser.GameObjects.Arc;
+  private readonly face: Phaser.GameObjects.Image;
   private readonly cross: Phaser.GameObjects.Graphics;
-  private readonly dot: Phaser.GameObjects.Arc;
+  private readonly dot: Phaser.GameObjects.Image;
   private value: TipOffset = CENTRE_TIP;
 
   constructor(
@@ -23,12 +25,13 @@ export class SpinControl {
       .text(c.x, c.y - c.radius - c.labelGap, labelText, textStyle(TEXT_STYLE.labelSize))
       .setOrigin(0.5)
       .setName('spinLabel');
-    this.face = scene.add.circle(c.x, c.y, c.radius, COLORS.ball.cue).setStrokeStyle(1.5, COLORS.ballOutline, 0.6).setName('spinControl');
+    // The face is the cue ball as drawn on the table, only larger.
+    this.face = scene.add.image(c.x, c.y, ballTexture(scene, 'cue', c.radius)).setName('spinControl');
     this.cross = scene.add.graphics().setName('spinCross');
     this.cross.lineStyle(1, COLORS.spinCross, c.crossAlpha);
     this.cross.lineBetween(c.x - c.radius, c.y, c.x + c.radius, c.y);
     this.cross.lineBetween(c.x, c.y - c.radius, c.x, c.y + c.radius);
-    this.dot = scene.add.circle(c.x, c.y, c.dotRadius, COLORS.spinDot).setName('spinDot');
+    this.dot = scene.add.image(c.x, c.y, spinTipTexture(scene, c.dotRadius)).setName('spinDot');
   }
 
   get tip(): TipOffset {

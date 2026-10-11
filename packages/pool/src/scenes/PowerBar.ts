@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { COLORS, POWER_BAR, TEXT_STYLE } from '../config/layout';
+import { powerFillTexture, powerHandleTexture, powerTrackTexture } from './art/controlsArt';
 
 /**
  * Vertical pull-back power control. Touch the bar, drag down to set power, let go to shoot.
@@ -7,16 +8,19 @@ import { COLORS, POWER_BAR, TEXT_STYLE } from '../config/layout';
  * scene decides what a release means.
  */
 export class PowerBar {
-  private readonly graphics: Phaser.GameObjects.Graphics;
-  private readonly handle: Phaser.GameObjects.Rectangle;
+  private readonly track: Phaser.GameObjects.Image;
+  private readonly fill: Phaser.GameObjects.Image;
+  private readonly handle: Phaser.GameObjects.Image;
   private readonly label: Phaser.GameObjects.Text;
   private dragStartY: number | null = null;
   private value = 0;
 
   constructor(scene: Phaser.Scene, labelText: string) {
-    this.graphics = scene.add.graphics().setName('powerTrack');
+    const left = POWER_BAR.x - POWER_BAR.width / 2;
+    this.track = scene.add.image(left, POWER_BAR.top, powerTrackTexture(scene)).setOrigin(0, 0).setName('powerTrack');
+    this.fill = scene.add.image(left, POWER_BAR.top, powerFillTexture(scene)).setOrigin(0, 0).setName('powerFill');
     this.handle = scene.add
-      .rectangle(POWER_BAR.x, POWER_BAR.top, POWER_BAR.width + 12, POWER_BAR.handleHeight, COLORS.powerHandle)
+      .image(POWER_BAR.x, POWER_BAR.top, powerHandleTexture(scene, POWER_BAR.width + POWER_BAR.handleOverhang, POWER_BAR.handleHeight))
       .setName('powerHandle');
     this.label = scene.add
       .text(POWER_BAR.x, POWER_BAR.top - 30, labelText, { fontFamily: TEXT_STYLE.fontFamily, fontSize: TEXT_STYLE.labelSize, color: COLORS.text })
@@ -37,9 +41,8 @@ export class PowerBar {
   }
 
   setEnabled(enabled: boolean): void {
-    const alpha = enabled ? 1 : 0.35;
-    this.graphics.setAlpha(alpha);
-    this.handle.setAlpha(alpha);
+    const alpha = enabled ? 1 : POWER_BAR.disabledAlpha;
+    for (const o of [this.track, this.fill, this.handle]) o.setAlpha(alpha);
   }
 
   /** True if a design-pixel point should grab the bar. */
@@ -89,13 +92,8 @@ export class PowerBar {
   }
 
   private redraw(): void {
-    const g = this.graphics;
-    const left = POWER_BAR.x - POWER_BAR.width / 2;
-    g.clear();
-    g.fillStyle(COLORS.powerTrack, 1);
-    g.fillRect(left, POWER_BAR.top, POWER_BAR.width, POWER_BAR.height);
-    g.fillStyle(COLORS.powerFill, 1);
-    g.fillRect(left, POWER_BAR.top, POWER_BAR.width, POWER_BAR.height * this.value);
+    // The fill shows as far as the pull: green for a gentle shot, red at full power.
+    this.fill.setCrop(0, 0, POWER_BAR.width, POWER_BAR.height * this.value);
     this.handle.setY(POWER_BAR.top + POWER_BAR.height * this.value);
   }
 }

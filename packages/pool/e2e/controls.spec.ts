@@ -39,9 +39,8 @@ test('the spin dot sets where the cue strikes: topspin follows, backspin draws, 
     await expect.poll(async () => (await state(page)).shots).toBe(shots + 1);
     const played = (await state(page)).lastShot!;
     expect(played.height).toBeCloseTo(-dy * MAX, 2);
-    // Reset as soon as the shot is played; touching the control while balls roll changes nothing.
-    expect((await state(page)).spin).toEqual({ side: 0, height: 0 });
-    await dragSpin(page, 1, 0);
+    // Reset as soon as the shot is played. (This shot is too short to test touching the control
+    // while balls roll: on a busy machine they can stop first. The next test does that on a break.)
     expect((await state(page)).spin).toEqual({ side: 0, height: 0 });
 
     const settled = await waitUntilSettled(page);
@@ -52,6 +51,22 @@ test('the spin dot sets where the cue strikes: topspin follows, backspin draws, 
   expect(results.follow!.verdict).toEqual({ kind: 'foul', reason: 'cue-ball-potted' });
   expect(results.draw!.verdict).toEqual({ kind: 'continue' });
   expect(results.draw!.cueDistance).toBeGreaterThan(LEN + 0.2);
+  expect(errors).toEqual([]);
+});
+
+test('touching the spin control while the balls roll changes nothing', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  const shots = (await state(page)).shots;
+  await pullPower(page, 1);
+  await expect.poll(async () => (await state(page)).shots).toBe(shots + 1);
+  await dragSpin(page, 1, 0);
+  const after = await state(page);
+  // A full-power break rolls for seconds; still moving after the touch proves it landed mid-roll.
+  expect(after.moving).toBe(true);
+  expect(after.spin).toEqual({ side: 0, height: 0 });
+  await waitUntilSettled(page);
+  expect((await state(page)).spin).toEqual({ side: 0, height: 0 });
   expect(errors).toEqual([]);
 });
 

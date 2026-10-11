@@ -1,17 +1,20 @@
 import * as Phaser from 'phaser';
-import { COLORS, TABLE_LAYOUT } from '../config/layout';
+import { BALL_ART, TABLE_ART } from '../config/art';
+import { TABLE_DEPTH, TABLE_LAYOUT } from '../config/layout';
 import type { TableConfig } from '../config/table';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
+import { ballShadowTexture, ballTexture } from './art/ballArt';
+import { canvasTexture } from './art/canvasArt';
+import { drawTable, type TableFrame } from './art/tableArt';
 
 const TABLE_TEXTURE = 'pool-table';
-const BALL_OUTLINE = 1.5;
 
 /**
- * Draws the table and balls. Placeholder art: flat shapes only (docs/ASSETS.md).
+ * Draws the table and balls with the drawn art (Milestone 9, `scenes/art/`).
  * Owns the conversion between table metres and design pixels.
  */
 export class TableView {
-  private readonly ballSprites = new Map<number, Phaser.GameObjects.Image>();
+  private readonly ballSprites = new Map<number, { ball: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image }>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -41,80 +44,47 @@ export class TableView {
   }
 
   /**
-   * Draws the static table once into a texture. Phaser rebuilds Graphics geometry every frame,
-   * so static art is not left as live Graphics (ARCHITECTURE A12).
+   * Draws the static table once into a texture (ARCHITECTURE A12): Phaser rebuilds Graphics
+   * geometry every frame, so static art is never left as live Graphics.
    */
   drawTable(): void {
     const topLeft = this.toDesign(0, 0);
-    const w = this.px(this.geometry.length);
-    const h = this.px(this.geometry.width);
     const rail = TABLE_LAYOUT.railWidth;
-    // Texture space: the outer edge of the rail is (0, 0).
-    const left = topLeft.x - rail;
-    const top = topLeft.y - rail;
-    const at = (x: number, y: number) => {
-      const p = this.toDesign(x, y);
-      return { x: p.x - left, y: p.y - top };
+    const margin = TABLE_ART.shadow.margin;
+    const outerW = this.px(this.geometry.length) + 2 * rail;
+    const outerH = this.px(this.geometry.width) + 2 * rail;
+    // Texture space: the outer edge of the rail is (margin, margin); the margin holds the shadow.
+    const left = topLeft.x - rail - margin;
+    const top = topLeft.y - rail - margin;
+    const frame: TableFrame = {
+      at: (x, y) => {
+        const p = this.toDesign(x, y);
+        return { x: p.x - left, y: p.y - top };
+      },
+      px: (m) => this.px(m),
+      outer: { x: margin, y: margin, width: outerW, height: outerH },
+      railWidth: rail,
     };
-
-    const g = this.scene.make.graphics({}, false);
-    g.fillStyle(COLORS.rail, 1);
-    g.fillRect(0, 0, w + 2 * rail, h + 2 * rail);
-    g.fillStyle(COLORS.cloth, 1);
-    g.fillRect(rail, rail, w, h);
-
-    // Pocket openings: dark areas behind each mouth, drawn generously so the jaws read clearly.
-    g.fillStyle(COLORS.pocket, 1);
-    const pocketRadius = this.px(Math.max(this.config.cornerMouth, this.config.middleMouth) / 2 + this.config.dropRadius / 2);
-    for (const pocket of this.geometry.pockets) {
-      const c = at(pocket.center.x, pocket.center.y);
-      g.fillCircle(c.x, c.y, pocketRadius);
-    }
-
-    // Cushion noses and jaws, as the physics sees them.
-    g.lineStyle(4, COLORS.cushion, 1);
-    for (const s of this.geometry.cushions) {
-      const a = at(s.a.x, s.a.y);
-      const b = at(s.b.x, s.b.y);
-      g.lineBetween(a.x, a.y, b.x, b.y);
-    }
-
-    g.lineStyle(1, COLORS.baulkLine, 0.35);
-    const baulk = at(this.config.baulkLine, 0);
-    g.lineBetween(baulk.x, baulk.y, baulk.x, baulk.y + h);
-
-    g.generateTexture(TABLE_TEXTURE, Math.ceil(w + 2 * rail), Math.ceil(h + 2 * rail));
-    g.destroy();
+    canvasTexture(this.scene, TABLE_TEXTURE, outerW + 2 * margin, outerH + 2 * margin, (ctx) => drawTable(ctx, frame, this.geometry, this.config));
     this.scene.add.image(left, top, TABLE_TEXTURE).setOrigin(0, 0).setName('table');
   }
 
-  /** Creates or refreshes ball sprites. Pocketed balls are hidden. */
+  /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden. */
   syncBalls(balls: readonly Ball[]): void {
+    const s = BALL_ART.shadow;
     for (const ball of balls) {
-      let sprite = this.ballSprites.get(ball.id);
-      if (!sprite) {
-        sprite = this.scene.add.image(0, 0, this.ballTexture(ball)).setName(`ball-${ball.id}`);
-        this.ballSprites.set(ball.id, sprite);
+      let sprites = this.ballSprites.get(ball.id);
+      if (!sprites) {
+        const radius = this.px(ball.radius);
+        sprites = {
+          shadow: this.scene.add.image(0, 0, ballShadowTexture(this.scene, radius)).setDepth(TABLE_DEPTH.shadows),
+          ball: this.scene.add.image(0, 0, ballTexture(this.scene, ball.kind, radius)).setName(`ball-${ball.id}`).setDepth(TABLE_DEPTH.balls),
+        };
+        this.ballSprites.set(ball.id, sprites);
       }
       const p = this.toDesign(ball.x, ball.y);
-      sprite.setPosition(p.x, p.y);
-      sprite.setVisible(!ball.pocketed);
+      sprites.ball.setPosition(p.x, p.y).setVisible(!ball.pocketed);
+      sprites.shadow.setPosition(p.x + s.offsetX, p.y + s.offsetY).setVisible(!ball.pocketed);
     }
-  }
-
-  /** One small texture per ball kind and size, drawn once. */
-  private ballTexture(ball: Ball): string {
-    const radius = this.px(ball.radius);
-    const key = `ball-${ball.kind}-${radius.toFixed(2)}`;
-    if (this.scene.textures.exists(key)) return key;
-    const size = Math.ceil(2 * radius + 2 * BALL_OUTLINE);
-    const g = this.scene.make.graphics({}, false);
-    g.fillStyle(COLORS.ball[ball.kind], 1);
-    g.fillCircle(size / 2, size / 2, radius);
-    g.lineStyle(BALL_OUTLINE, COLORS.ballOutline, 0.6);
-    g.strokeCircle(size / 2, size / 2, radius);
-    g.generateTexture(key, size, size);
-    g.destroy();
-    return key;
   }
 }

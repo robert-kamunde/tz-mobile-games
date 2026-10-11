@@ -98,10 +98,11 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; pulling the power bar meanwhile does nothing; choosing two players restores "Mchezaji" names. |
 | Frame budget | 6x CPU throttle: average CPU per frame while Hard thinks minus the same table while the player aims stays under the 6 ms thinking budget plus 6 ms; Hard still shoots (time limit). |
 
-#### Spin and fine aim (3 scenarios, `controls.spec.ts`)
+#### Spin and fine aim (4 scenarios, `controls.spec.ts`)
 | Scenario | Checks |
 |---|---|
-| Spin | Dragging the dot to the top and bottom sets topspin and backspin, and the shot is played with it; the dot is back at the centre as soon as the shot is played and ignores touches while balls roll. On the same pot, topspin makes the cue ball follow the red into the pocket (foul) and backspin brings it back past where it started. |
+| Spin | Dragging the dot to the top and bottom sets topspin and backspin, and the shot is played with it; the dot is back at the centre as soon as the shot is played. On the same pot, topspin makes the cue ball follow the red into the pocket (foul) and backspin brings it back past where it started. |
+| Spin while rolling | During a full-power break, a spin drag changes nothing; the balls are checked to still be moving after the drag, so the touch really landed mid-roll. |
 | Fine aim | 200 design pixels turn the aim clockwise by 190 to 210 times the per-pixel angle; dragging back returns it; a cancelled touch never shoots and the strip still works after it. |
 | Computer's turn | Spin and fine aim drags change nothing while the computer thinks, and it plays a centre-ball shot. |
 
@@ -167,6 +168,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-11 | 0.8.1 (device) | n/a | n/a | n/a | Robert rebuilt 0.8.1 and checked it on the ZTE Blade A35 (Android 14): "all looks good". Splash, back button and landscape lock now confirmed alongside full screen, icon, saves and sound. |
 | 2026-10-11 | 8 | pass | 210/210 (+2 ladder tests skipped) | pool 141/144, then the menu tests 24/24 and screenshots rerun (shell unchanged) | Characters. The first full run failed one menu test on all three sizes: its expected menu probe lacked the new `selectedCharacter` field (test updated; rerun of the menu tests passed). Two planted bugs: player 2 allowed to take player 1's character (caught); characters shown but not saved after Continue (missed at first because the names on screen were right, so a second reopen was added to the test, which then caught it). Screenshots of the picker and table at three sizes checked: grid, names and buttons fit; the computer's name fits the right-hand panel. |
 | 2026-10-11 | 8.1 | pass | 210/210 | pool match and characters tests 39/39 | Ball count removed from the player names. The tray test now checks the names have no count; it fails on 0.9.0 and passes on 0.9.1. |
+| 2026-10-11 | 9A | pass | 210/210 (+2 ladder tests skipped) | pool 147/147 + shell 33/33 on the second run | Table art. First full run: 141/144; the spin test failed on all three sizes because its touch "while balls roll" came after a short shot had already stopped. It fails the same way on 0.9.1 under load, so a test timing fault, not the art; that check now runs on a full-power break and proves the balls are still moving. Break at 6x CPU throttle: 1.7 to 2.6 ms average CPU per frame (max 5.1 ms). Power-bar fill checked on a mid-pull screenshot; red/yellow checked on deuteranopia and protanopia simulations. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)

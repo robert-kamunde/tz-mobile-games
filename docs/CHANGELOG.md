@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 (unreleased) - Milestone 9 Part A: table art
+- Robert chose "Claude now, designer later" for the art (2026-10-11). This is the first of three parts: the table and its controls.
+- Table: wooden rails with grain and diamond markers, a cushion strip, felt with a soft sheen and speckle, pockets with depth and cushion jaws, a shadow under the table.
+- Balls are shaded with a highlight and shine, and cast a soft shadow on the felt.
+- Colour-blind help: red balls carry a white spot, so red and yellow can be told apart without colour. Checked on a simulation of the two common kinds of red-green colour blindness.
+- The cue is a tapered wooden cue (blue tip, white ferrule, light shaft, dark butt with a grip wrap) with a shadow, instead of a line.
+- Power bar: a rounded track, a green-to-red fill and a ridged handle. Spin control: a shaded cue-ball face with a red tip marker. Fine-aim strip: a darker track with a border.
+- All of it is drawn by the game when it starts (Canvas 2D textures, A24); no image files were added, so the download size is unchanged. A designer can later replace any of these with an image.
+
 ## 0.9.1 (unreleased) - No ball count next to the names
 - The player panels show only the character's name. The number of balls left is gone (Robert, 2026-10-11): the tray under each name already shows it.
 - Robert approved the character names.

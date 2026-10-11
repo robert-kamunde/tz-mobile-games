@@ -10,27 +10,20 @@ export const TABLE_LAYOUT = {
   /** Top-left corner of the playing area (cushion noses). */
   originX: 58,
   originY: 104,
-  /** Wooden rail drawn around the cushions. */
+  /** Wooden rail drawn around the cushions (the cushion strip is the inner part of it, config/art.ts). */
   railWidth: 34,
 } as const;
 
+/** Drawing order on the table: ball shadows, balls, then the aim guide and cue above them; the HUD is above all. */
+export const TABLE_DEPTH = { shadows: 1, balls: 2, aim: 3 } as const;
+
 export const COLORS = {
   background: '#101418',
-  rail: 0x5b3a1e,
-  cloth: 0x1d6b3a,
-  cushion: 0x15502b,
-  pocket: 0x050505,
-  baulkLine: 0xffffff,
   ball: { cue: 0xf5f5f0, red: 0xc62828, yellow: 0xf2c94c, black: 0x111111 },
   ballOutline: 0x000000,
   aimLine: 0xffffff,
-  cue: 0xd9b38c,
-  powerTrack: 0x2a2f36,
-  powerFill: 0xf2994a,
-  powerHandle: 0xffffff,
-  spinDot: 0xc62828,
   spinCross: 0x101418,
-  fineAimTrack: 0x2a2f36,
+  fineAimTrack: 0x1c2228,
   fineAimTick: 0xb8c2bd,
   text: '#ffffff',
   textDim: '#b8c2bd',
@@ -143,6 +136,9 @@ export const POWER_BAR = {
   height: 340,
   width: 44,
   handleHeight: 26,
+  /** The handle is this much wider than the bar, so it is easy to see under a thumb. */
+  handleOverhang: 12,
+  disabledAlpha: 0.35,
   /** Releasing below this fraction cancels the shot instead of playing a feeble one. */
   cancelBelow: 0.04,
   /** Extra touch area around the bar, so it is easy to grab on a small phone. */
@@ -192,7 +188,6 @@ export const AIM_GUIDE = {
 
 export const CUE_STICK = {
   length: 360,
-  width: 8,
   /** Gap between the cue tip and the ball at zero power, and extra pull-back at full power, pixels. */
   restGap: 10,
   maxPullBack: 90,

@@ -3,7 +3,11 @@
 Last updated: 2026-10-11
 
 ## Current milestone
-None in progress. Milestone 8 (characters) finished on 2026-10-11. Robert approved the names; 0.9.1 removed the ball count next to the names at his request. Next: the Play listing inputs and Milestone 9 (art and sound).
+Milestone 9: art and sound, in three parts, each sent to Robert as a phone build. Robert chose "Claude now, designer later" (2026-10-11): Claude draws the art in code, a designer may replace it later.
+- **Part A, the table (done, 0.10.0, 2026-10-11):** rails, felt, pockets, shaded balls with shadows, a wooden cue, styled power bar, spin control and fine-aim strip; a white spot on red balls for colour-blind players. Drawn at start-up (A24), no image files.
+- **Part B, the screens (next):** a portrait for each of the 11 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
+- **Part C, store and sound:** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
+- Waiting on Robert: the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)
 Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.
@@ -48,7 +52,7 @@ Everything needed for the first Android build that can be done without a phone o
 
 ## Next (order to confirm with Robert)
 - First device build: done and checked on a ZTE Blade A35 (Android 14), 2026-10-10 and 11.
-- Proposed Milestone 9: the art and sound pass (table, balls, cue, menu, character portraits, recorded sounds, icon), replacing the placeholders in ASSETS.md. Needs a decision on who makes the art.
+- Milestone 9 Parts B and C (above).
 
 ## Blockers / decisions needed
 1. Android build environment (KNOWN_ISSUES B1). Needed before the first phone test. Trying the game in a phone's browser over Wi-Fi with `npm run dev:pool` is possible today on Robert's own computer.

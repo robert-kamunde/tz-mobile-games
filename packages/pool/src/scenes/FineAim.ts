@@ -1,4 +1,5 @@
 import * as Phaser from 'phaser';
+import { CONTROLS_ART } from '../config/art';
 import { COLORS, FINE_AIM } from '../config/layout';
 
 /**
@@ -54,6 +55,8 @@ export class FineAim {
     g.clear();
     g.fillStyle(COLORS.fineAimTrack, 1);
     g.fillRoundedRect(left, f.y - f.height / 2, f.width, f.height, f.height / 2);
+    g.lineStyle(CONTROLS_ART.track.borderWidth, Phaser.Display.Color.HexStringToColor(CONTROLS_ART.track.border).color, 1);
+    g.strokeRoundedRect(left, f.y - f.height / 2, f.width, f.height, f.height / 2);
     g.fillStyle(COLORS.fineAimTick, 1);
     const shift = ((this.offset % f.tickSpacing) + f.tickSpacing) % f.tickSpacing;
     // Ticks stay clear of the rounded ends.
