@@ -13,8 +13,9 @@ Status: **draft, not submitted.** The Kiswahili text has not been reviewed by a 
 | Category | Sports |
 | Tags (pick up to 5 in Play Console) | Pool, Billiards, Offline, Two-player, Casual |
 | Free or paid | Free. No ads and no purchases in this version. |
-| Contact email | **Robert** (a support address players can write to; shown publicly) |
-| Privacy policy URL | **Robert**: host `docs/PRIVACY_POLICY.md` on a public page (for example GitHub Pages or Google Sites) and paste the link. |
+| Developer name | FAR Data Solutions (Robert, 2026-10-11; "FAR" in capitals) |
+| Contact email | robert.kamunde@farddatasolutions.net (Robert, 2026-10-11; shown publicly) |
+| Privacy policy URL | **Robert**: put `packages/pool/store/privacy-policy.html` on a public page (for example on the FAR Data Solutions website, or Google Sites) and paste the link. |
 
 ## Short description (max 80 characters)
 - **sw:** Pool ya bar mfukoni mwako: cheza na rafiki au kompyuta, bila intaneti. (70)
@@ -67,7 +68,7 @@ The icon and feature graphic are drawn by `npm run icons -w @tzg/pool`.
 - Expected result: rated for everyone (IARC 3+). The final rating is whatever the questionnaire gives.
 
 ## Target audience
-Recommended: **13 and over**. Choosing ages under 13 brings in Google's Families policy (extra review and rules). The game would likely pass, but it adds work before the first release. **Robert** decides.
+**13 and over** (Robert, 2026-10-11). Ages under 13 would bring in Google's Families policy (extra review and rules).
 
 ## Data safety form: answers for this version
 - Does the app collect or share any of the required user data types? **No.**

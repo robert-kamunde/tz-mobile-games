@@ -1,15 +1,15 @@
 # Bongo Pool Table: Privacy policy / Sera ya faragha
 
-Draft, 2026-10-10. Not yet published. Before publishing: **Robert** fills in the contact details, the date, and has the Kiswahili checked by a native speaker.
+Draft, 2026-10-11. Not yet published. Owner, contact and date filled in from Robert (2026-10-11). Before publishing: a public page to host it, and the Kiswahili checked by a native speaker.
 
 ---
 
 ## Kiswahili
 
 **Sera ya faragha ya Bongo Pool Table**
-Imesasishwa: [tarehe]
+Imesasishwa: 11 Oktoba 2026
 
-Bongo Pool Table ("mchezo") imetengenezwa na [jina la mmiliki]. Sera hii inaeleza jinsi mchezo unavyoshughulikia taarifa zako.
+Bongo Pool Table ("mchezo") imetengenezwa na FAR Data Solutions. Sera hii inaeleza jinsi mchezo unavyoshughulikia taarifa zako.
 
 **Hatukusanyi taarifa zako.** Mchezo hautumii akaunti, hauombi jina, namba ya simu, barua pepe wala mahali ulipo, na hautumi chochote kwenye intaneti.
 
@@ -21,16 +21,16 @@ Bongo Pool Table ("mchezo") imetengenezwa na [jina la mmiliki]. Sera hii inaelez
 
 **Mabadiliko:** tukibadilisha sera hii (kwa mfano tukiongeza matangazo au mchezo wa mtandaoni), tutasasisha ukurasa huu kabla ya toleo hilo kutoka.
 
-**Wasiliana nasi:** [barua pepe]
+**Wasiliana nasi:** robert.kamunde@farddatasolutions.net
 
 ---
 
 ## English
 
 **Bongo Pool Table privacy policy**
-Last updated: [date]
+Last updated: 11 October 2026
 
-Bongo Pool Table ("the game") is made by [owner name]. This policy explains how the game handles your information.
+Bongo Pool Table ("the game") is made by FAR Data Solutions. This policy explains how the game handles your information.
 
 **We do not collect your data.** The game has no account, does not ask for your name, phone number, email or location, and sends nothing over the internet.
 
@@ -42,4 +42,4 @@ Bongo Pool Table ("the game") is made by [owner name]. This policy explains how 
 
 **Changes:** if this policy changes (for example if ads or online play are added), this page will be updated before that version is released.
 
-**Contact:** [email]
+**Contact:** robert.kamunde@farddatasolutions.net
