@@ -39,7 +39,7 @@ async function menuAndContinue(page: Page): Promise<void> {
 test('the game opens on the menu, with no Continue before a game is played', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  expect(await menuState(page)).toEqual({ continueShown: false, panel: null, locale: 'sw' });
+  expect(await menuState(page)).toEqual({ continueShown: false, panel: null, selectedCharacter: null, locale: 'sw' });
   for (const name of ['menu-play', 'menu-stats', 'menu-rules', 'menu-settings', 'placeholderLabel']) await elementCenter(page, name, MENU_SCENE);
   expect(await page.evaluate(() => window.__tzg!.elementCenter('Menu', 'menu-continue'))).toBeNull();
 

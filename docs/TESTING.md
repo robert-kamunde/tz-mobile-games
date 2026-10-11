@@ -4,7 +4,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ## Automated
 
-### Unit tests (`npm test`): 201 tests
+### Unit tests (`npm test`): 210 tests
 
 #### Core, `packages/core/test` (50)
 | Area | What is covered |
@@ -18,9 +18,10 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Back button | No handler leaves the app; newest handler first, stopping at the first that handles it; a removed handler is not asked (removing twice is harmless); a throwing handler is logged and does not leave the app. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
 
-#### Pool, `packages/pool/test` (151)
+#### Pool, `packages/pool/test` (160)
 | Area | What is covered |
 |---|---|
+| Characters | 8 player characters, 6 men and 2 women; unique ids and names, names short enough for the panel; the computer's seat shows its level's character; two players never share a character; saved picks accepted only as two different known characters; progress and a saved game from before characters load with their stats and the default characters. |
 | Table and rack | 6 pockets, 18 cushion segments; 7 reds, 7 yellows, black in the middle of row 3, different back corners; cue ball behind the baulk line; nothing overlaps. |
 | Rolling and sliding | Rolling distance matches v²/2a; stun shot skids for 2v/(7µg) then rolls at 5/7 speed; backspin draws back, topspin follows through. |
 | Collisions | Full-ball hit matches restitution; with elastic balls a cut separates at 90°; cushion returns speed scaled by restitution; left and right side spin bend the rebound by exactly opposite amounts. |
@@ -47,7 +48,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Android project | One app ID in the Capacitor config, Gradle, strings and the activity's package; version from package.json in x.y.z form; landscape only; icon, round icon, adaptive foreground and splash at every density at the right pixel sizes; store icon and feature graphic sizes. One-time tips save: default unseen, only a true/false flag accepted. |
 | Source rules | No Phaser, DOM, trigonometry, pow/exp/log, `Math.random` or clock calls in `src/physics`, `src/rules` and `src/ai`. |
 
-### Browser tests (`npm run test:e2e`): 53 scenarios x 3 screen sizes = 159 runs
+### Browser tests (`npm run test:e2e`): 59 scenarios x 3 screen sizes = 177 runs
 Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emulation at 640x360 (small phone), 915x412 (tall phone) and 1280x800 (tablet). Pool tests use real touch events (start, move, end, cancel).
 
 #### Shell demo (11 scenarios)
@@ -134,6 +135,14 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 - Back on the table closes the help, is ignored while balls roll, closes the New game picker without changing the game, then goes to the menu with Continue offered and the app not left.
 - With every request outside the game's own server blocked and the browser set offline after loading, a shot, Menu and Continue all work and no outside request is attempted.
 
+#### Characters (6 scenarios, `characters.spec.ts`)
+- Against the computer: Fundi is selected first, another face is tapped and started; the panels and status show that character and the computer's (Mzee Kobe); Continue after reopening, twice, keeps them; the next game opens with that character selected.
+- Two players: "Mchezaji 1" picks and taps Endelea; for "Mchezaji 2" that character is faded, not selected and cannot be tapped; Anza starts with both names and picks.
+- Back on player 2 returns to player 1 with the choice kept, Back again to the opponents, and the phone's back button closes the picker without leaving the app.
+- New game on the table: Back from the characters returns to the opponents, then to the same game; a new choice starts with the chosen character and Mama Ntilie.
+- In English the computer is "Dogo Mbishi (Easy)" and the picker says "Player 1" and "Next".
+- A saved game with its characters removed (as an older version wrote it) continues with the default characters.
+
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
 
@@ -156,6 +165,7 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-10 | 7 (device) | n/a | n/a | n/a | First Android build: Robert built the app on his Windows PC with Android Studio (RELEASE.md) and ran it on a ZTE Blade A35 (Z2453), Android 14. "Runs really well." 6e: full screen yes; icon and name yes; splash not seen; back button and landscape lock not reported. Saving (3): works. Sound (6d): heard when opened from the phone, not heard while started from Android Studio over USB. |
 | 2026-10-10 | 0.8.1 | pass | 202/202 (+2 ladder tests skipped) | not rerun (no web code changed) | Launch theme for Android 12+ (splash background and icon) and the web view's load colour. The new unit test fails when the splash colour drifts from the game's (planted). Not built here (B1); Robert to rebuild and check the splash. |
 | 2026-10-11 | 0.8.1 (device) | n/a | n/a | n/a | Robert rebuilt 0.8.1 and checked it on the ZTE Blade A35 (Android 14): "all looks good". Splash, back button and landscape lock now confirmed alongside full screen, icon, saves and sound. |
+| 2026-10-11 | 8 | pass | 210/210 (+2 ladder tests skipped) | pool 141/144, then the menu tests 24/24 and screenshots rerun (shell unchanged) | Characters. The first full run failed one menu test on all three sizes: its expected menu probe lacked the new `selectedCharacter` field (test updated; rerun of the menu tests passed). Two planted bugs: player 2 allowed to take player 1's character (caught); characters shown but not saved after Continue (missed at first because the names on screen were right, so a second reopen was added to the test, which then caught it). Screenshots of the picker and table at three sizes checked: grid, names and buttons fit; the computer's name fits the right-hand panel. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)

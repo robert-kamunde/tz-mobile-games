@@ -3,7 +3,16 @@
 Last updated: 2026-10-11
 
 ## Current milestone
-None in progress. Milestone 7 (release readiness) finished on 2026-10-10. Robert built the app and ran it on his ZTE Blade A35 (Android 14) the same day: runs well, full screen, icon, saves and sound work; no splash was visible, fixed in 0.8.1. On 2026-10-11 he confirmed 0.8.1 on the phone: splash, back button and landscape all work. Next: the Play listing inputs and the proposal below.
+None in progress. Milestone 8 (characters) finished on 2026-10-11. Next: Robert's go on the character names, the Play listing inputs, and Milestone 9 (art and sound).
+
+### Milestone 8 scope (done)
+Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.
+- 8 player characters (6 men, 2 women) and one computer character per level, all in `config/characters.ts`.
+- New game: opponent, then "Chagua mhusika" for each person (player 2 cannot take player 1's character), last choice selected. Back steps back.
+- Faces (placeholder) and names in the player panels and all messages; computer names on the picker and in Stats.
+- Choices saved with the game and remembered; older saves load with default characters.
+- Not in scope: real portraits (Milestone 9), stats per player character, unlockable characters.
+- Tests: unit (roster split, unique short names, picks validation, older saves); browser (computer and two-player picking, the taken character, Back and the phone's back button, New game on the table, English, Continue keeping the characters, an older save); screenshots at three screen sizes.
 
 ### Milestone 7 scope (done)
 Everything needed for the first Android build that can be done without a phone or the Android SDK (B1):
@@ -32,13 +41,14 @@ Everything needed for the first Android build that can be done without a phone o
 - Milestone 3 (2026-10-08): computer opponent at three levels, opponent picker. 136 unit tests and 90 browser test runs pass; ladder Hard 36/40 over Medium, Medium 32/40 over Easy.
 - Break pot decides colours (Robert's rule, 2026-10-08, 0.5.1).
 - Milestone 5 (2026-10-08): spin control and fine aim (TD4). 177 unit tests and 123 browser test runs pass. Report: project folder `reports/milestone-5-report.md`.
+- Milestone 8 (2026-10-11): characters (looks only, street nicknames). 210 unit tests and 177 browser test runs pass (pool 144, shell 33). Report: project folder `reports/milestone-8-report.md`.
 - Milestone 7 (2026-10-10): release readiness. Android project (not yet built, B1), back button, first-game help, placeholder icon and splash, store listing and privacy policy drafts, offline test; renamed Bongo Pool Table. 201 unit tests and 159 browser test runs pass. Report: project folder `reports/milestone-7-report.md`.
 - Milestone 6 (2026-10-09): sound. Cue, ball, cushion and pocket sounds that follow impact speed, synthesised placeholders, Sound on/off in Settings, first-touch unlock, silent in the background, silent fallback. 192 unit tests and 141 browser test runs pass. Report: project folder `reports/milestone-6-report.md`.
 - Milestone 4 (2026-10-08): main menu (Continue, Play, Stats, Rules, Settings), Menu button on the table, game in progress saved and resumed (TD6), stats per computer level, last opponent marked (TD8), language setting, rules screen, save backups (TD2). 166 unit tests and 111 browser test runs pass. Report: project folder `reports/milestone-4-report.md`.
 
 ## Next (order to confirm with Robert)
 - First device build: done and checked on a ZTE Blade A35 (Android 14), 2026-10-10 and 11.
-- Proposed Milestone 8: the art and sound pass (table, balls, cue, menu, recorded sounds, icon), replacing the placeholders in ASSETS.md. Needs a decision on who makes the art.
+- Proposed Milestone 9: the art and sound pass (table, balls, cue, menu, character portraits, recorded sounds, icon), replacing the placeholders in ASSETS.md. Needs a decision on who makes the art.
 
 ## Blockers / decisions needed
 1. Android build environment (KNOWN_ISSUES B1). Needed before the first phone test. Trying the game in a phone's browser over Wi-Fi with `npm run dev:pool` is possible today on Robert's own computer.
@@ -50,4 +60,4 @@ None open.
 See KNOWN_ISSUES.md (TD1, TD5, TD7, TD8, TD9; TD2, TD4 and TD6 resolved).
 
 ## Architectural decisions
-See ARCHITECTURE.md (A1 to A22).
+See ARCHITECTURE.md (A1 to A23).
