@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TABLE_ART } from '../src/config/art';
-import { DESIGN, POWER_BAR, SPIN_CONTROL, TABLE_LAYOUT, screenSides } from '../src/config/layout';
+import { TABLE_ART, TUBE_ART } from '../src/config/art';
+import { DESIGN, POWER_BAR, SPIN_CONTROL, TABLE_LAYOUT, TUBE, screenSides } from '../src/config/layout';
 import { UK_7FT_TABLE } from '../src/config/table';
 import { buildTableGeometry } from '../src/physics/geometry';
 import { defaultProgress, validateProgress } from '../src/progress/progress';
@@ -52,5 +52,27 @@ describe('left-handed layout', () => {
     delete old.hand;
     expect(validateProgress(old)?.hand).toBe('right');
     expect(validateProgress({ ...p, hand: 'both' })?.hand).toBe('right');
+  });
+});
+
+describe('potted-ball tube', () => {
+  const radius = UK_7FT_TABLE.objectBallRadius * TABLE_LAYOUT.scale;
+  const half = radius + TUBE.clearance + TUBE.wall;
+
+  it('fits between the screen edge and the table rail, mirrored for the left hand', () => {
+    for (const hand of ['right', 'left'] as const) {
+      const sides = screenSides(hand, LENGTH);
+      const [tableLeft, tableRight] = tableEdges(sides.tableDx).map((e, i) => e + (i === 0 ? TABLE_ART.shadow.margin : -TABLE_ART.shadow.margin));
+      const x = sides.controlX(TUBE.x);
+      expect(x - half).toBeGreaterThanOrEqual(0);
+      expect(x + half).toBeLessThanOrEqual(DESIGN.width);
+      if (hand === 'right') expect(x + half).toBeLessThan(tableLeft!);
+      else expect(x - half).toBeGreaterThan(tableRight!);
+    }
+  });
+
+  it('holds all 15 object balls between its end caps', () => {
+    const inside = TUBE.bottom - TUBE.top - 2 * TUBE_ART.cap.height;
+    expect(15 * (2 * radius + TUBE.gap)).toBeLessThan(inside - (TUBE.entryY - TUBE.top + half));
   });
 });

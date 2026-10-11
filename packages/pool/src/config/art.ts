@@ -186,3 +186,17 @@ export const LOGO_ART = {
   /** Kept on the logo's text (the font is the game's own). */
   font: 'system-ui, sans-serif',
 } as const;
+
+/** The potted-ball tube (config/layout.ts `TUBE`): tinted glass with metal end caps. */
+export const TUBE_ART = {
+  glass: 'rgba(170, 210, 230, 0.16)',
+  /** Light enough that the black ball shows against it. */
+  inside: 'rgba(190, 215, 230, 0.24)',
+  edge: 'rgba(220, 240, 255, 0.55)',
+  edgeWidth: 1.5,
+  /** Bright streak down the front of the glass, drawn over the balls. */
+  shine: { x: 0.3, width: 0.16, color: 'rgba(255, 255, 255, 0.28)' },
+  cap: { height: 9, light: '#c9d1d8', dark: '#6b747c' },
+  /** Pipe between the tube and the table rail runs this far into the rail. */
+  pipeOverlap: 8,
+} as const;

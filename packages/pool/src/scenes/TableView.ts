@@ -5,6 +5,7 @@ import type { TableConfig } from '../config/table';
 import type { TableTheme } from '../config/tables';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
 import { ballShadowTexture, ballTexture } from './art/ballArt';
+import { PottedTube } from './PottedTube';
 import type { BackgroundStyle } from '../config/backgrounds';
 import { dropOtherSceneTextures, sceneTexture } from './art/backgroundArt';
 import { dropOtherTableTextures, tableTexture, tableTextureOrigin } from './art/tableTexture';
@@ -14,6 +15,7 @@ import { dropOtherTableTextures, tableTexture, tableTextureOrigin } from './art/
  * Owns the conversion between table metres and design pixels.
  */
 export class TableView {
+  private tube: PottedTube | null = null;
   private readonly ballSprites = new Map<number, { ball: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image }>();
 
   constructor(
@@ -73,9 +75,16 @@ export class TableView {
     image.setOrigin(0, 0).setName('table').setData('theme', theme.id).setData('background', background.id);
   }
 
-  /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden. */
+  /** Ids of the balls in the potted-ball tube, bottom first (for tests). */
+  get tubeIds(): number[] {
+    return this.tube?.ids ?? [];
+  }
+
+  /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden and shown in the tube. */
   syncBalls(balls: readonly Ball[]): void {
     const s = BALL_ART.shadow;
+    this.tube ??= new PottedTube(this.scene, this.sides, this.px(this.config.objectBallRadius));
+    this.tube.sync(balls);
     for (const ball of balls) {
       let sprites = this.ballSprites.get(ball.id);
       if (!sprites) {

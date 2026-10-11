@@ -644,6 +644,7 @@ export class TableScene extends Phaser.Scene {
       aim: this.aim,
       power: this.powerBar.power,
       balls: this.sim.balls.map((b) => ({ id: b.id, kind: b.kind, x: b.x, y: b.y, r: b.radius, pocketed: b.pocketed })),
+      tube: this.view.tubeIds,
       events: this.sim.shotEvents().map((e) => e.type),
       match: this.match,
       verdict: this.lastResult?.verdict ?? null,

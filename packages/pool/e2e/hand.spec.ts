@@ -57,6 +57,14 @@ async function expectClearLayout(page: Page): Promise<void> {
     expect(c.left).toBeGreaterThanOrEqual(0);
     expect(c.right).toBeLessThanOrEqual(DESIGN.width);
   }
+  // The potted-ball tube: on screen, on the side away from the controls, clear of every control and button.
+  const tube = await boundsOf(page, 'tube');
+  expect(tube.left).toBeGreaterThanOrEqual(0);
+  expect(tube.right).toBeLessThanOrEqual(DESIGN.width);
+  const controlsLeft = Math.min(...controls.map((c) => c.left));
+  expect(tube.right < controlsLeft || tube.left > Math.max(...controls.map((c) => c.right)), 'tube beside the controls').toBe(true);
+  expect(controlsLeft < DESIGN.width / 2, 'controls and tube on opposite sides').toBe(tube.left > DESIGN.width / 2);
+  for (const o of [...controls, ...buttons, strip]) expect(overlaps(tube, o), 'tube over a control').toBe(false);
   for (const b of buttons) {
     expect(overlaps(b, strip), 'button over the fine-aim strip').toBe(false);
     expect(b.left).toBeGreaterThanOrEqual(0);

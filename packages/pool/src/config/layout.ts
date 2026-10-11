@@ -5,10 +5,13 @@
 export const DESIGN = { width: 1280, height: 720 } as const;
 
 export const TABLE_LAYOUT = {
-  /** Pixels per metre of table. */
-  scale: 560,
+  /**
+   * Pixels per metre of table. 539 (was 560 before the potted-ball tube, 0.18.0) leaves room for the
+   * tube between the screen edge and the table on the side away from the controls.
+   */
+  scale: 539,
   /** Top-left corner of the playing area (cushion noses). */
-  originX: 58,
+  originX: 96,
   originY: 104,
   /** Wooden rail drawn around the cushions (the cushion strip is the inner part of it, config/art.ts). */
   railWidth: 34,
@@ -71,9 +74,9 @@ export const HUD = {
   /** Above the table, balls and cue stick; below panels. */
   depth: 10,
   /** Status line centred over the table. */
-  status: { x: 570, y: 36, wrapWidth: 480, lineSpacing: -2 },
+  status: { x: 590, y: 36, wrapWidth: 480, lineSpacing: -2 },
   /** Player panels at the two top corners of the table. */
-  players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 17, gap: 10, inactiveAlpha: 0.45 },
+  players: { y: 36, leftX: 96, rightX: 1082, chipRadius: 17, gap: 10, inactiveAlpha: 0.45 },
   /** The player's face sits inside the chip, which shows round it as a ring in their ball colour. */
   face: { radius: 14 },
   /**
@@ -85,12 +88,12 @@ export const HUD = {
   placeholder: { x: 1190, y: 626, wrapWidth: 150 },
   /** Menu button, bottom left (anchored by its left edge). */
   menu: { left: 12, y: DESIGN.height - 30 },
-  /** Between the bottom rail (ends at y 650) and the fine-aim strip. */
-  hint: { x: 570, y: 668 },
+  /** Between the bottom rail (ends at y 631) and the fine-aim strip. */
+  hint: { x: 590, y: 668 },
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
   newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
   /** Game-over panel over the middle of the table. */
-  gameOver: { x: 570, y: 330, width: 640, height: 200, alpha: 0.82 },
+  gameOver: { x: 590, y: 330, width: 640, height: 200, alpha: 0.82 },
   /** A second tap on New game within this time confirms it mid-match. */
   confirmMs: 3000,
   /**
@@ -126,7 +129,7 @@ export const PANEL = {
   /** Above the table and the HUD. */
   depth: 20,
   /** Over the middle of the table (the in-game opponent picker, five choices and Back); the table shows faintly through it. */
-  overTable: { x: 570, y: 360, width: 600, height: 560, alpha: 0.94 },
+  overTable: { x: 590, y: 360, width: 600, height: 560, alpha: 0.94 },
   /** Over the main menu, hiding it completely so its buttons do not show through the text. */
   overMenu: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 1100, height: 660, alpha: 1 },
 } as const;
@@ -186,6 +189,29 @@ export const MENU = {
   placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;
 
+/**
+ * The see-through tube potted balls roll into (Robert, 2026-10-11), joined to the table on the side
+ * away from the controls. Written for the right hand (tube at the left edge); `ScreenSides.controlX`
+ * mirrors it. Balls stack from the bottom in the order they were potted.
+ */
+export const TUBE = {
+  x: 34,
+  top: 76,
+  bottom: 626,
+  /** Inside half-width beyond a ball's radius, and the glass wall. */
+  clearance: 3,
+  wall: 3,
+  /** Where potted balls come in: a short pipe from the table's rail near the top corner pocket. */
+  entryY: 96,
+  /** Gap between stacked balls. */
+  gap: 1,
+  /** How fast a ball falls, design pixels per second squared, and the most a fall takes. */
+  gravity: 2600,
+  maxFallMs: 650,
+  /** Time to roll along the pipe into the tube. */
+  pipeMs: 140,
+} as const;
+
 export const BALL_IN_HAND = {
   /** A touch this close to the cue ball (design pixels) picks it up instead of aiming. */
   grabRadius: 44,
@@ -227,7 +253,7 @@ export const SPIN_CONTROL = {
  * the aim by `radiansPerPixel` per design pixel (the whole strip turns it about 17 degrees).
  */
 export const FINE_AIM = {
-  x: 570,
+  x: 590,
   y: 702,
   width: 600,
   height: 30,

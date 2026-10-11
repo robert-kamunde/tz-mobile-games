@@ -21,6 +21,7 @@ export interface PoolState {
   aim: { x: number; y: number };
   power: number;
   balls: BallState[];
+  tube: number[];
   events: string[];
   match: MatchState;
   verdict: ShotVerdict | null;

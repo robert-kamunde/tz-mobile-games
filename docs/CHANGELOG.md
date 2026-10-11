@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.0 (unreleased) - The potted-ball tube
+- Robert's idea (2026-10-11): a see-through glass tube beside the table, on the side away from the power bar (left edge normally, right edge in left-handed mode), joined to the table by a short pipe near the top corner pocket. Every potted ball (not the cue ball) rolls in along the pipe and drops onto the stack with a small bounce, so the tube shows the balls in the order they went down. The name trays stay as they were.
+- To make room the table is about 4% smaller (539 pixels per metre instead of 560) and sits a little further right; the status line, hint, fine-aim strip and panels over the table moved with it.
+- A saved game shows its potted balls in the tube straight away, in ball-number order, because the save does not record the order they were potted.
+- The 8-ball game type (striped and solid balls) was discussed and dropped by Robert.
+
 ## 0.17.0 (unreleased) - Art Part B: portraits, buttons, panels, logo and the menu bar
 - **Portraits** for all 12 characters, replacing the coloured circles with a letter. Simple friendly faces drawn by the game, each with something to recognise them by: Fundi's orange cap and moustache, Malkia's gold headwrap, Mwamba's bald head, Bonge's round face and grin, Shangazi's kitenge wrap and glasses, Mjanja's cap turned back and chain, Bishoo's dark glasses and white collar, Kichwa's afro and glasses, Dogo Mbishi's big cap, Mama Ntilie's red headwrap and apron, Mzee Kobe's white kofia and grey beard, Bingwa's cornrows, dark glasses and gold chain. They show on the character picker and in the player panels (a little bigger there than before).
 - **Buttons** are rounded and raised, white, or gold for the current choice. **Panels** (Settings, Stats, Rules, pickers, game over) are rounded with a thin gold edge.
