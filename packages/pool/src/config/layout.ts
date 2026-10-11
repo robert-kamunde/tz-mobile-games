@@ -78,7 +78,7 @@ export const HUD = {
   /** Player panels at the two top corners of the table. */
   players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 17, gap: 10, inactiveAlpha: 0.45 },
   /** The player's face sits inside the chip, which shows round it as a ring in their ball colour. */
-  face: { radius: 12 },
+  face: { radius: 14 },
   /**
    * Potted-ball tray under each player's name: one slot per ball of their colour, filled as they
    * are potted. Sits between the name and the top rail (rail starts at y 70).

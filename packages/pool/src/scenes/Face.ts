@@ -1,47 +1,51 @@
 import type * as Phaser from 'phaser';
 import type { Character } from '../config/characters';
-import { COLORS, TEXT_STYLE } from '../config/layout';
-import { textStyle } from './ui';
+import { COLORS } from '../config/layout';
+import { portraitTexture } from './art/portraitArt';
 
 /**
- * A character's face. PLACEHOLDER: a coloured circle with an initial until the art pass replaces it
- * with a drawn portrait (docs/ASSETS.md).
+ * A character's face: their drawn portrait (config/portraits.ts) over a named circle. The circle is
+ * what tests find and what the picker makes tappable; the portrait covers it.
  */
 export class Face {
   readonly circle: Phaser.GameObjects.Arc;
-  readonly initial: Phaser.GameObjects.Text;
+  readonly portrait: Phaser.GameObjects.Image;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, radius: number, name: string) {
+  constructor(
+    private readonly scene: Phaser.Scene,
+    x: number,
+    y: number,
+    private readonly radius: number,
+    name: string,
+  ) {
     this.circle = scene.add.circle(x, y, radius, COLORS.overlay).setName(name);
-    // The letter scales with the face but never below the smallest readable text size.
-    const size = Math.max(parseInt(TEXT_STYLE.labelSize, 10), Math.round(radius * 1.1));
-    this.initial = scene.add.text(x, y, '', { ...textStyle(`${size}px`), fontStyle: 'bold' }).setOrigin(0.5);
+    this.portrait = scene.add.image(x, y, portraitTexture(scene, '', radius)).setDisplaySize(2 * radius, 2 * radius);
   }
 
   show(character: Character): this {
-    this.circle.setFillStyle(character.faceColor);
-    this.initial.setText(character.initial);
+    this.portrait.setTexture(portraitTexture(this.scene, character.id, this.radius)).setDisplaySize(2 * this.radius, 2 * this.radius);
+    this.circle.setData('character', character.id);
     return this;
   }
 
-  get objects(): (Phaser.GameObjects.Arc | Phaser.GameObjects.Text)[] {
-    return [this.circle, this.initial];
+  get objects(): (Phaser.GameObjects.Arc | Phaser.GameObjects.Image)[] {
+    return [this.circle, this.portrait];
   }
 
   setDepth(depth: number): this {
     this.circle.setDepth(depth);
-    this.initial.setDepth(depth);
+    this.portrait.setDepth(depth);
     return this;
   }
 
   setAlpha(alpha: number): this {
     this.circle.setAlpha(alpha);
-    this.initial.setAlpha(alpha);
+    this.portrait.setAlpha(alpha);
     return this;
   }
 
   destroy(): void {
     this.circle.destroy();
-    this.initial.destroy();
+    this.portrait.destroy();
   }
 }

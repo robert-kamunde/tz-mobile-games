@@ -89,3 +89,40 @@ export const CONTROLS_ART = {
   /** Cue-tip marker on the spin face: chalk blue with a light edge. */
   spinTip: { color: '#2f6fd0', edge: '#ffffff', edgeWidth: 2 },
 } as const;
+
+/**
+ * Character portraits (config/portraits.ts says who looks how). Geometry is in a 100-unit square
+ * that the drawing scales to the texture; the face sits a little above the middle with the
+ * shoulders cut off by the round frame.
+ */
+export const PORTRAIT_ART = {
+  /** Texture pixels per design pixel, so faces stay sharp when a big phone scales the game up. */
+  resolution: 2,
+  unit: 100,
+  /** Everything inside the frame is drawn this much bigger, about this point, so the face fills it. */
+  zoom: 1.2,
+  zoomAt: { x: 50, y: 42 },
+  head: { x: 50, y: 47, rx: 20, ry: 24, roundRx: 23.5, roundRy: 23, youngScale: 0.9, youngDrop: 5 },
+  /** Light on the face from the top left. */
+  skinLight: 'rgba(255, 255, 255, 0.16)',
+  skinShade: 'rgba(0, 0, 0, 0.22)',
+  neck: { halfWidth: 8, roundHalfWidth: 10.5, top: 62, bottom: 84 },
+  shoulders: { y: 104, rx: 44, ry: 28 },
+  collar: { depth: 14, width: 12 },
+  ear: { dy: 1, radius: 4.5 },
+  hairline: 34,
+  eyes: { dx: 8, dy: -2, rx: 3.8, ry: 3, youngGrow: 1.2, pupil: 1.9, white: '#f7f3ea', dark: '#1a120c' },
+  brows: { dy: -8, halfLength: 4, width: 2 },
+  nose: { dy: 6, halfWidth: 3.2, depth: 2.2 },
+  mouth: { dy: 14, halfWidth: 6.5, lip: '#4a1f14', teeth: '#fbf8f2' },
+  beard: { stubbleTop: 8, stubbleAlpha: 0.35, fullTop: 11, moustacheDy: 10.5, goateeDy: 19 },
+  glasses: { radius: 5.6, width: 1.6, frame: '#1c1c1c', dark: 'rgba(15, 15, 20, 0.88)', glint: 'rgba(255, 255, 255, 0.35)' },
+  earring: { radius: 2.4, dy: 8 },
+  chain: { y: 82, sag: 9, width: 2.2, pendant: 3.2 },
+  afro: { dy: -14, radius: 26 },
+  cap: { crownDy: -11, crownRx: 22.5, crownRy: 15, brimDy: -11, brimRx: 25, brimRy: 4.5, button: 2.2 },
+  wrap: { dy: -21, rx: 25, ry: 19, band: 5, knot: { dy: -36, rx: 7, ry: 5 }, dots: 7 },
+  kofia: { top: -38, bottom: -14, halfWidth: 19.5, band: 5 },
+  /** Thin dark line round the frame. */
+  frame: { width: 2.5, color: 'rgba(0, 0, 0, 0.55)' },
+} as const;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AI_LEVEL_IDS } from '../src/config/ai';
 import { COMPUTER_CHARACTERS, DEFAULT_PICKS, MAX_NAME_LENGTH, PLAYER_CHARACTERS } from '../src/config/characters';
 import { seatCharacter, validatePicks, withDistinctPicks } from '../src/progress/characters';
+import { PORTRAITS } from '../src/config/portraits';
 
 const all = [...PLAYER_CHARACTERS, ...AI_LEVEL_IDS.map((level) => COMPUTER_CHARACTERS[level])];
 
@@ -18,8 +19,12 @@ describe('characters', () => {
     for (const c of all) {
       expect(c.id).toMatch(/^[a-z]+(-[a-z]+)*$/);
       expect(c.name.length).toBeLessThanOrEqual(MAX_NAME_LENGTH);
-      expect(c.initial).toMatch(/^[A-Z]$/);
+      expect(PORTRAITS[c.id], `portrait for ${c.id}`).toBeDefined();
     }
+  });
+
+  it('has a portrait for every character and none for anyone else', () => {
+    expect(Object.keys(PORTRAITS).sort()).toEqual(all.map((c) => c.id).sort());
   });
 
   it('starts with two different player characters', () => {
