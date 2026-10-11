@@ -62,6 +62,11 @@ export const HUD = {
   gameOver: { x: 570, y: 330, width: 640, height: 200, alpha: 0.82 },
   /** A second tap on New game within this time confirms it mid-match. */
   confirmMs: 3000,
+  /**
+   * Catchphrase bubble under the speaker's panel, over the top rail and the edge of the felt; it
+   * points up at their face and goes after `QUIPS.showMs`.
+   */
+  quip: { top: 84, padX: 14, padY: 8, radius: 12, tailWidth: 16, tailHeight: 10, textSize: '22px', fill: 0xffffff, alpha: 0.95, textColor: '#101418' },
 } as const;
 
 /** Buttons: text on a solid background. */

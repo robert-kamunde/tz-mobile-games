@@ -10,6 +10,8 @@ import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { tableTheme } from '../config/tables';
 import { CUE_STYLES } from '../config/cues';
+import { QUIPS, quipKey } from '../config/quips';
+import { QuipChooser } from '../rules/quips';
 import { rotateAim } from '../controls/fineAim';
 import { computeAimGuide } from '../physics/aim';
 import { buildTableGeometry } from '../physics/geometry';
@@ -85,6 +87,8 @@ export class TableScene extends Phaser.Scene {
   private opponentChosen = false;
   /** Varies the computer's aiming error between matches; each shot's seed adds the shot count. */
   private computerSeed = 0;
+  /** Decides when characters say a catchphrase; new for each match. */
+  private quips = new QuipChooser(createRandom(0));
   private slots!: PoolSlots;
   /** The game as it was before the shot now rolling: what is saved if the app is closed mid-shot. */
   private beforeShot: SavedMatch | null = null;
@@ -234,6 +238,8 @@ export class TableScene extends Phaser.Scene {
     if (this.sim.isMoving) return;
     this.computer.cancel();
     this.computerSeed = Date.now() >>> 0;
+    this.quips = new QuipChooser(createRandom((this.computerSeed ^ QUIPS.seedSalt) >>> 0));
+    this.hud.hideQuip();
     this.cancelGestures();
     this.sim = this.newSimulation();
     this.match = startMatch(breaker);
@@ -255,6 +261,8 @@ export class TableScene extends Phaser.Scene {
     this.setCast(saved.opponent, saved.picks);
     this.opponentChosen = true;
     this.computerSeed = Date.now() >>> 0;
+    this.quips = new QuipChooser(createRandom((this.computerSeed ^ QUIPS.seedSalt) >>> 0));
+    this.hud.hideQuip();
     this.sim = new PoolSimulation(this.geometry, DEFAULT_PHYSICS, restoreBalls(saved.balls, UK_7FT_TABLE), this.logger.child('physics'));
     this.match = saved.match;
     this.shots = saved.shots;
@@ -402,6 +410,7 @@ export class TableScene extends Phaser.Scene {
       result = { state: { ...this.match, phase: 'play', current: opponentOf(this.match.current), ballInHand: null }, verdict: { kind: 'turn-over' }, groupsAssigned: false };
     }
     this.lastResult = result;
+    const shooter = this.match.current;
     this.match = result.state;
     this.beforeShot = null;
     this.logger.info(`shot ${this.shots}: ${JSON.stringify(result.verdict)}`);
@@ -438,6 +447,8 @@ export class TableScene extends Phaser.Scene {
       messages.push(this.turnMessage());
       this.hud.setStatus(messages.join('\n'));
     }
+    const quip = this.quips.afterShot(shooter, verdict, (seat) => this.hud.characterId(seat));
+    if (quip) this.hud.say(quip.speaker, this.t.t(quipKey(this.hud.characterId(quip.speaker), quip.moment, quip.index)));
     this.saveMatch();
     this.refresh();
     this.startComputerTurnIfDue();
@@ -630,6 +641,7 @@ export class TableScene extends Phaser.Scene {
       status: this.hud.statusText,
       gameOverShown: this.hud.gameOverVisible,
       trays: this.hud.trayState,
+      quip: this.hud.quip,
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.setup.visible,

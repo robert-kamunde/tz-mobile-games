@@ -3,6 +3,7 @@ import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
 import { countInRack } from '../physics/rack';
 import { DEFAULT_PICKS } from '../config/characters';
+import { QUIPS } from '../config/quips';
 import { seatCharacter, type CharacterPicks } from '../progress/characters';
 import type { Opponent } from '../progress/opponent';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
@@ -41,6 +42,10 @@ export class MatchHud {
   private readonly overPanel: Phaser.GameObjects.Rectangle;
   private readonly overTitle: Phaser.GameObjects.Text;
   private readonly overDetail: Phaser.GameObjects.Text;
+  private readonly quipBox: Phaser.GameObjects.Graphics;
+  private readonly quipLabel: Phaser.GameObjects.Text;
+  private quipTimer: Phaser.Time.TimerEvent | null = null;
+  private quipSpeaker: PlayerId | null = null;
   private confirmUntil = 0;
   private opponent: Opponent = { kind: 'human' };
   private picks: CharacterPicks = DEFAULT_PICKS;
@@ -96,6 +101,13 @@ export class MatchHud {
     this.overTitle = scene.add.text(g.x, g.y - 30, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
     this.overDetail = scene.add.text(g.x, g.y + 34, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
 
+    const q = HUD.quip;
+    this.quipBox = scene.add.graphics().setName('quipBubble').setVisible(false);
+    this.quipLabel = scene.add
+      .text(0, q.top + q.padY, '', textStyle(q.textSize, q.textColor))
+      .setName('quipText')
+      .setVisible(false);
+
     this.newGame = addButton(
       scene,
       HUD.newGame.right,
@@ -122,7 +134,7 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.quipBox, this.quipLabel, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
   }
@@ -138,7 +150,12 @@ export class MatchHud {
     return seatCharacter(player, this.opponent, this.picks).name;
   }
 
-  groupName(group: Group): string {
+  /** Id of the character in a seat, for their catchphrases. */
+  characterId(player: PlayerId): string {
+    return seatCharacter(player, this.opponent, this.picks).id;
+  }
+
+    groupName(group: Group): string {
     return this.t.t(`group.${group}`);
   }
 
@@ -175,6 +192,44 @@ export class MatchHud {
       slot.setStrokeStyle(HUD.tray.outlineWidth, filled ? COLORS.ballOutline : COLORS.ball[group], filled ? 1 : HUD.tray.emptyAlpha);
     });
     this.trays[player] = { potted, slots };
+  }
+
+  /**
+   * A catchphrase in a bubble under the speaker's panel, pointing at their face. A new line replaces
+   * the one showing; it goes by itself after a moment.
+   */
+  say(player: PlayerId, line: string): void {
+    const q = HUD.quip;
+    const p = HUD.players;
+    const left = player === 0;
+    const label = this.quipLabel.setText(line).setVisible(true);
+    const width = label.width + 2 * q.padX;
+    const height = label.height + 2 * q.padY;
+    const x = left ? p.leftX : p.rightX - width;
+    label.setX(x + q.padX);
+    const faceX = left ? p.leftX + p.chipRadius : p.rightX - p.chipRadius;
+    this.quipBox
+      .clear()
+      .fillStyle(q.fill, q.alpha)
+      .fillRoundedRect(x, q.top, width, height, q.radius)
+      .fillTriangle(faceX - q.tailWidth / 2, q.top, faceX + q.tailWidth / 2, q.top, faceX, q.top - q.tailHeight)
+      .setVisible(true);
+    this.quipSpeaker = player;
+    this.quipTimer?.remove();
+    this.quipTimer = this.scene.time.delayedCall(QUIPS.showMs, () => this.hideQuip());
+  }
+
+  hideQuip(): void {
+    this.quipTimer?.remove();
+    this.quipTimer = null;
+    this.quipSpeaker = null;
+    this.quipBox.setVisible(false);
+    this.quipLabel.setVisible(false);
+  }
+
+  /** The line showing and who says it, for tests. */
+  get quip(): { speaker: PlayerId; text: string } | null {
+    return this.quipSpeaker === null ? null : { speaker: this.quipSpeaker, text: this.quipLabel.text };
   }
 
   /** Bottom line: how to use the controls right now, or nothing when the player has nothing to do. */

@@ -27,6 +27,8 @@ export interface PoolState {
   status: string;
   gameOverShown: boolean;
   trays: { potted: number; slots: number }[];
+  /** The catchphrase showing and whose it is. */
+  quip: { speaker: number; text: string } | null;
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;

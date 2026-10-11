@@ -75,6 +75,8 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Choosing: after the opponent, "Chagua mhusika" shows the 8 faces with last time's choice selected, so a repeat game is one more tap. Two players choose in turn and player 2 cannot take player 1's character (shown faded).
 - Shown in the player panels (face and name) and in all status and game-over messages. Stats count results per computer character, not per player character.
 - Names are kept in one config file (`config/characters.ts`) so Robert can change them. Robert approved them on 2026-10-11.
+- Players use the character names; typing your own name was built and then left out at Robert's request (2026-10-11).
+- Catchphrases (0.13.0, Robert's request): each character says a short line in a speech bubble under their name when they pot one of theirs and play on, when the other player fouls (a tease), and when they win, in the game's language. About 4 in 10 pots and 6 in 10 fouls get a line, then at least two quiet shots; a win always does. Lines are in `config/quips.ts`.
 
 ### Computer opponent as built (Milestone 3)
 - One computer opponent with three levels. It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.

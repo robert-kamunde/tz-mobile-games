@@ -14,6 +14,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Catchphrases (pool) | Every character (player and computer) has a line for each moment in Swahili and English, none longer than the bubble allows, and no lines for characters that do not exist; string tables match. The shooter speaks after a pot, the other player after a foul, the winner at the end, nobody after a miss or re-rack. Lines come at the configured chance, stay quiet for the set number of shots after a line (a win still speaks), do not repeat straight away; over 3000 pots the share stays within bounds. |
 | Tables (pool) | Six tables, each with its own felt and rail style; every new felt differs from every ball by at least 25 (CIE76) in normal, deuteranopia and protanopia vision; the check catches a red felt; only known ids accepted. Progress keeps the table; older saves and unknown tables give Klasiki. |
 | App exit | Saves, then closes; does nothing where the game cannot close itself; still closes if saving fails. |
 | Sound synth | Each layer kind makes a short, non-silent sound peaking exactly at the recipe level with a silent last sample; the same seed gives the same samples; bad sample rates and lengths are refused. |
@@ -156,6 +157,10 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 - New game on the table: Back from the characters returns to the opponents, then to the same game; a new choice starts with the chosen character and Mama Ntilie.
 - In English the computer is "Dogo Mbishi (Easy)" and the picker says "Player 1" and "Next".
 - A saved game with its characters removed (as an older version wrote it) continues with the default characters.
+
+#### Catchphrases (2 scenarios, `quips.spec.ts`)
+- Fundi wins: "Kazi imekamilika!" shows in a bubble below player 1's name, on the left half of the screen, and is gone after `QUIPS.showMs`.
+- In English, Shangazi wins and says "Auntie wins, sit down!".
 
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.

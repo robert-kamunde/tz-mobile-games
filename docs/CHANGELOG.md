@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.0 (unreleased) - Catchphrases
+- Robert asked for character catchphrases in Swahili or English to match the game's language (2026-10-11). Every character, the computer's three included, has lines for three moments: potting one of theirs and playing on, the other player fouling (a friendly tease), and winning. Examples: Fundi "Kazi ya fundi hiyo!" / "That's a craftsman's work!", Mama Ntilie "Moto kama chapati!" / "Hot like a fresh chapati!", Mzee Kobe "Haraka haraka haina baraka." / "Haste brings no blessing."
+- The line shows in a white speech bubble under the speaker's name, pointing at their face, for about 3 seconds.
+- Not every shot gets a line: about 4 in 10 pots and 6 in 10 fouls do, then the characters stay quiet for at least two shots, and the same line is never said twice in a row. A win always gets one.
+- All lines are in `config/quips.ts`, Swahili and English side by side, so they are easy to change.
+- Your own name (built earlier the same day, never released) was left out at Robert's request; players use the character names.
+
 ## 0.12.0 (unreleased) - Choose your cue
 - Robert's idea (2026-10-11): pick the cue too. "Fimbo" (Cue) sits next to "Meza" on one menu row and opens a picker of six cues, one to match each table, all free and looks only (every cue plays the same): **Klasiki** (wood with a black wrap), **Zanzibar** (dark wood with brass rings), **Kitenge** (a kitenge-print grip), **Maasai** (red check butt with a beaded grip), **Tingatinga** (painted colour bands with dots), **Makonde** (ebony with bone-white inlays).
 - The chosen cue is saved (`cue` in `pool.progress`) and shown for every shot on this phone, the computer's included. Older saves get Klasiki.

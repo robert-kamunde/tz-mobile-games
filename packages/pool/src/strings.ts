@@ -1,4 +1,7 @@
 import type { StringTables } from '@tzg/core';
+import { quipStrings } from './config/quips';
+
+const QUIP_STRINGS = quipStrings();
 
 /** Kiswahili wording has not yet been checked by a native speaker (KNOWN_ISSUES U3). */
 export const poolStrings: StringTables = {
@@ -84,6 +87,7 @@ export const poolStrings: StringTables = {
     'over.black-potted': 'Ameingiza mpira mweusi',
     'over.black-potted-early': '{loser} aliingiza mweusi mapema',
     'over.black-potted-with-foul': '{loser} aliingiza mweusi kwa faulo',
+    ...QUIP_STRINGS.sw,
   },
   en: {
     'shell.rotate': 'Turn your phone sideways to play',
@@ -167,5 +171,6 @@ export const poolStrings: StringTables = {
     'over.black-potted': 'Potted the black',
     'over.black-potted-early': '{loser} potted the black too early',
     'over.black-potted-with-foul': '{loser} potted the black with a foul',
+    ...QUIP_STRINGS.en,
   },
 };
