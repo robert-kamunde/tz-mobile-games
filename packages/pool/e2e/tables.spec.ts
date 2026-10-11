@@ -88,3 +88,32 @@ test('every table draws and plays a break without errors', async ({ page }) => {
   }
   expect(errors).toEqual([]);
 });
+
+/** The cue drawn on the table (its style id). */
+const cueOnScreen = (page: Page) => page.evaluate(() => window.__tzg!.dataOf('Table', 'cueStick', 'style'));
+
+test('Fimbo: the chosen cue is used on the table and kept after reopening; Back keeps the old one', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await tap(page, 'menu-cues', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('cues');
+  expect((await menuState(page)).selectedCue).toBe('classic');
+  await tap(page, 'cue-maasai', MENU_SCENE);
+  expect((await menuState(page)).selectedCue).toBe('maasai');
+  await tap(page, 'cue-confirm', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  expect((await menuState(page)).cue).toBe('maasai');
+
+  await tap(page, 'menu-cues', MENU_SCENE);
+  await tap(page, 'cue-makonde', MENU_SCENE);
+  await page.evaluate(() => window.__tzg!.back());
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  expect((await menuState(page)).cue).toBe('maasai');
+  expect((await menuState(page)).table).toBe('classic');
+
+  await playFromMenu(page, 'two');
+  expect(await cueOnScreen(page)).toBe('maasai');
+  await reopen(page);
+  expect((await menuState(page)).cue).toBe('maasai');
+  expect(errors).toEqual([]);
+});

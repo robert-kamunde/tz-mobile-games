@@ -9,6 +9,7 @@ import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { tableTheme } from '../config/tables';
+import { CUE_STYLES } from '../config/cues';
 import { rotateAim } from '../controls/fineAim';
 import { computeAimGuide } from '../physics/aim';
 import { buildTableGeometry } from '../physics/geometry';
@@ -123,10 +124,11 @@ export class TableScene extends Phaser.Scene {
 
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
     this.view = new TableView(this, this.geometry, UK_7FT_TABLE);
-    this.view.drawTable(tableTheme(this.slots.progress.load().data.table));
+    const looks = this.slots.progress.load().data;
+    this.view.drawTable(tableTheme(looks.table));
     this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
-    this.aimView = new AimView(this, this.view);
+    this.aimView = new AimView(this, this.view, CUE_STYLES[looks.cue]);
     this.powerBar = new PowerBar(this, this.t.t('pool.power'));
     this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset);
     this.fineAim = new FineAim(this);

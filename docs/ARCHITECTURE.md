@@ -114,7 +114,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `scenes/MatchSetup.ts`, `scenes/CharacterPicker.ts`, `scenes/Face.ts` | The new-game choice (opponent, then each player's character, with Back stepping back), the face grid, and the placeholder face drawn in the picker and the player panels. |
 | `scenes/OpponentPicker.ts` | "Unacheza na nani?" panel: two players or the computer at one of three levels, with the last choice marked. Used on the menu and after New game. |
 | `scenes/MatchHud.ts` | Player panels, status line, controls hint, New game button (two-tap confirm mid-match), game-over panel. |
-| `scenes/TablePicker.ts` | "Chagua meza": a picture of each table, the selection frame, Choose and Back. |
+| `scenes/LookPicker.ts` | "Chagua meza" and "Chagua fimbo": a grid of pictures with names, the selection frame, Choose and Back. Cue styles are data in `config/cues.ts`, drawn by `art/cueArt.ts`. |
 | `scenes/art/` | Canvas 2D drawing of the table (in each table style; `tableTexture.ts` makes the full-size and preview textures), balls and shadows, cue and its shadow, and the control parts (`canvasTexture` makes a texture once per key). |
 | `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing (table, balls, aim guide, cue stick, ball-in-hand ring) and the power control. |
 

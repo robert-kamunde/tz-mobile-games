@@ -41,12 +41,15 @@ export interface PoolState {
 
 export interface MenuState {
   continueShown: boolean;
-  panel: 'picker' | 'characters' | 'tables' | 'stats' | 'rules' | 'settings' | 'exit' | null;
+  panel: 'picker' | 'characters' | 'tables' | 'cues' | 'stats' | 'rules' | 'settings' | 'exit' | null;
   selectedCharacter: string | null;
   /** Selected on the open table picker. */
   selectedTable: string | null;
+  selectedCue: string | null;
   /** The saved table choice. */
   table: string;
+  /** The saved cue choice. */
+  cue: string;
   locale: string;
 }
 

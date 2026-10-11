@@ -113,27 +113,33 @@ export const CHARACTER_PICKER = {
   buttonOffsetX: 140,
 } as const;
 
-/** Table picker: a small picture of each table (TABLE_ART.previewScale) in a 3 by 2 grid, names below. */
-export const TABLE_PICKER = {
-  columns: 3,
-  columnSpacing: 345,
-  rowSpacing: 235,
-  /** Below the panel title. */
-  firstRowFromTop: 178,
-  /** Between a picture and its name. */
-  nameGap: 6,
+/** Pickers for tables and cues: a picture of each choice in a grid, names below, Back and Choose at the bottom. */
+const LOOK_PICKER_COMMON = {
+  /** Between a picture's frame and its name. */
+  nameGap: 4,
   selectedFrame: { width: 5, gap: 5, color: 0xf2c94c },
+  /** Thin pictures (cues) still get at least this much height to tap. */
+  minTouchHeight: 44,
   buttonsFromBottom: 46,
   buttonOffsetX: 140,
+} as const;
+
+export const LOOK_PICKER = {
+  /** Tables at TABLE_ART.previewScale, 3 by 2, below the panel title. */
+  table: { ...LOOK_PICKER_COMMON, columns: 3, columnSpacing: 345, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Cues at CUE_ART.previewScale, 2 by 3. */
+  cue: { ...LOOK_PICKER_COMMON, columns: 2, columnSpacing: 500, rowSpacing: 130, firstRowFromTop: 150 },
 } as const;
 
 /** Main menu. */
 export const MENU = {
   x: DESIGN.width / 2,
   titleY: 90,
-  /** Up to seven buttons (Continue to Exit) fit between the title and the bottom edge. */
+  /** Up to seven rows (Continue to Exit) fit between the title and the bottom edge. */
   firstButtonY: 190,
   buttonSpacing: 70,
+  /** Between two buttons sharing a row. */
+  pairGap: 16,
   /** "Placeholder art" label, bottom right (anchored by its right edge). */
   placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;

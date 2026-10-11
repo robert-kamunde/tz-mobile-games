@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { CUE_ART } from '../config/art';
+import type { CueStyle } from '../config/cues';
 import { AIM_GUIDE, BALL_IN_HAND, COLORS, CUE_STICK, TABLE_DEPTH } from '../config/layout';
 import type { AimGuide } from '../physics/aim';
 import type { Ball, Vec2 } from '../physics/types';
@@ -13,11 +14,11 @@ export class AimView {
   private readonly cue: Phaser.GameObjects.Image;
   private readonly cueShadow: Phaser.GameObjects.Image;
 
-  constructor(scene: Phaser.Scene, private readonly table: TableView) {
+  constructor(scene: Phaser.Scene, private readonly table: TableView, cueStyle: CueStyle) {
     this.guideGraphics = scene.add.graphics().setName('aimGuide').setDepth(TABLE_DEPTH.aim);
     // The tip is the image's left end, so rotating about it points the cue along the aim.
     this.cueShadow = scene.add.image(0, 0, cueShadowTexture(scene)).setOrigin(0, 0.5).setAlpha(CUE_ART.shadow.alpha).setDepth(TABLE_DEPTH.aim).setVisible(false);
-    this.cue = scene.add.image(0, 0, cueTexture(scene)).setOrigin(0, 0.5).setName('cueStick').setDepth(TABLE_DEPTH.aim).setVisible(false);
+    this.cue = scene.add.image(0, 0, cueTexture(scene, cueStyle)).setOrigin(0, 0.5).setName('cueStick').setData('style', cueStyle.id).setDepth(TABLE_DEPTH.aim).setVisible(false);
     this.cueGraphics = scene.add.graphics().setName('ballInHandRing').setDepth(TABLE_DEPTH.aim);
   }
 

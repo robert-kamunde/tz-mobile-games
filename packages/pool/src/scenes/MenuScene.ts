@@ -3,12 +3,17 @@ import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { AI_LEVEL_IDS } from '../config/ai';
 import { COMPUTER_CHARACTERS } from '../config/characters';
-import { BUTTON, COLORS, MENU, PANEL, TEXT_STYLE } from '../config/layout';
+import { BUTTON, COLORS, LOOK_PICKER, MENU, PANEL, TEXT_STYLE } from '../config/layout';
 import type { PoolSlots } from '../progress/slots';
+import { CUE_ART, TABLE_ART } from '../config/art';
+import { CUE_IDS, CUE_STYLES, isCueId } from '../config/cues';
 import { UK_7FT_TABLE } from '../config/table';
+import { TABLE_IDS, TABLE_THEMES, isTableId } from '../config/tables';
 import { buildTableGeometry } from '../physics/geometry';
 import { MatchSetup } from './MatchSetup';
-import { TablePicker } from './TablePicker';
+import { LookPicker } from './LookPicker';
+import { cueTexture } from './art/cueArt';
+import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { TableStart } from './TableScene';
@@ -34,7 +39,7 @@ export class MenuScene extends Phaser.Scene {
   private t!: Translator;
   private slots!: PoolSlots;
   private setup!: MatchSetup;
-  private tables!: TablePicker;
+  private looks!: LookPicker;
   private panel: Panel | null = null;
   private openPanel: MenuPanel | null = null;
   private hasSavedGame = false;
@@ -54,38 +59,49 @@ export class MenuScene extends Phaser.Scene {
 
     const t = this.t;
     this.add.text(MENU.x, MENU.titleY, t.t('menu.title'), textStyle(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('menu-title');
-    const items: { id: string; onTap: () => void }[] = [
-      ...(this.hasSavedGame ? [{ id: 'continue', onTap: () => this.startTable({ resume: true }) }] : []),
-      {
-        id: 'play',
-        onTap: () => {
-          const progress = this.slots.progress.load().data;
-          this.setup.show(progress.lastOpponent, progress.lastPicks, () => undefined);
+    // Each row is one button, or two side by side (Meza and Fimbo share a row so the menu fits).
+    type Item = { id: string; onTap: () => void };
+    const rows: Item[][] = [
+      ...(this.hasSavedGame ? [[{ id: 'continue', onTap: () => this.startTable({ resume: true }) }]] : []),
+      [
+        {
+          id: 'play',
+          onTap: () => {
+            const progress = this.slots.progress.load().data;
+            this.setup.show(progress.lastOpponent, progress.lastPicks, () => undefined);
+          },
         },
-      },
-      { id: 'tables', onTap: () => this.showTables() },
-      { id: 'stats', onTap: () => this.showPanel('stats') },
-      { id: 'rules', onTap: () => this.showPanel('rules') },
-      { id: 'settings', onTap: () => this.showPanel('settings') },
+      ],
+      [
+        { id: 'tables', onTap: () => this.showLooks('table') },
+        { id: 'cues', onTap: () => this.showLooks('cue') },
+      ],
+      [{ id: 'stats', onTap: () => this.showPanel('stats') }],
+      [{ id: 'rules', onTap: () => this.showPanel('rules') }],
+      [{ id: 'settings', onTap: () => this.showPanel('settings') }],
       // A web page cannot close itself, so Exit is only offered in the app. A game in progress is
       // already saved, so the popup only reassures; with none, Exit closes at once.
-      ...(services.exit.available ? [{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : services.exit.exit()) }] : []),
+      ...(services.exit.available ? [[{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : services.exit.exit()) }]] : []),
     ];
-    items.forEach((item, i) =>
-      addButton(this, MENU.x, MENU.firstButtonY + i * MENU.buttonSpacing, { name: `menu-${item.id}`, label: t.t(`menu.${item.id}`), onTap: item.onTap }, { width: BUTTON.width }),
-    );
+    rows.forEach((row, i) => {
+      const width = (BUTTON.width - (row.length - 1) * MENU.pairGap) / row.length;
+      row.forEach((item, j) => {
+        const x = MENU.x - BUTTON.width / 2 + width / 2 + j * (width + MENU.pairGap);
+        addButton(this, x, MENU.firstButtonY + i * MENU.buttonSpacing, { name: `menu-${item.id}`, label: t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
+      });
+    });
     this.add
       .text(MENU.placeholder.right, MENU.placeholder.y, t.t('pool.placeholder'), textStyle(TEXT_STYLE.labelSize, COLORS.textDim))
       .setOrigin(1, 0.5)
       .setName('placeholderLabel');
 
     this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice));
-    this.tables = new TablePicker(this, t, PANEL.overMenu, buildTableGeometry(UK_7FT_TABLE), UK_7FT_TABLE);
+    this.looks = new LookPicker(this, PANEL.overMenu);
     if (data.panel) this.showPanel(data.panel);
     // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
     onBackButton(this, () => {
       if (this.setup.goBack()) return true;
-      if (this.tables.goBack()) return true;
+      if (this.looks.goBack()) return true;
       if (!this.panel) return false;
       this.closePanel();
       return true;
@@ -93,25 +109,47 @@ export class MenuScene extends Phaser.Scene {
 
     registerTestProbe('pool.menu', () => ({
       continueShown: this.hasSavedGame,
-      panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.tables.visible ? 'tables' : this.openPanel,
-      selectedTable: this.tables.selected,
+      panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.looks.showing === 'table' ? 'tables' : this.looks.showing === 'cue' ? 'cues' : this.openPanel,
+      selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
+      selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
       table: this.slots.progress.load().data.table,
+      cue: this.slots.progress.load().data.cue,
       selectedCharacter: this.setup.selectedCharacter,
       locale: this.t.locale,
     }));
   }
 
-  /** Meza: the chosen table is saved at once and used from the next time the table opens. */
-  private showTables(): void {
+  /**
+   * Meza or Fimbo: the choice is saved at once and used from the next time the table opens (a game
+   * in progress included). Pictures are drawn on first open; a scene restart reuses them.
+   */
+  private showLooks(kind: 'table' | 'cue'): void {
+    const t = this.t;
     const progress = this.slots.progress.load().data;
-    this.tables.show(
-      progress.table,
-      (table) => {
-        this.slots.progress.save({ ...this.slots.progress.load().data, table });
-        this.tables.hide();
+    const items =
+      kind === 'table'
+        ? TABLE_IDS.map((id) => ({
+            id,
+            label: t.t(`table.${id}`),
+            texture: tableTexture(this, buildTableGeometry(UK_7FT_TABLE), UK_7FT_TABLE, TABLE_THEMES[id], TABLE_ART.previewScale).key,
+          }))
+        : CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale) }));
+    this.looks.show({
+      prefix: kind,
+      title: t.t(kind === 'table' ? 'tables.title' : 'cues.title'),
+      items,
+      layout: LOOK_PICKER[kind],
+      selected: kind === 'table' ? progress.table : progress.cue,
+      confirmLabel: t.t('looks.choose'),
+      backLabel: t.t('ui.back'),
+      onConfirm: (id) => {
+        const latest = this.slots.progress.load().data;
+        if (kind === 'table' && isTableId(id)) this.slots.progress.save({ ...latest, table: id });
+        if (kind === 'cue' && isCueId(id)) this.slots.progress.save({ ...latest, cue: id });
+        this.looks.hide();
       },
-      () => this.tables.hide(),
-    );
+      onBack: () => this.looks.hide(),
+    });
   }
 
   private startTable(start: TableStart): void {

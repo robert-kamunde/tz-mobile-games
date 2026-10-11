@@ -48,15 +48,16 @@ export const CUE_ART = {
   /** Thickness at the tip and at the butt, design pixels (the length is CUE_STICK.length). */
   tipWidth: 6,
   buttWidth: 11,
+  /** Tip and ferrule are the same on every cue; wood and decoration are per cue (config/cues.ts). */
   tip: { length: 4, color: '#3b6fb6' },
   ferrule: { length: 10, color: '#f4efe4' },
-  shaft: { light: '#f0d9a8', dark: '#c9a46a' },
-  /** Fraction of the length from the tip where the darker butt wood starts, and the grip wrap. */
+  /** Fraction of the length from the tip where the butt starts, and where the grip is. */
   buttStart: 0.62,
-  butt: { light: '#6b3a1c', dark: '#3b1e0c' },
-  wrap: { start: 0.74, end: 0.92, color: '#1d1d1d', stripe: '#c62828' },
-  buttCap: { length: 6, color: '#111111' },
+  grip: { start: 0.74, end: 0.92 },
+  buttCap: { length: 6 },
   shadow: { offsetX: 3, offsetY: 5, alpha: 0.3 },
+  /** Cues on the cue picker: this many times their real size. */
+  previewScale: 1.25,
 } as const;
 
 /** The controls beside and under the table: power bar, spin face and fine-aim strip. */

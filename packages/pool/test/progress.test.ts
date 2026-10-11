@@ -151,6 +151,15 @@ describe('progress', () => {
     expect(validateProgress({ ...p, table: 'gold' })).toEqual({ ...p, table: 'classic' });
   });
 
+  it('keeps the chosen cue; an older save or an unknown cue gives Klasiki', () => {
+    const p = { ...defaultProgress(), cue: 'makonde' as const };
+    expect(validateProgress(viaJson(p))).toEqual(p);
+    const old = viaJson(p) as Record<string, unknown>;
+    delete old.cue;
+    expect(validateProgress(old)?.cue).toBe('classic');
+    expect(validateProgress({ ...p, cue: 'gold' })?.cue).toBe('classic');
+  });
+
   it('opponent validation accepts only known opponents', () => {
     expect(validateOpponent({ kind: 'human', extra: 1 })).toEqual({ kind: 'human' });
     expect(validateOpponent({ kind: 'computer', level: 'hard' })).toEqual({ kind: 'computer', level: 'hard' });

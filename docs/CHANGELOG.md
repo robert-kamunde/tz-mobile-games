@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.12.0 (unreleased) - Choose your cue
+- Robert's idea (2026-10-11): pick the cue too. "Fimbo" (Cue) sits next to "Meza" on one menu row and opens a picker of six cues, one to match each table, all free and looks only (every cue plays the same): **Klasiki** (wood with a black wrap), **Zanzibar** (dark wood with brass rings), **Kitenge** (a kitenge-print grip), **Maasai** (red check butt with a beaded grip), **Tingatinga** (painted colour bands with dots), **Makonde** (ebony with bone-white inlays).
+- The chosen cue is saved (`cue` in `pool.progress`) and shown for every shot on this phone, the computer's included. Older saves get Klasiki.
+- The table picker became a general `LookPicker`, used for tables and cues.
+
 ## 0.11.0 (unreleased) - Choose your table
 - Robert asked for different tables with African and local designs (2026-10-11). A new "Meza" (Tables) button on the main menu shows a small picture of each table; tap one, then "Chagua" (Choose). Back, or the phone's back button, leaves the choice as it was.
 - Six tables, all free: **Klasiki** (wood, green felt), **Zanzibar** (dark carved wood with a rope border and brass studs like the Zanzibar doors, teal felt), **Kitenge** (a kitenge print of rings and dots, blue felt), **Maasai** (red shuka check with a line of beads, slate-blue felt), **Tingatinga** (bold painted sections with dots and waves, purple felt), **Makonde** (ebony with carved zigzags, sage felt).

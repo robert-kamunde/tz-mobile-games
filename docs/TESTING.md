@@ -100,13 +100,14 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; pulling the power bar meanwhile does nothing; choosing two players restores "Mchezaji" names. |
 | Frame budget | 6x CPU throttle: average CPU per frame while Hard thinks minus the same table while the player aims stays under the 6 ms thinking budget plus 6 ms; Hard still shoots (time limit). |
 
-#### Tables (4 scenarios, `tables.spec.ts`)
+#### Tables and cues (5 scenarios, `tables.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Choose a table | The picker opens with Klasiki selected; Back closes it; choosing Zanzibar saves it, the next game is drawn on it, and after reopening it is still chosen and selected on the picker. |
 | Back keeps the table | Selecting another table then Back, or the phone's back button, leaves the saved table unchanged and does not leave the app. |
 | Continue on a new table | A game in progress continues on a table chosen meanwhile, with the balls where they were. |
 | Every table | Each of the six tables draws and plays a break with no errors. |
+| Choose a cue | Fimbo opens with Klasiki selected; choosing Maasai saves it; selecting another then the phone's back button keeps Maasai (and the table unchanged); the table scene draws the Maasai cue; kept after reopening. |
 
 #### Spin and fine aim (4 scenarios, `controls.spec.ts`)
 | Scenario | Checks |
