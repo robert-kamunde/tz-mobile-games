@@ -32,10 +32,10 @@ export interface AiLevelConfig {
  * widest search, and the robustness check on its best shots.
  */
 export const AI_LEVELS: Readonly<Record<AiLevel, AiLevelConfig>> = {
-  easy: { aimError: 0.016, powerError: 0.13, maxCandidates: 12, speedFactors: [1.8], positionPlay: false, placementSpots: 3, maxSteps: 120_000, robustTop: 0 },
+  easy: { aimError: 0.02, powerError: 0.15, maxCandidates: 12, speedFactors: [1.8], positionPlay: false, placementSpots: 3, maxSteps: 120_000, robustTop: 0 },
   medium: { aimError: 0.006, powerError: 0.07, maxCandidates: 24, speedFactors: [1.5, 2.4], positionPlay: true, placementSpots: 5, maxSteps: 250_000, robustTop: 3 },
   hard: { aimError: 0.0022, powerError: 0.035, maxCandidates: 36, speedFactors: [1.3, 2, 3.2], positionPlay: true, placementSpots: 7, maxSteps: 400_000, robustTop: 6 },
-  impossible: { aimError: 0.0006, powerError: 0.012, maxCandidates: 48, speedFactors: [1.25, 1.7, 2.4, 3.4], positionPlay: true, placementSpots: 9, maxSteps: 500_000, robustTop: 8 },
+  impossible: { aimError: 0.0004, powerError: 0.01, maxCandidates: 48, speedFactors: [1.25, 1.7, 2.4, 3.4], positionPlay: true, placementSpots: 9, maxSteps: 500_000, robustTop: 8 },
 };
 
 export const AI_SEARCH = {
