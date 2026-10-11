@@ -1,9 +1,9 @@
 # Project Status
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Current milestone
-None in progress. Milestone 7 (release readiness) finished on 2026-10-10. Robert built the app and ran it on his ZTE Blade A35 (Android 14) the same day: runs well, full screen, icon, saves and sound work; no splash was visible (0.8.1 fixes the Android 12+ splash, to be checked on his next build). Next: the back button and landscape check, then the proposal below.
+None in progress. Milestone 7 (release readiness) finished on 2026-10-10. Robert built the app and ran it on his ZTE Blade A35 (Android 14) the same day: runs well, full screen, icon, saves and sound work; no splash was visible, fixed in 0.8.1. On 2026-10-11 he confirmed 0.8.1 on the phone: splash, back button and landscape all work. Next: the Play listing inputs and the proposal below.
 
 ### Milestone 7 scope (done)
 Everything needed for the first Android build that can be done without a phone or the Android SDK (B1):
@@ -37,7 +37,7 @@ Everything needed for the first Android build that can be done without a phone o
 - Milestone 4 (2026-10-08): main menu (Continue, Play, Stats, Rules, Settings), Menu button on the table, game in progress saved and resumed (TD6), stats per computer level, last opponent marked (TD8), language setting, rules screen, save backups (TD2). 166 unit tests and 111 browser test runs pass. Report: project folder `reports/milestone-4-report.md`.
 
 ## Next (order to confirm with Robert)
-- First device build: done 2026-10-10 (ZTE Blade A35, Android 14). Waiting on Robert to rebuild with 0.8.1 (splash) and report the back button and landscape lock.
+- First device build: done and checked on a ZTE Blade A35 (Android 14), 2026-10-10 and 11.
 - Proposed Milestone 8: the art and sound pass (table, balls, cue, menu, recorded sounds, icon), replacing the placeholders in ASSETS.md. Needs a decision on who makes the art.
 
 ## Blockers / decisions needed

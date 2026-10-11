@@ -3,7 +3,7 @@
 ## 0.8.1 (unreleased) - Fix: no splash screen on Android 12 and newer
 - Robert saw no splash screen on his ZTE Blade A35 (Android 14). Android 12 and newer ignore the splash image and show the app icon on a background colour from the theme, which was unset. The launch theme now sets that background to the game's dark colour (`splash_background`) and the icon to the app icon. The game's web view also loads on the same colour (`backgroundColor` in `capacitor.config.ts`) instead of white. Android 11 and older still show the splash image.
 - The Android splash still lasts only until the game's first frame, so on a fast start it is brief.
-- Not yet checked on a phone: Robert needs to rebuild (B1).
+- Checked by Robert on his ZTE Blade A35 (Android 14), 2026-10-11.
 
 ## 0.8.0 (unreleased) - Milestone 7: release readiness
 - The game is now called **Bongo Pool Table** (Robert, 2026-10-10; was "Pool ya Mtaani"). Saves are unaffected: their key prefix stays `pool`.
