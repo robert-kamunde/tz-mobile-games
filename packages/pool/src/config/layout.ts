@@ -65,9 +65,6 @@ export const COLORS = {
   overlay: 0x0b0e11,
   accent: '#f2994a',
   buttonText: '#101418',
-  buttonBackground: '#ffffff',
-  /** A button marked as the current or last choice. */
-  buttonHighlight: '#f2c94c',
 } as const;
 
 export const HUD = {
@@ -124,6 +121,8 @@ export const PANEL = {
   backBottom: 46,
   bodyLineSpacing: 6,
   sideMargin: 40,
+  /** The panel's tap-catching box is all but invisible; the drawn panel shows instead. */
+  hitAlpha: 0.01,
   /** Above the table and the HUD. */
   depth: 20,
   /** Over the middle of the table (the in-game opponent picker, five choices and Back); the table shows faintly through it. */
@@ -175,7 +174,7 @@ export const LOOK_PICKER = {
 /** Main menu. */
 export const MENU = {
   x: DESIGN.width / 2,
-  titleY: 90,
+  titleY: 82,
   /** Up to seven rows (Continue to Exit) fit between the title and the bottom edge. */
   firstButtonY: 190,
   buttonSpacing: 70,

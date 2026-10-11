@@ -16,7 +16,9 @@ export function phoneTestConfig(options: { packageDir: string; port: number }): 
   const { packageDir, port } = options;
   return defineConfig({
     testDir: './e2e',
-    timeout: 30_000,
+    // Tests that play several shots run in a software renderer, four at a time; with a random rack
+    // (0.16.0) they take 20 to 30 s, so 30 s left no room. Frame time is checked by @timing instead.
+    timeout: 60_000,
     fullyParallel: true,
     reporter: [['list']],
     use: { baseURL: `http://127.0.0.1:${port}`, hasTouch: true, isMobile: true },

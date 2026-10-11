@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.0 (unreleased) - Art Part B: portraits, buttons, panels, logo and the menu bar
+- **Portraits** for all 12 characters, replacing the coloured circles with a letter. Simple friendly faces drawn by the game, each with something to recognise them by: Fundi's orange cap and moustache, Malkia's gold headwrap, Mwamba's bald head, Bonge's round face and grin, Shangazi's kitenge wrap and glasses, Mjanja's cap turned back and chain, Bishoo's dark glasses and white collar, Kichwa's afro and glasses, Dogo Mbishi's big cap, Mama Ntilie's red headwrap and apron, Mzee Kobe's white kofia and grey beard, Bingwa's cornrows, dark glasses and gold chain. They show on the character picker and in the player panels (a little bigger there than before).
+- **Buttons** are rounded and raised, white, or gold for the current choice. **Panels** (Settings, Stats, Rules, pickers, game over) are rounded with a thin gold edge.
+- **Title logo:** "BONGO" in gold letters with an 8-ball as its first O, over a red "POOL TABLE" banner.
+- **Menu background:** a neighbourhood pool bar at night: a two-tone painted wall, a barred window with the moon, a cue rack, coloured string lights, a lamp glowing behind the buttons, a chalk scoreboard, a counter with a radio, and the edge of a pool table along the bottom. No drinks anywhere (Robert).
+- **Potted-ball trays** show the same shaded balls as the table.
 ## 0.16.0 (unreleased) - A stronger computer, Impossible, and a different break every game
 - Robert found Hard easy to beat (2026-10-11). Every level now aims and judges power more accurately and looks at more shots; Medium also checks its best shots hold up if slightly mishit. In 20 to 30 games each, the new level beat the old one of the same name: Easy 23/30, Medium 18/20, Hard 15/20.
 - New fifth opponent: **Bingwa (Haiwezekani / Impossible)**, almost no aiming or power error and the widest search. It beat the new Hard 24/30, potting about three shots in four and fouling on 2% of its shots. Bingwa has its own catchphrases. The name is Claude's choice, for Robert to confirm.

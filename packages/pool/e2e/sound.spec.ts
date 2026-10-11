@@ -41,7 +41,7 @@ test('a break plays the cue, ball and cushion sounds, and a harder shot strikes 
 
 test('Sound off in Settings plays nothing, and stays off after reopening', async ({ page }) => {
   // Two full breaks; a random rack (0.16.0) can roll for up to 8 s of game time.
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   await tap(page, 'menu-settings', MENU_SCENE);

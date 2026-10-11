@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { BUTTON, COLORS, PANEL, TEXT_STYLE } from '../config/layout';
+import { buttonTexture, panelTexture } from './art/uiArt';
 
 export interface ButtonSpec {
   /** Object name, used by browser tests to find it. */
@@ -17,14 +18,15 @@ export const textStyle = (size: string, color: string = COLORS.text): Phaser.Typ
 });
 
 /**
- * A text button. Taps fire on release, never for a touch the system cancelled (call, notification
+ * A button: a label over a drawn face (scenes/art/uiArt.ts). Taps fire on release, never for a touch the system cancelled (call, notification
  * shade). `width` fixes the width so stacked buttons line up; without it the button fits its text.
  */
 export function addButton(scene: Phaser.Scene, x: number, y: number, spec: ButtonSpec, options: { width?: number; originX?: number } = {}): Phaser.GameObjects.Text {
+  const face = scene.add.image(x, y, '__DEFAULT');
+  // Made before the label so it draws underneath at the same depth.
   const button = scene.add
     .text(x, y, spec.label, {
       ...textStyle(TEXT_STYLE.buttonSize, COLORS.buttonText),
-      backgroundColor: spec.highlighted ? COLORS.buttonHighlight : COLORS.buttonBackground,
       padding: BUTTON.padding,
       align: 'center',
       ...(options.width ? { fixedWidth: options.width } : {}),
@@ -33,10 +35,42 @@ export function addButton(scene: Phaser.Scene, x: number, y: number, spec: Butto
     .setName(spec.name)
     .setData('highlighted', spec.highlighted === true)
     .setInteractive({ useHandCursor: true });
+  followButton(scene, button, face);
   button.on('pointerup', (pointer: Phaser.Input.Pointer) => {
     if (!pointer.wasCanceled) spec.onTap();
   });
   return button;
+}
+
+/**
+ * Keeps a button's face under its label: callers move, hide, fade, re-layer and destroy the label
+ * (a plain Text, which tests and screens already use), and the face follows before every frame.
+ */
+function followButton(scene: Phaser.Scene, label: Phaser.GameObjects.Text, face: Phaser.GameObjects.Image): void {
+  let look = '';
+  const sync = () => {
+    // A label can change (New game asks "sure?"), so the face is redrawn to its new size.
+    const highlighted = label.getData('highlighted') === true;
+    const now = `${label.width}x${label.height}-${highlighted}`;
+    if (now !== look) {
+      look = now;
+      face.setTexture(buttonTexture(scene, label.width, label.height, highlighted));
+    }
+    face
+      .setPosition(label.x + (0.5 - label.originX) * label.displayWidth, label.y + (0.5 - label.originY) * label.displayHeight)
+      .setScale(label.scaleX, label.scaleY)
+      .setVisible(label.visible)
+      .setAlpha(label.alpha);
+    if (face.depth !== label.depth) face.setDepth(label.depth);
+  };
+  sync();
+  scene.events.on(Phaser.Scenes.Events.POST_UPDATE, sync);
+  scene.events.on(Phaser.Scenes.Events.PRE_RENDER, sync);
+  label.once(Phaser.GameObjects.Events.DESTROY, () => {
+    scene.events.off(Phaser.Scenes.Events.POST_UPDATE, sync);
+    scene.events.off(Phaser.Scenes.Events.PRE_RENDER, sync);
+    face.destroy();
+  });
 }
 
 export interface PanelSpec {
@@ -56,14 +90,16 @@ export interface PanelSpec {
  * swallows taps so nothing underneath reacts. Built when shown and destroyed when closed.
  */
 export class Panel {
-  private readonly objects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Text)[] = [];
+  private readonly objects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
 
   constructor(scene: Phaser.Scene, spec: PanelSpec) {
     const { x, y, width, height, alpha } = spec.area;
     const top = y - height / 2;
-    const box = scene.add.rectangle(x, y, width, height, COLORS.overlay, alpha).setName(spec.name).setInteractive();
+    // The box swallows taps; the drawn panel over it is what shows.
+    const box = scene.add.rectangle(x, y, width, height, COLORS.overlay, PANEL.hitAlpha).setName(spec.name).setInteractive();
+    const look = scene.add.image(x, y, panelTexture(scene, width, height)).setAlpha(alpha);
     const title = scene.add.text(x, top + PANEL.titleTop, spec.title, textStyle(TEXT_STYLE.statusSize)).setOrigin(0.5, 0);
-    this.objects.push(box, title);
+    this.objects.push(box, look, title);
     let nextY = title.y + title.height + PANEL.gap;
     if (spec.body) {
       const body = scene.add

@@ -8,6 +8,8 @@ import { seatCharacter, type CharacterPicks } from '../progress/characters';
 import type { Opponent } from '../progress/opponent';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
 import { Face } from './Face';
+import { ballTexture } from './art/ballArt';
+import { panelTexture } from './art/uiArt';
 import { addButton, textStyle } from './ui';
 
 export interface PlayerPanelInfo {
@@ -34,12 +36,12 @@ const TRAY_SLOTS = Math.max(countInRack('red'), countInRack('yellow'));
  * the translator; the scene decides what to say.
  */
 export class MatchHud {
-  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc; face: Face; tray: Phaser.GameObjects.Arc[] }[];
+  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc; face: Face; tray: Phaser.GameObjects.Arc[]; trayBalls: Phaser.GameObjects.Image[] }[];
   private readonly trays: [TrayState, TrayState] = [{ potted: 0, slots: 0 }, { potted: 0, slots: 0 }];
   private readonly status: Phaser.GameObjects.Text;
   private readonly hint: Phaser.GameObjects.Text;
   private readonly newGame: Phaser.GameObjects.Text;
-  private readonly overPanel: Phaser.GameObjects.Rectangle;
+  private readonly overPanel: Phaser.GameObjects.Image;
   private readonly overTitle: Phaser.GameObjects.Text;
   private readonly overDetail: Phaser.GameObjects.Text;
   private readonly quipBox: Phaser.GameObjects.Graphics;
@@ -76,7 +78,9 @@ export class MatchHud {
       const tray = Array.from({ length: TRAY_SLOTS }, (_, i) =>
         scene.add.circle(firstX + i * step, tr.y, tr.ballRadius).setName(`tray-${player}-${i}`).setVisible(false),
       );
-      return { label, chip, face, tray };
+      // A potted ball is the same shaded ball as on the table, over its slot.
+      const trayBalls = tray.map((slot) => scene.add.image(slot.x, slot.y, ballTexture(scene, 'red', tr.ballRadius)).setVisible(false));
+      return { label, chip, face, tray, trayBalls };
     });
 
     this.status = scene.add
@@ -99,7 +103,7 @@ export class MatchHud {
       .setName('placeholderLabel');
 
     const g = { ...HUD.gameOver, x: HUD.gameOver.x + dx };
-    this.overPanel = scene.add.rectangle(g.x, g.y, g.width, g.height, COLORS.overlay, g.alpha).setName('gameOverPanel').setVisible(false);
+    this.overPanel = scene.add.image(g.x, g.y, panelTexture(scene, g.width, g.height)).setAlpha(g.alpha).setName('gameOverPanel').setVisible(false);
     this.overTitle = scene.add.text(g.x, g.y - 30, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
     this.overDetail = scene.add.text(g.x, g.y + 34, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
 
@@ -136,7 +140,7 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.quipBox, this.quipLabel, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.quipBox, this.quipLabel, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
   }
@@ -192,12 +196,16 @@ export class MatchHud {
   private showTray(player: PlayerId, { group, remaining, total }: PlayerPanelInfo): void {
     const slots = group ? total : 0;
     const potted = slots - (group ? remaining : 0);
-    this.panels[player]!.tray.forEach((slot, i) => {
+    const { tray, trayBalls } = this.panels[player]!;
+    tray.forEach((slot, i) => {
       slot.setVisible(i < slots);
+      trayBalls[i]!.setVisible(false);
       if (!group || i >= slots) return;
       const filled = i < potted;
+      // The slot keeps its fill (invisible) so tests can read which colour and how many are filled.
       slot.setFillStyle(COLORS.ball[group], filled ? 1 : 0);
-      slot.setStrokeStyle(HUD.tray.outlineWidth, filled ? COLORS.ballOutline : COLORS.ball[group], filled ? 1 : HUD.tray.emptyAlpha);
+      slot.setStrokeStyle(HUD.tray.outlineWidth, COLORS.ball[group], filled ? 0 : HUD.tray.emptyAlpha);
+      if (filled) trayBalls[i]!.setTexture(ballTexture(this.scene, group, HUD.tray.ballRadius)).setVisible(true);
     });
     this.trays[player] = { potted, slots };
   }

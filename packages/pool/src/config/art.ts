@@ -126,3 +126,63 @@ export const PORTRAIT_ART = {
   /** Thin dark line round the frame. */
   frame: { width: 2.5, color: 'rgba(0, 0, 0, 0.55)' },
 } as const;
+
+/** Buttons and panels (Milestone 9 Part B): rounded, softly lit, with a thin gold edge on panels. */
+export const UI_ART = {
+  button: {
+    radius: 12,
+    /** Top and bottom of the face, normal and highlighted (the current or last choice). */
+    face: ['#ffffff', '#dfe5ea'],
+    highlight: ['#ffd96a', '#e0a92a'],
+    /** A darker lip along the bottom so the button looks raised. */
+    lip: { height: 3, color: 'rgba(0, 0, 0, 0.28)' },
+    edge: { width: 1, color: 'rgba(0, 0, 0, 0.35)' },
+    /** Shine along the top edge. */
+    shine: 'rgba(255, 255, 255, 0.6)',
+  },
+  panel: {
+    radius: 18,
+    /** Lighter at the top, darker at the bottom; the panel's own alpha still applies. */
+    top: '#1c252d',
+    bottom: '#0b0e11',
+    edge: { width: 2, color: 'rgba(242, 201, 76, 0.55)' },
+    inner: { inset: 5, width: 1, color: 'rgba(255, 255, 255, 0.08)' },
+  },
+} as const;
+
+/**
+ * The menu (Milestone 9 Part B): a neighbourhood pool bar at night, no drinks anywhere (Robert,
+ * 2026-10-11). Painted two-tone wall, a barred window, a cue rack, string lights, a lamp glowing
+ * behind the buttons, a counter with a radio, and the edge of a pool table along the bottom. Detail
+ * stays at the sides; the middle is kept calm for the buttons.
+ */
+export const MENU_ART = {
+  wall: { top: '#2f6b66', bottom: '#214c48', lowerTop: 430, lower: '#6b3b22', lowerDark: '#4a2816', stripe: '#e0a030', stripeHeight: 8 },
+  floor: { top: 600, color: '#3a3532', dark: '#24201e', tile: 80 },
+  /** Warm light from a lamp above the middle of the room. */
+  glow: { x: 640, y: 120, radius: 560, color: 'rgba(255, 214, 140, 0.30)' },
+  lamp: { x: 640, top: 0, cord: 18, shadeWidth: 120, shadeHeight: 34, color: '#1f3d2a', rim: '#d4a64a', bulb: '#fff3c4' },
+  lights: { y: 34, sag: 46, spacing: 54, radius: 5, colors: ['#ff5a4f', '#ffd24a', '#4fd36b', '#4fb3ff', '#ff8ad8'], glow: 14 },
+  window: { x: 46, y: 150, width: 200, height: 190, frame: '#c9c2b4', sky: ['#0d1830', '#1d3157'], bars: '#2b2b2b', barSpacing: 24, stars: 14 },
+  rack: { x: 268, y: 214, width: 48, height: 300, wood: '#6b4423', cues: ['#c8a165', '#a0522d', '#d9b77d', '#8b5a2b'] },
+  counter: { x: 974, y: 470, width: 306, height: 150, top: '#8a5a32', front: '#5e3a1e', panel: '#4b2e17', edge: '#2b1a0c' },
+  radio: { x: 1010, y: 418, width: 110, height: 52, body: '#b23a2a', grille: '#2b2b2b', dial: '#f2c94c' },
+  board: { x: 1000, y: 150, width: 230, height: 160, frame: '#7a5230', slate: '#1d2a22', chalk: 'rgba(240, 240, 230, 0.75)' },
+  fan: { x: 1130, y: 60, blade: 90, color: '#3a3a3a' },
+  table: { top: 640, rail: '#5a3a1e', railDark: '#3a2412', felt: '#1f7a46', feltDark: '#145233', railHeight: 26 },
+  /** Darker round the edges, so the eye lands on the buttons. */
+  vignette: 'rgba(0, 0, 0, 0.55)',
+  /** Darkens the middle a little more so white button labels and the panel stay readable. */
+  centreShade: { width: 700, color: 'rgba(0, 0, 0, 0.18)' },
+} as const;
+
+/** The title logo on the menu: "BONGO" in gold with the 8-ball as its first O, "POOL TABLE" on a banner. */
+export const LOGO_ART = {
+  width: 620,
+  height: 150,
+  word: { size: 92, y: 66, letterGap: 4, fill: ['#fff1a8', '#f2c94c', '#c98a12'], stroke: '#3b1f08', strokeWidth: 8, shadow: 'rgba(0, 0, 0, 0.5)' },
+  ball: { color: '#111111', spot: '#ffffff', shine: 'rgba(255, 255, 255, 0.55)' },
+  banner: { y: 124, height: 40, width: 360, fill: '#c0392b', dark: '#7d241b', text: '#ffffff', size: 26, notch: 14 },
+  /** Kept on the logo's text (the font is the game's own). */
+  font: 'system-ui, sans-serif',
+} as const;

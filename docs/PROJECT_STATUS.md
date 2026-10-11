@@ -9,9 +9,9 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Tables (done, 0.11.0, 2026-10-11; Robert's request):** six tables to choose from on a new "Meza" menu button: Classic, Zanzibar, Kitenge, Maasai, Tingatinga, Makonde. Patterns on the rails only, plain felt, each felt checked for colour blindness. All free.
 - **Personal touches (Robert, 2026-10-11, "proceed with them"):** cue choice (done, 0.12.0), character catchphrases in Swahili or English (done, 0.13.0), left-handed mode in Settings (done, 0.14.0) and backgrounds behind the table (done, 0.15.0). All personal touches are built.
 - **Stronger computer, Impossible level, random rack (done, 0.16.0, 2026-10-11; Robert's request):** every level stronger, Bingwa (Haiwezekani) added, a different rack every game. Your own name was dropped at Robert's request (2026-10-11): players use the character names. Tables and cues are all free (Robert's choice on the card).
-- **Part B, the screens (after the personal touches):** a portrait for each of the 11 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
+- **Part B, the screens (done, 0.17.0, 2026-10-11):** a portrait for each of the 12 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
 - **Part C, store and sound:** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
-- Waiting on Robert: the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
+- Waiting on Robert: whether "Bingwa" is a good name for the Impossible opponent, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)
 Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.

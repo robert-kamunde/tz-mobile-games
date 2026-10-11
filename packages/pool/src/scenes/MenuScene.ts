@@ -15,6 +15,7 @@ import { MatchSetup } from './MatchSetup';
 import { LookPicker } from './LookPicker';
 import { backgroundTexture, type PreviewTable } from './art/backgroundArt';
 import { cueTexture } from './art/cueArt';
+import { logoTexture, menuBackgroundTexture } from './art/menuArt';
 import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
@@ -60,7 +61,8 @@ export class MenuScene extends Phaser.Scene {
     this.hasSavedGame = this.slots.match.load().data !== null;
 
     const t = this.t;
-    this.add.text(MENU.x, MENU.titleY, t.t('menu.title'), textStyle(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('menu-title');
+    this.add.image(0, 0, menuBackgroundTexture(this)).setOrigin(0).setName('menu-background');
+    this.add.image(MENU.x, MENU.titleY, logoTexture(this, t.t('menu.title'))).setName('menu-title');
     // Each row is one button, or two side by side (Meza and Fimbo share a row so the menu fits).
     type Item = { id: string; onTap: () => void };
     const rows: Item[][] = [

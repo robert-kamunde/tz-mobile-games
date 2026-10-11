@@ -79,7 +79,7 @@ test('controls are ignored while balls are moving', async ({ page }) => {
 
 test('going to the background mid-shot freezes the table and gives the same result after returning', async ({ page }) => {
   // Plays two full breaks; slow when the other browser tests run alongside.
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
   const errors = trackErrors(page);
   // Reference: the same break with no interruption.
   await boot(page);
