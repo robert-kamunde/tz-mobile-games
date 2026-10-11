@@ -63,6 +63,11 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   const vsComputer = {} as Record<AiLevel, LevelRecord>;
   for (const level of AI_LEVEL_IDS) {
     const entry = vs[level];
+    // A level added in an update (Impossible, 0.16.0) is missing from older saves: no games yet.
+    if (entry === undefined) {
+      vsComputer[level] = { played: 0, won: 0 };
+      continue;
+    }
     if (typeof entry !== 'object' || entry === null) return null;
     const { played, won } = entry as Record<string, unknown>;
     if (!isCount(played) || !isCount(won) || won > played) return null;

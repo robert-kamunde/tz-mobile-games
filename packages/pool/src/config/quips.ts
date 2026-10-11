@@ -79,6 +79,11 @@ export const QUIP_LINES: Readonly<Record<string, CharacterLines>> = {
     foul: [['Umeunguza wali, mwanangu.', 'You burnt the rice, dear.']],
     win: [['Haya, chakula tayari!', 'Right, dinner is served!']],
   },
+  bingwa: {
+    pot: [['Bingwa hakosei!', 'The champion never misses!'], ['Hii ni kazi ndogo.', 'This is easy work.']],
+    foul: [['Asante kwa zawadi!', 'Thanks for the gift!']],
+    win: [['Bingwa ni bingwa!', 'A champion is a champion!']],
+  },
   'mzee-kobe': {
     pot: [['Polepole ndio mwendo.', 'Slowly does it.'], ['Uzoefu, kijana.', 'Experience, young one.']],
     foul: [['Haraka haraka haina baraka.', 'Haste brings no blessing.']],

@@ -112,7 +112,7 @@ describe('progress', () => {
     p = recordGame(p, { kind: 'computer', level: 'easy' }, 1);
     p = recordGame(p, { kind: 'computer', level: 'hard' }, 1);
     p = recordGame(p, { kind: 'human' }, 1);
-    expect(p.vsComputer).toEqual({ easy: { played: 2, won: 1 }, medium: { played: 0, won: 0 }, hard: { played: 1, won: 0 } });
+    expect(p.vsComputer).toEqual({ easy: { played: 2, won: 1 }, medium: { played: 0, won: 0 }, hard: { played: 1, won: 0 }, impossible: { played: 0, won: 0 } });
     expect(p.twoPlayerGames).toBe(1);
   });
 
@@ -122,9 +122,16 @@ describe('progress', () => {
     expect(validateProgress(viaJson(defaultProgress()))).toEqual(defaultProgress());
   });
 
+  it('an older save without the Impossible level keeps its stats and starts Impossible at zero', () => {
+    const p = recordGame(defaultProgress(), { kind: 'computer', level: 'hard' }, 0);
+    const old = viaJson(p) as RawProgress;
+    delete old.vsComputer.impossible;
+    expect(validateProgress(old)).toEqual(p);
+  });
+
   it.each([
     ['more wins than games', (p: RawProgress) => (p.vsComputer.easy = { played: 1, won: 2 })],
-    ['a missing level', (p: RawProgress) => delete p.vsComputer.hard],
+    ['a damaged level', (p: RawProgress) => (p.vsComputer.hard = 'lots')],
     ['a fractional count', (p: RawProgress) => (p.twoPlayerGames = 1.5)],
     ['a bad last opponent', (p: RawProgress) => (p.lastOpponent = { kind: 'robot' })],
   ])('rejects %s', (_name, change) => {

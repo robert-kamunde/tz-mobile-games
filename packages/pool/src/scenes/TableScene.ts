@@ -600,7 +600,8 @@ export class TableScene extends Phaser.Scene {
   // ---- Helpers ----------------------------------------------------------------------------
 
   private newSimulation(): PoolSimulation {
-    return new PoolSimulation(this.geometry, DEFAULT_PHYSICS, rackBalls(UK_7FT_TABLE), this.logger.child('physics'));
+    // A new random rack every game (Math.random is fine here: nothing needs to repeat it).
+    return new PoolSimulation(this.geometry, DEFAULT_PHYSICS, rackBalls(UK_7FT_TABLE, createRandom((Math.random() * 2 ** 32) >>> 0)), this.logger.child('physics'));
   }
 
   /** Redraws everything that depends on the match state while the table is still. */

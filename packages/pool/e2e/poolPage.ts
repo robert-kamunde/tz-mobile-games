@@ -76,7 +76,7 @@ export async function waitForScene(page: Page, key: string): Promise<void> {
   }, key);
 }
 
-export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard';
+export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard' | 'impossible';
 
 /**
  * On the character picker: keeps the selected characters (or taps the given ones) and confirms, once

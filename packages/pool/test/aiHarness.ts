@@ -1,6 +1,6 @@
 import { createRandom } from '@tzg/core';
 import { ShotPlanner } from '../src/ai/planner';
-import { AI_LEVELS, type AiLevel } from '../src/config/ai';
+import { AI_LEVELS, type AiLevel, type AiLevelConfig } from '../src/config/ai';
 import { DEFAULT_PHYSICS } from '../src/config/physics';
 import { SIMULATION_LOOP } from '../src/config/layout';
 import { respawnCueBall } from '../src/physics/placement';
@@ -19,8 +19,12 @@ export interface GameRecord {
 }
 
 /** Plays one decision for match.current on sim, the way the table scene does. Returns the new match state. */
-export function playAiTurn(sim: PoolSimulation, match: MatchState, level: AiLevel, seed: number) {
-  const planner = new ShotPlanner({ balls: sim.balls, table: GEOMETRY, tableConfig: TABLE, physics: DEFAULT_PHYSICS, match }, AI_LEVELS[level], createRandom(seed));
+/** A level by name, or its settings directly (to compare tunings). */
+export type AiPlayer = AiLevel | AiLevelConfig;
+
+export function playAiTurn(sim: PoolSimulation, match: MatchState, level: AiPlayer, seed: number) {
+  const config = typeof level === 'string' ? AI_LEVELS[level] : level;
+  const planner = new ShotPlanner({ balls: sim.balls, table: GEOMETRY, tableConfig: TABLE, physics: DEFAULT_PHYSICS, match }, config, createRandom(seed));
   planner.work(Number.MAX_SAFE_INTEGER);
   const decision = planner.decision();
   if (decision.place) {
@@ -36,7 +40,7 @@ export function playAiTurn(sim: PoolSimulation, match: MatchState, level: AiLeve
 }
 
 /** A whole game between two AI levels; player 0 breaks. Stops after maxShots with no winner. */
-export function playAiGame(levels: readonly [AiLevel, AiLevel], seed: number, maxShots = 150): GameRecord {
+export function playAiGame(levels: readonly [AiPlayer, AiPlayer], seed: number, maxShots = 150): GameRecord {
   let sim = rackedSim();
   let match = startMatch(0);
   const turns: { player: PlayerId; verdict: ShotVerdict }[] = [];

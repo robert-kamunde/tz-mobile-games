@@ -2,9 +2,10 @@
  * Computer opponent tuning (GAME_DESIGN.md "Computer opponent"). Values are starting points tuned
  * with the strength ladder (`npm run ai:ladder -w @tzg/pool`), not with players yet.
  */
-export type AiLevel = 'easy' | 'medium' | 'hard';
+export type AiLevel = 'easy' | 'medium' | 'hard' | 'impossible';
 
-export const AI_LEVEL_IDS: readonly AiLevel[] = ['easy', 'medium', 'hard'];
+/** Weakest first. Impossible (Haiwezekani) was added at Robert's request, 2026-10-11. */
+export const AI_LEVEL_IDS: readonly AiLevel[] = ['easy', 'medium', 'hard', 'impossible'];
 
 export interface AiLevelConfig {
   /** Standard deviation of the aiming error, radians. */
@@ -25,10 +26,16 @@ export interface AiLevelConfig {
   readonly robustTop: number;
 }
 
+/**
+ * 2026-10-11: Robert found Hard easy to beat, so every level was made stronger (about one step: the new
+ * Easy is close to the old Medium) and Impossible was added: almost no aiming or power error, the
+ * widest search, and the robustness check on its best shots.
+ */
 export const AI_LEVELS: Readonly<Record<AiLevel, AiLevelConfig>> = {
-  easy: { aimError: 0.03, powerError: 0.2, maxCandidates: 6, speedFactors: [2], positionPlay: false, placementSpots: 2, maxSteps: 80_000, robustTop: 0 },
-  medium: { aimError: 0.011, powerError: 0.1, maxCandidates: 16, speedFactors: [1.6, 2.6], positionPlay: true, placementSpots: 4, maxSteps: 200_000, robustTop: 0 },
-  hard: { aimError: 0.004, powerError: 0.05, maxCandidates: 30, speedFactors: [1.4, 2.2, 3.4], positionPlay: true, placementSpots: 6, maxSteps: 400_000, robustTop: 5 },
+  easy: { aimError: 0.016, powerError: 0.13, maxCandidates: 12, speedFactors: [1.8], positionPlay: false, placementSpots: 3, maxSteps: 120_000, robustTop: 0 },
+  medium: { aimError: 0.006, powerError: 0.07, maxCandidates: 24, speedFactors: [1.5, 2.4], positionPlay: true, placementSpots: 5, maxSteps: 250_000, robustTop: 3 },
+  hard: { aimError: 0.0022, powerError: 0.035, maxCandidates: 36, speedFactors: [1.3, 2, 3.2], positionPlay: true, placementSpots: 7, maxSteps: 400_000, robustTop: 6 },
+  impossible: { aimError: 0.0006, powerError: 0.012, maxCandidates: 48, speedFactors: [1.25, 1.7, 2.4, 3.4], positionPlay: true, placementSpots: 9, maxSteps: 500_000, robustTop: 8 },
 };
 
 export const AI_SEARCH = {

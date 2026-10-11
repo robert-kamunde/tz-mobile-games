@@ -126,8 +126,8 @@ export const PANEL = {
   sideMargin: 40,
   /** Above the table and the HUD. */
   depth: 20,
-  /** Over the middle of the table (the in-game opponent picker); the table shows faintly through it. */
-  overTable: { x: 570, y: 360, width: 600, height: 500, alpha: 0.94 },
+  /** Over the middle of the table (the in-game opponent picker, five choices and Back); the table shows faintly through it. */
+  overTable: { x: 570, y: 360, width: 600, height: 560, alpha: 0.94 },
   /** Over the main menu, hiding it completely so its buttons do not show through the text. */
   overMenu: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 1100, height: 660, alpha: 1 },
 } as const;

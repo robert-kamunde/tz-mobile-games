@@ -8,6 +8,7 @@ import {
   elementCenter,
   layout,
   menuState,
+  playFromMenu,
   potTheBlack,
   pullPower,
   reopen,
@@ -251,4 +252,23 @@ test('Exit during a game asks first, says the game is saved, and the game contin
   await waitForScene(page, SCENE);
   expect((await state(page)).balls).toEqual(afterBreak.balls);
   expect(errors).toEqual([]);
+});
+
+test('the opponent picker fits all five choices and Back without overlapping, on the menu and on the table', async ({ page }) => {
+  const boxes = async (scene: string) =>
+    Promise.all(['two', 'easy', 'medium', 'hard', 'impossible', 'back'].map((id) => page.evaluate(([s, n]) => window.__tzg!.boundsOf(s, n), [scene, `opponent-${id}`] as const)));
+  const expectApart = (list: ({ top: number; bottom: number } | null)[]) => {
+    for (let i = 1; i < list.length; i++) expect(list[i]!.top, `button ${i}`).toBeGreaterThan(list[i - 1]!.bottom);
+  };
+  await bootTo(page, MENU_SCENE);
+  await tap(page, 'menu-play', MENU_SCENE);
+  expectApart(await boxes(MENU_SCENE));
+  await tap(page, 'opponent-back', MENU_SCENE);
+  await playFromMenu(page, 'impossible');
+  expect((await state(page)).opponent).toEqual({ kind: 'computer', level: 'impossible' });
+  expect((await state(page)).players[1]).toBe('Bingwa');
+  await tap(page, 'newGameButton');
+  await tap(page, 'newGameButton');
+  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
+  expectApart(await boxes(SCENE));
 });

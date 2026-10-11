@@ -37,6 +37,8 @@ export const COMPUTER_CHARACTERS: Readonly<Record<AiLevel, Character>> = {
   easy: { id: 'dogo-mbishi', name: 'Dogo Mbishi', gender: 'male', faceColor: 0x4a6fa5, initial: 'D' },
   medium: { id: 'mama-ntilie', name: 'Mama Ntilie', gender: 'female', faceColor: 0x8e5a9e, initial: 'N' },
   hard: { id: 'mzee-kobe', name: 'Mzee Kobe', gender: 'male', faceColor: 0x5f6b73, initial: 'K' },
+  /** Impossible (0.16.0): the champion of the street tables. Name chosen by Claude, for Robert to confirm. */
+  impossible: { id: 'bingwa', name: 'Bingwa', gender: 'male', faceColor: 0x8a6d1c, initial: 'B' },
 };
 
 /** Player 1 and player 2 before anyone has chosen. */
