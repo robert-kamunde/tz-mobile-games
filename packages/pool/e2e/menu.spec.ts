@@ -4,6 +4,7 @@ import {
   MENU_SCENE,
   SCENE,
   boot,
+  confirmCharacters,
   elementCenter,
   layout,
   menuState,
@@ -117,8 +118,8 @@ test('a finished game leaves no Continue, and a win against the computer is coun
   await tap(page, 'menu-stats', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('stats');
   const stats = await textOf(page, MENU_SCENE, 'statsPanel-body');
-  expect(stats).toContain('Kompyuta (Rahisi): umeshinda 1 kati ya 1');
-  expect(stats).toContain('Kompyuta (Ngumu): umeshinda 0 kati ya 0');
+  expect(stats).toContain('Dogo Mbishi (Rahisi): umeshinda 1 kati ya 1');
+  expect(stats).toContain('Mzee Kobe (Ngumu): umeshinda 0 kati ya 0');
   expect(stats).toContain('Wachezaji wawili: michezo 0');
 
   // The picker marks the last opponent.
@@ -147,8 +148,9 @@ test('the chosen language changes every label and is kept after reopening', asyn
   expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Play');
   await tap(page, 'menu-play', MENU_SCENE);
   await tap(page, 'opponent-two', MENU_SCENE);
+  await confirmCharacters(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
-  expect((await state(page)).status).toContain('Player 1');
+  expect((await state(page)).status).toContain('Fundi');
   expect(await textOf(page, SCENE, 'menuButton')).toBe('Menu');
   expect(errors).toEqual([]);
 });
@@ -171,6 +173,7 @@ test('a damaged saved game is set aside: the menu opens normally with no Continu
   await tap(page, 'stats-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
   await tap(page, 'opponent-two', MENU_SCENE);
+  await confirmCharacters(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   expect(JSON.parse((await storage(page, 'pool.match'))!).data.shots).toBe(0);
   expect(errors).toEqual([]);
@@ -197,6 +200,7 @@ test('after changing the language, Menu from the table opens the main menu, not 
   await tap(page, 'settings-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
   await tap(page, 'opponent-two', MENU_SCENE);
+  await confirmCharacters(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);

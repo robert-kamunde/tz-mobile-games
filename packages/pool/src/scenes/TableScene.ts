@@ -16,6 +16,8 @@ import { countInRack, rackBalls } from '../physics/rack';
 import { PoolSimulation } from '../physics/simulation';
 import type { Shot, TableGeometry, Vec2 } from '../physics/types';
 import type { TipOffset } from '../controls/spin';
+import { DEFAULT_PICKS } from '../config/characters';
+import type { CharacterPicks } from '../progress/characters';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { recordGame } from '../progress/progress';
 import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
@@ -36,7 +38,7 @@ import { AimView } from './AimView';
 import { ComputerTurn } from './ComputerTurn';
 import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
-import { OpponentPicker } from './OpponentPicker';
+import { MatchSetup, type MatchChoice } from './MatchSetup';
 import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
 import type { MenuStart } from './MenuScene';
@@ -52,8 +54,8 @@ const BREAK_AIM: Vec2 = { x: 1, y: 0 };
 /** Against the computer, the computer is player 2 and the person always breaks the first game. */
 const COMPUTER_PLAYER: PlayerId = 1;
 
-/** How the table is opened from the menu: a new game against an opponent, or the saved game. */
-export type TableStart = { readonly opponent: Opponent } | { readonly resume: true };
+/** How the table is opened from the menu: a new game (opponent and characters), or the saved game. */
+export type TableStart = MatchChoice | { readonly resume: true };
 
 /**
  * A Blackball match on one table, against another person on the same phone or the computer.
@@ -72,11 +74,12 @@ export class TableScene extends Phaser.Scene {
   private spin!: SpinControl;
   private fineAim!: FineAim;
   private hud!: MatchHud;
-  private picker!: OpponentPicker;
+  private setup!: MatchSetup;
   /** The one-time "how to play" panel on the first game, while it shows. */
   private howToPlay: Panel | null = null;
   private computer!: ComputerTurn;
   private opponent: Opponent = { kind: 'human' };
+  private picks: CharacterPicks = DEFAULT_PICKS;
   private opponentChosen = false;
   /** Varies the computer's aiming error between matches; each shot's seed adds the shot count. */
   private computerSeed = 0;
@@ -127,7 +130,7 @@ export class TableScene extends Phaser.Scene {
     this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset);
     this.fineAim = new FineAim(this);
     this.hud = new MatchHud(this, this.t, () => this.askForOpponent());
-    this.picker = new OpponentPicker(this, this.t, PANEL.overTable, (opponent) => this.onOpponentPicked(opponent));
+    this.setup = new MatchSetup(this, this.t, PANEL.overTable, (choice) => this.onMatchChosen(choice));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
     addButton(this, HUD.menu.left, HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: 0 }).setDepth(HUD.depth);
@@ -167,14 +170,14 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.registerProbes();
-    // Back closes the picker, otherwise does what Menu does (nothing while balls roll).
+    // Back closes the help or steps back through choosing a game, otherwise does what Menu does (nothing while balls roll).
     onBackButton(this, () => {
       if (this.howToPlay) this.closeHowToPlay();
-      else if (!this.picker.goBack()) this.goToMenu();
+      else if (!this.setup.goBack()) this.goToMenu();
       return true;
     });
     if ('opponent' in start) {
-      this.onOpponentPicked(start.opponent);
+      this.onMatchChosen(start);
       return;
     }
     const saved = this.slots.match.load().data;
@@ -199,29 +202,28 @@ export class TableScene extends Phaser.Scene {
   // ---- Match flow -------------------------------------------------------------------------
 
   /**
-   * New game: choose the opponent first. The current game stays behind the picker, and is still
-   * the saved game, until a choice is made; Back returns to it.
+   * New game: choose the opponent and characters first. The current game stays behind the picker,
+   * and is still the saved game, until a choice is made; Back returns to it.
    */
   private askForOpponent(): void {
     if (this.sim.isMoving) return;
     this.computer.cancel();
     this.cancelGestures();
-    const last = this.slots.progress.load().data.lastOpponent;
-    this.picker.show(last, () => {
+    const progress = this.slots.progress.load().data;
+    this.setup.show(progress.lastOpponent, progress.lastPicks, () => {
       this.refresh();
       this.startComputerTurnIfDue();
     });
     this.refresh();
   }
 
-  private onOpponentPicked(opponent: Opponent): void {
+  private onMatchChosen({ opponent, picks }: MatchChoice): void {
     // A first game or a new opponent starts with player 1 breaking; a rematch alternates the break as before.
     const rematch = this.opponentChosen && opponentId(opponent) === opponentId(this.opponent);
     this.opponentChosen = true;
-    this.opponent = opponent;
+    this.setCast(opponent, picks);
     const progress = this.slots.progress.load().data;
-    this.slots.progress.save({ ...progress, lastOpponent: opponent });
-    this.hud.setComputerPlayer(opponent.kind === 'computer' ? COMPUTER_PLAYER : null);
+    this.slots.progress.save({ ...progress, lastOpponent: opponent, lastPicks: picks });
     this.startNewMatch(rematch ? opponentOf(this.match.breaker) : 0);
   }
 
@@ -247,9 +249,8 @@ export class TableScene extends Phaser.Scene {
 
   /** Puts a saved game back on the table, as it was after its last finished shot. */
   private resumeMatch(saved: SavedMatch): void {
-    this.opponent = saved.opponent;
+    this.setCast(saved.opponent, saved.picks);
     this.opponentChosen = true;
-    this.hud.setComputerPlayer(saved.opponent.kind === 'computer' ? COMPUTER_PLAYER : null);
     this.computerSeed = Date.now() >>> 0;
     this.sim = new PoolSimulation(this.geometry, DEFAULT_PHYSICS, restoreBalls(saved.balls, UK_7FT_TABLE), this.logger.child('physics'));
     this.match = saved.match;
@@ -264,11 +265,18 @@ export class TableScene extends Phaser.Scene {
     this.startComputerTurnIfDue();
   }
 
+  /** Who plays this game: kept for saving and shown on the player panels. */
+  private setCast(opponent: Opponent, picks: CharacterPicks): void {
+    this.opponent = opponent;
+    this.picks = picks;
+    this.hud.setCast(opponent, picks);
+  }
+
   /** Back to the main menu. The game is saved and Continue brings it back. Ignored while balls roll. */
   private goToMenu(): void {
     if (this.sim.isMoving) return;
     this.computer.cancel();
-    this.picker.hide();
+    this.setup.hide();
     this.saveMatch();
     this.openMenu();
   }
@@ -282,7 +290,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   private snapshot(): SavedMatch {
-    return { opponent: this.opponent, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots };
+    return { opponent: this.opponent, picks: this.picks, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots };
   }
 
   /**
@@ -298,9 +306,9 @@ export class TableScene extends Phaser.Scene {
     if (game) this.slots.match.save(game);
   }
 
-  /** A panel over the table (the picker or "how to play"): the table ignores the player meanwhile. */
+  /** A panel over the table (choosing a game or "how to play"): the table ignores the player meanwhile. */
   private get overlayOpen(): boolean {
-    return this.picker.visible || this.howToPlay !== null;
+    return this.setup.visible || this.howToPlay !== null;
   }
 
   /** Explains the controls on the player's first game; never again once dismissed. */
@@ -621,7 +629,11 @@ export class TableScene extends Phaser.Scene {
       trays: this.hud.trayState,
       opponent: this.opponent,
       computer: this.computer.currentPhase,
-      pickerShown: this.picker.visible,
+      pickerShown: this.setup.visible,
+      setupStep: this.setup.step,
+      selectedCharacter: this.setup.selectedCharacter,
+      players: [this.hud.playerName(0), this.hud.playerName(1)],
+      picks: this.picks,
       howToPlayShown: this.howToPlay !== null,
       spin: this.spin.tip,
       lastShot: this.lastShot,

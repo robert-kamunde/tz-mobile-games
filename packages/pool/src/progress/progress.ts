@@ -1,5 +1,6 @@
 import { AI_LEVEL_IDS, type AiLevel } from '../config/ai';
 import type { PlayerId } from '../rules/blackball';
+import { validatePicks, type CharacterPicks } from './characters';
 import { validateOpponent, type Opponent } from './opponent';
 
 /** Results and preferences kept between games. */
@@ -15,6 +16,8 @@ export interface PoolProgress {
   readonly twoPlayerGames: number;
   /** The opponent chosen last time, marked on the picker. */
   readonly lastOpponent: Opponent | null;
+  /** The characters chosen last time, selected on the picker. Saves from before 0.9 have none. */
+  readonly lastPicks: CharacterPicks | null;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -24,7 +27,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null };
 }
 
 /** Counts a finished game. */
@@ -53,5 +56,7 @@ export function validateProgress(raw: unknown): PoolProgress | null {
     if (!isCount(played) || !isCount(won) || won > played) return null;
     vsComputer[level] = { played, won };
   }
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last };
+  // Missing (an older save) or unreadable picks only lose the remembered choice, never the stats.
+  const lastPicks = validatePicks(r.lastPicks);
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks };
 }

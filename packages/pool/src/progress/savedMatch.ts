@@ -2,6 +2,8 @@ import type { TableConfig } from '../config/table';
 import { CUE_BALL_ID, rackBalls } from '../physics/rack';
 import type { Ball } from '../physics/types';
 import { validateMatchState, type MatchState } from '../rules/blackball';
+import { DEFAULT_PICKS } from '../config/characters';
+import { validatePicks, type CharacterPicks } from './characters';
 import { validateOpponent, type Opponent } from './opponent';
 
 /**
@@ -17,6 +19,8 @@ export interface SavedBall {
 
 export interface SavedMatch {
   readonly opponent: Opponent;
+  /** Characters for player 1 and 2 (against the computer, player 2's is unused). */
+  readonly picks: CharacterPicks;
   readonly match: MatchState;
   readonly balls: readonly SavedBall[];
   /** Shots played in this game so far (seeds the computer's aim and numbers the log). */
@@ -85,5 +89,7 @@ export function validateSavedMatch(raw: unknown, table: TableConfig): SavedMatch
       if (dx * dx + dy * dy < min * min) return null;
     }
   }
-  return { opponent, match, balls, shots: r.shots as number };
+  // A game saved before characters existed, or with unreadable picks, plays on with the default ones.
+  const picks = validatePicks(r.picks) ?? DEFAULT_PICKS;
+  return { opponent, picks, match, balls, shots: r.shots as number };
 }

@@ -1,10 +1,11 @@
 import type * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
+import { COMPUTER_CHARACTERS } from '../config/characters';
 import { OPPONENTS, opponentId, type Opponent } from '../progress/opponent';
 import { Panel, type PanelSpec } from './ui';
 
 /**
- * "Unacheza na nani?" panel: two players on one phone, or the computer at a level. The last choice
+ * "Unacheza na nani?" panel: two players on one phone, or the computer at a level (named by its character). The last choice
  * is marked. Buttons are named `opponent-<id>` (two, easy, medium, hard) and `opponent-back`.
  */
 export class OpponentPicker {
@@ -34,7 +35,7 @@ export class OpponentPicker {
       title: t.t('picker.title'),
       buttons: OPPONENTS.map((opponent) => ({
         name: `opponent-${opponentId(opponent)}`,
-        label: opponent.kind === 'human' ? t.t('picker.twoPlayers') : t.t('picker.computer', { level: t.t(`level.${opponent.level}`) }),
+        label: opponent.kind === 'human' ? t.t('picker.twoPlayers') : t.t('picker.computer', { name: COMPUTER_CHARACTERS[opponent.level].name, level: t.t(`level.${opponent.level}`) }),
         highlighted: opponentId(opponent) === lastId,
         onTap: () => {
           this.hide();

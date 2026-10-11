@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultProgress, recordGame, validateProgress } from '../src/progress/progress';
 import { restoreBalls, toSavedBalls, validateSavedMatch, type SavedMatch } from '../src/progress/savedMatch';
 import { createPoolSlots } from '../src/progress/slots';
+import { DEFAULT_PICKS } from '../src/config/characters';
 import { validateOpponent } from '../src/progress/opponent';
 import { startMatch, validateMatchState, type MatchState } from '../src/rules/blackball';
 import { TABLE, rackedSim } from './helpers';
@@ -14,7 +15,7 @@ function savedAfterBreak(): SavedMatch {
   sim.strike({ direction: { x: 1, y: 0.01 }, power: 1, side: 0, height: 0 });
   sim.runUntilSettled();
   if (sim.cueBall.pocketed) throw new Error('test break potted the cue ball; pick another');
-  return { opponent: { kind: 'computer', level: 'medium' }, match: PLAY, balls: toSavedBalls(sim.balls), shots: 1 };
+  return { opponent: { kind: 'computer', level: 'medium' }, picks: ['bonge', 'malkia'], match: PLAY, balls: toSavedBalls(sim.balls), shots: 1 };
 }
 
 /** JSON round trip, as storage does. */
@@ -52,6 +53,15 @@ describe('saved game', () => {
       const s = saved.balls.find((x) => x.id === b.id)!;
       const kind = fresh.find((x) => x.id === b.id)!.kind;
       expect([b.x, b.y, b.pocketed, b.kind, b.vx, b.vy]).toEqual([s.x, s.y, s.pocketed, kind, 0, 0]);
+    }
+  });
+
+  it('a game saved before characters existed, or with bad characters, loads with the default ones', () => {
+    for (const picks of [undefined, ['fundi', 'fundi'], ['nobody', 'fundi'], 'fundi']) {
+      const raw = viaJson(savedAfterBreak()) as Record<string, unknown>;
+      if (picks === undefined) delete raw.picks;
+      else raw.picks = picks;
+      expect(validateSavedMatch(raw, TABLE)?.picks).toEqual(DEFAULT_PICKS);
     }
   });
 
@@ -121,6 +131,15 @@ describe('progress', () => {
     const raw = viaJson(defaultProgress()) as RawProgress;
     change(raw);
     expect(validateProgress(raw)).toBeNull();
+  });
+
+  it('keeps the last characters, and an older save without them keeps its stats', () => {
+    const p = { ...defaultProgress(), lastPicks: ['malkia', 'fundi'] as const };
+    expect(validateProgress(viaJson(p))).toEqual(p);
+    const old = viaJson(recordGame(defaultProgress(), { kind: 'human' }, 0)) as Record<string, unknown>;
+    delete old.lastPicks;
+    expect(validateProgress(old)).toEqual({ ...recordGame(defaultProgress(), { kind: 'human' }, 0), lastPicks: null });
+    expect(validateProgress({ ...p, lastPicks: ['fundi', 'fundi'] })?.lastPicks).toBeNull();
   });
 
   it('opponent validation accepts only known opponents', () => {

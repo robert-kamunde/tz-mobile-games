@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 (unreleased) - Milestone 8: characters
+- Characters, for looks only (Robert, 2026-10-11): they change how a player is shown and named, never how the game plays.
+- 8 characters to play as, with fun Tanzanian street nicknames (Robert: nothing vulgar; 6 men, 2 women): Fundi, Malkia, Mwamba, Bonge, Shangazi, Mjanja, Bishoo, Kichwa.
+- The computer plays as one character per level: Dogo Mbishi (Easy), Mama Ntilie (Medium), Mzee Kobe (Hard). The opponent picker and Stats use these names.
+- New game flow: opponent, then "Chagua mhusika" (choose your character) with last time's choice selected, then Start. Two players choose in turn ("Mchezaji 1", "Mchezaji 2") and cannot take the same character. Back and the phone's back button step back through the choices.
+- The table shows each player's face and name in the player panel (the face sits inside the ball-colour chip, which now shows as a ring) and in every message ("Bonge: zamu yako", "Mzee Kobe anacheza…", "Malkia ameshinda!").
+- Faces are placeholders: a coloured circle with an initial (ASSETS.md).
+- Saves: the chosen characters are kept with the game in progress and remembered for the next game (`picks` in `pool.match`, `lastPicks` in `pool.progress`). Games and stats saved by older versions load as before, with the default characters.
+
 ## 0.8.1 (unreleased) - Fix: no splash screen on Android 12 and newer
 - Robert saw no splash screen on his ZTE Blade A35 (Android 14). Android 12 and newer ignore the splash image and show the app icon on a background colour from the theme, which was unset. The launch theme now sets that background to the game's dark colour (`splash_background`) and the icon to the app icon. The game's web view also loads on the same colour (`backgroundColor` in `capacitor.config.ts`) instead of white. Android 11 and older still show the splash image.
 - The Android splash still lasts only until the game's first frame, so on a fast start it is brief.

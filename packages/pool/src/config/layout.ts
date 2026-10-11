@@ -49,7 +49,9 @@ export const HUD = {
   /** Status line centred over the table. */
   status: { x: 570, y: 36, wrapWidth: 480, lineSpacing: -2 },
   /** Player panels at the two top corners of the table. */
-  players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 13, gap: 10, inactiveAlpha: 0.45 },
+  players: { y: 36, leftX: 58, rightX: 1082, chipRadius: 17, gap: 10, inactiveAlpha: 0.45 },
+  /** The player's face sits inside the chip, which shows round it as a ring in their ball colour. */
+  face: { radius: 12 },
   /**
    * Potted-ball tray under each player's name: one slot per ball of their colour, filled as they
    * are potted. Sits between the name and the top rail (rail starts at y 70).
@@ -96,6 +98,26 @@ export const PANEL = {
   overTable: { x: 570, y: 360, width: 600, height: 500, alpha: 0.94 },
   /** Over the main menu, hiding it completely so its buttons do not show through the text. */
   overMenu: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 1100, height: 660, alpha: 1 },
+} as const;
+
+/**
+ * Character picker: a grid of faces in a panel, with Back and Next/Start side by side at the bottom.
+ * Offsets are from the panel's top edge and centre, so it fits both the table and the menu panel.
+ */
+export const CHARACTER_PICKER = {
+  columns: 4,
+  faceRadius: 38,
+  columnSpacing: 125,
+  rowSpacing: 125,
+  firstRowFromTop: 175,
+  /** Between a face and its name. */
+  nameGap: 8,
+  selectedRing: { width: 5, color: 0xf2c94c },
+  /** A character player 1 already took, shown faded to player 2. */
+  takenAlpha: 0.3,
+  buttonsFromBottom: 46,
+  /** Back sits this far left of the centre, Next/Start this far right. */
+  buttonOffsetX: 140,
 } as const;
 
 /** Main menu. */

@@ -2,7 +2,11 @@ import * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
 import { countInRack } from '../physics/rack';
+import { DEFAULT_PICKS } from '../config/characters';
+import { seatCharacter, type CharacterPicks } from '../progress/characters';
+import type { Opponent } from '../progress/opponent';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
+import { Face } from './Face';
 import { addButton, textStyle } from './ui';
 
 export interface PlayerPanelInfo {
@@ -29,7 +33,7 @@ const TRAY_SLOTS = Math.max(countInRack('red'), countInRack('yellow'));
  * the translator; the scene decides what to say.
  */
 export class MatchHud {
-  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc; tray: Phaser.GameObjects.Arc[] }[];
+  private readonly panels: { label: Phaser.GameObjects.Text; chip: Phaser.GameObjects.Arc; face: Face; tray: Phaser.GameObjects.Arc[] }[];
   private readonly trays: [TrayState, TrayState] = [{ potted: 0, slots: 0 }, { potted: 0, slots: 0 }];
   private readonly status: Phaser.GameObjects.Text;
   private readonly hint: Phaser.GameObjects.Text;
@@ -38,7 +42,8 @@ export class MatchHud {
   private readonly overTitle: Phaser.GameObjects.Text;
   private readonly overDetail: Phaser.GameObjects.Text;
   private confirmUntil = 0;
-  private computerPlayer: PlayerId | null = null;
+  private opponent: Opponent = { kind: 'human' };
+  private picks: CharacterPicks = DEFAULT_PICKS;
   private matchActive = true;
 
   constructor(
@@ -50,8 +55,11 @@ export class MatchHud {
     const p = HUD.players;
     this.panels = PLAYERS.map((player) => {
       const left = player === 0;
-      const chip = scene.add.circle(left ? p.leftX + p.chipRadius : p.rightX - p.chipRadius, p.y, p.chipRadius, COLORS.ball.cue);
+      const chipX = left ? p.leftX + p.chipRadius : p.rightX - p.chipRadius;
+      const chip = scene.add.circle(chipX, p.y, p.chipRadius, COLORS.ball.cue);
       chip.setStrokeStyle(1.5, COLORS.ballOutline, 0.6).setName(`playerChip-${player}`);
+      // The face covers the chip's middle; the chip shows round it as a ring in the player's ball colour.
+      const face = new Face(scene, chipX, p.y, HUD.face.radius, `playerFace-${player}`);
       const labelX = left ? p.leftX + 2 * p.chipRadius + p.gap : p.rightX - 2 * p.chipRadius - p.gap;
       const label = scene.add.text(labelX, p.y, '', text(TEXT_STYLE.playerSize)).setOrigin(left ? 0 : 1, 0.5).setName(`player-${player}`);
       // Slots run inwards from the outer edge, under the chip and name.
@@ -61,7 +69,7 @@ export class MatchHud {
       const tray = Array.from({ length: TRAY_SLOTS }, (_, i) =>
         scene.add.circle(firstX + i * step, tr.y, tr.ballRadius).setName(`tray-${player}-${i}`).setVisible(false),
       );
-      return { label, chip, tray };
+      return { label, chip, face, tray };
     });
 
     this.status = scene.add
@@ -114,17 +122,20 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
+    this.setCast(this.opponent, this.picks);
   }
 
-  /** Marks which player is the computer (named "Kompyuta"), or none. */
-  setComputerPlayer(player: PlayerId | null): void {
-    this.computerPlayer = player;
+  /** Who plays: the opponent decides whether player 2 is the computer's character or a pick. */
+  setCast(opponent: Opponent, picks: CharacterPicks): void {
+    this.opponent = opponent;
+    this.picks = picks;
+    for (const player of PLAYERS) this.panels[player]!.face.show(seatCharacter(player, opponent, picks));
   }
 
   playerName(player: PlayerId): string {
-    return player === this.computerPlayer ? this.t.t('player.computer') : this.t.t('player.name', { n: player + 1 });
+    return seatCharacter(player, this.opponent, this.picks).name;
   }
 
   groupName(group: Group): string {
@@ -133,7 +144,7 @@ export class MatchHud {
 
   showPlayers(state: MatchState, info: readonly [PlayerPanelInfo, PlayerPanelInfo]): void {
     for (const player of PLAYERS) {
-      const { label, chip } = this.panels[player]!;
+      const { label, chip, face } = this.panels[player]!;
       const { group, remaining, onBlack } = info[player];
       // The chip shows the colour (white while the table is open, black once on the black); the number is balls left.
       label.setText(group && !onBlack ? `${this.playerName(player)} · ${remaining}` : this.playerName(player));
@@ -142,6 +153,7 @@ export class MatchHud {
       const alpha = active ? 1 : HUD.players.inactiveAlpha;
       label.setAlpha(alpha).setFontStyle(active ? 'bold' : 'normal');
       chip.setAlpha(alpha);
+      face.setAlpha(alpha);
       this.showTray(player, info[player]);
     }
   }

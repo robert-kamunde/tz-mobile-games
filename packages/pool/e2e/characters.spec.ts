@@ -1,0 +1,152 @@
+import { expect, test, type Page } from '@playwright/test';
+import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
+import { MENU_SCENE, SCENE, boot, dismissHowToPlay, menuState, pickOpponent, playFromMenu, reopen, state, tap, waitForScene } from './poolPage';
+
+const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
+const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n]) => window.__tzg!.textOf(s, n), [scene, name] as const);
+const taken = (page: Page, id: string) => page.evaluate((n) => window.__tzg!.dataOf('Menu', `character-${n}`, 'taken'), id);
+const selected = async (page: Page) => (await menuState(page)).selectedCharacter;
+
+async function openCharacters(page: Page, opponent: string): Promise<void> {
+  await tap(page, 'menu-play', MENU_SCENE);
+  await tap(page, `opponent-${opponent}`, MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+}
+
+async function start(page: Page): Promise<void> {
+  await tap(page, 'character-confirm', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  await dismissHowToPlay(page);
+}
+
+test('against the computer: choose a character, see it on the table, keep it after reopening', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openCharacters(page, 'hard');
+  expect(await selected(page)).toBe('fundi');
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Anza');
+  await tap(page, 'character-bonge', MENU_SCENE);
+  expect(await selected(page)).toBe('bonge');
+  await start(page);
+  const s = await state(page);
+  expect(s.players).toEqual(['Bonge', 'Mzee Kobe']);
+  expect(s.status).toContain('Bonge');
+
+  // Reopened mid-game, Continue brings back the same characters.
+  await reopen(page);
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).players).toEqual(['Bonge', 'Mzee Kobe']);
+  // And they are saved again with the game, not only shown.
+  await reopen(page);
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).players).toEqual(['Bonge', 'Mzee Kobe']);
+
+  // The next game starts with the last choice selected.
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  await openCharacters(page, 'easy');
+  expect(await selected(page)).toBe('bonge');
+  expect(errors).toEqual([]);
+});
+
+test('two players each choose, and player 2 cannot take player 1’s character', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openCharacters(page, 'two');
+  expect(await textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 1');
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Endelea');
+  await tap(page, 'character-mwamba', MENU_SCENE);
+  await tap(page, 'character-confirm', MENU_SCENE);
+
+  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
+  expect(await taken(page, 'mwamba')).toBe(true);
+  // Player 2's last-time default was Mwamba, now taken, so another is selected; tapping Mwamba does nothing.
+  expect(await selected(page)).not.toBe('mwamba');
+  await tap(page, 'character-mwamba', MENU_SCENE);
+  expect(await selected(page)).not.toBe('mwamba');
+  await tap(page, 'character-malkia', MENU_SCENE);
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Anza');
+  await start(page);
+  const s = await state(page);
+  expect(s.players).toEqual(['Mwamba', 'Malkia']);
+  expect(s.picks).toEqual(['mwamba', 'malkia']);
+  expect(errors).toEqual([]);
+});
+
+test('Back and the phone back button step back through the characters to the opponents', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openCharacters(page, 'two');
+  await tap(page, 'character-kichwa', MENU_SCENE);
+  await tap(page, 'character-confirm', MENU_SCENE);
+  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
+
+  await back(page);
+  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 1');
+  expect(await selected(page)).toBe('kichwa');
+  await tap(page, 'character-back', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
+  await back(page);
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  expect(await page.evaluate(() => window.__tzg!.backLeaves())).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('New game on the table: Back from the characters returns to the opponents, then to the game', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  await tap(page, 'newGameButton');
+  await tap(page, 'newGameButton');
+  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
+  await tap(page, 'opponent-medium');
+  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
+  await back(page);
+  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
+  await back(page);
+  await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
+  expect((await state(page)).opponent).toEqual({ kind: 'human' });
+
+  await tap(page, 'newGameButton');
+  await tap(page, 'newGameButton');
+  await pickOpponent(page, 'medium', ['shangazi']);
+  expect((await state(page)).players).toEqual(['Shangazi', 'Mama Ntilie']);
+  expect(errors).toEqual([]);
+});
+
+test('in English the picker is translated and the names stay as they are', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await tap(page, 'menu-settings', MENU_SCENE);
+  await tap(page, 'language-en', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).locale).toBe('en');
+  await tap(page, 'settings-back', MENU_SCENE);
+  await tap(page, 'menu-play', MENU_SCENE);
+  expect(await textOf(page, MENU_SCENE, 'opponent-easy')).toBe('Dogo Mbishi (Easy)');
+  await tap(page, 'opponent-two', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+  expect(await textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Player 1');
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Next');
+  expect(errors).toEqual([]);
+});
+
+test('a game saved before characters existed continues with the default characters', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await playFromMenu(page, 'easy', ['bonge']);
+  expect((await state(page)).players).toEqual(['Bonge', 'Dogo Mbishi']);
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  // Strip the characters from the save, as an older version wrote it.
+  await page.evaluate(() => {
+    const raw = JSON.parse(window.localStorage.getItem('pool.match')!) as { data: Record<string, unknown> };
+    delete raw.data.picks;
+    window.localStorage.setItem('pool.match', JSON.stringify(raw));
+  });
+  await reopen(page);
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).players).toEqual(['Fundi', 'Dogo Mbishi']);
+  expect(errors).toEqual([]);
+});

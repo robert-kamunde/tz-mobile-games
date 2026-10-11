@@ -43,6 +43,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | A20 | Sounds are chosen from the physics event log, which now carries the impact speed of each ball and cushion contact. `ShotSoundMixer` (pure) turns each frame's new events into at most 4 cues, dropping a repeat of the same sound within 25 ms unless it is clearly louder. | Sound follows exactly what the physics did, with no second collision detector in the scene. Thinning keeps a break from turning into noise or using too many voices on a slow phone. | 2026-10-09 |
 | A21 | Android app through Capacitor 8.5; the Android project (`packages/pool/android`) is committed, with the copied web build and generated plugin files ignored. App ID in `capacitor.config.ts`; version only in `packages/pool/package.json`, read by Gradle (versionCode = major*10000 + minor*100 + patch). | One place for each value that must agree, checked by `test/android.test.ts`. Committing the project keeps the manifest, activity and icon changes reviewable. | 2026-10-10 |
 | A22 | Android's back button goes to a core `BackButton`: scenes add a handler while showing (`onBackButton`), newest first; when none handles it the app is minimised, not closed. The shell connects the phone's button only inside the app (`@capacitor/app`). | Without a listener, Capacitor's default closes the app from any screen, losing the player's place. Minimising matches Android 12+ behaviour for an app's first screen and keeps the game warm. Routing through core keeps it testable in the browser (`__tzg.back()`). | 2026-10-10 |
+| A23 | Characters are data in `config/characters.ts`; a game stores only the two player picks (`picks`), and the computer's seat always shows its level's character (`seatCharacter`). Missing or bad picks in a save fall back to the defaults instead of discarding the game or the stats. `MatchSetup` runs the whole new-game choice (opponent, then characters) for both the menu and the table. | Characters never touch physics, rules or AI, so they stay out of those folders. Deriving the computer's character means a save cannot pair a level with the wrong face. Older saves need no version bump. One setup flow keeps the menu and New game identical. | 2026-10-11 |
 | A13 | Physics runs in real time inside the scene (`FixedStepper`, max 100 steps per frame) with no render interpolation | 1 ms steps make interpolation error at most about 4 px at full speed. A frame slower than 100 ms makes the shot play slower; the result is unchanged. | 2026-10-07 |
 
 ## Core modules (`packages/core/src`)
@@ -89,6 +90,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `ai/candidates.ts` | Candidate shots: pots at each level's speeds, plain contacts, a sweep of directions, break shots, and ball-in-hand spots. |
 | `ai/planner.ts` | `ShotPlanner`: plays candidates out on copies of the table, scores outcomes (win, pot and position, miss and what it leaves, foul, loss), Hard's robustness check, then applies the level's aim and power error. |
 | `config/ai.ts` | Levels, search settings, outcome scores and on-screen pacing of a computer turn. |
+| `config/characters.ts` | The player characters (6 men, 2 women), the computer's character per level, default picks and the longest name allowed. |
+| `progress/characters.ts` | `CharacterPicks`, `seatCharacter`, `withDistinctPicks`, `validatePicks`. Pure. |
 | `progress/opponent.ts` | `Opponent` (two players or the computer at a level), its short id and validation. |
 | `progress/savedMatch.ts` | The saved game in progress (A17): `toSavedBalls`, `restoreBalls`, `validateSavedMatch`. |
 | `progress/progress.ts` | Stats and the last opponent: `recordGame`, `validateProgress`. |
@@ -105,6 +108,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `scenes/poolSounds.ts` | Renders the recipes once per app and adds them to the sound board. |
 | `scenes/poolSlots.ts`, `sceneKeys.ts` | The save slots shared through the registry, and the scene keys. |
 | `scenes/ComputerTurn.ts` | Paces a computer turn on screen: thinking in slices within the frame budget and time limits, then placing, aiming and power animation, then the shot. |
+| `scenes/MatchSetup.ts`, `scenes/CharacterPicker.ts`, `scenes/Face.ts` | The new-game choice (opponent, then each player's character, with Back stepping back), the face grid, and the placeholder face drawn in the picker and the player panels. |
 | `scenes/OpponentPicker.ts` | "Unacheza na nani?" panel: two players or the computer at one of three levels, with the last choice marked. Used on the menu and after New game. |
 | `scenes/MatchHud.ts` | Player panels, status line, controls hint, New game button (two-tap confirm mid-match), game-over panel. |
 | `scenes/TableView.ts`, `AimView.ts`, `PowerBar.ts` | Drawing (table, balls, aim guide, cue stick, ball-in-hand ring) and the power control. |
@@ -122,8 +126,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | Key | Owner | Schema version | Contents |
 |---|---|---|---|
 | `<gameId>.settings` | shell | 1 | `{ locale, soundVolume, musicVolume }` |
-| `pool.match` | pool | 1 | The game in progress (A17): `{ opponent, match, balls: [{ id, x, y, pocketed }], shots }`. Removed when the game ends. |
-| `pool.progress` | pool | 1 | `{ vsComputer: { easy, medium, hard: { played, won } }, twoPlayerGames, lastOpponent }` |
+| `pool.match` | pool | 1 | The game in progress (A17): `{ opponent, picks: [id, id], match, balls: [{ id, x, y, pocketed }], shots }`. Removed when the game ends. `picks` is new in 0.9.0 and may be missing (A23). |
+| `pool.progress` | pool | 1 | `{ vsComputer: { easy, medium, hard: { played, won } }, twoPlayerGames, lastOpponent, lastPicks }` (`lastPicks` new in 0.9.0, may be missing) |
 | `pool.tips` | pool | 1 | `{ howToPlaySeen }` |
 | `<key>.backup` | core | n/a | The last unreadable value of that key, as stored (A18). |
 

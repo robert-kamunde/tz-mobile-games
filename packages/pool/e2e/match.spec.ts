@@ -7,7 +7,7 @@ test('player 1 breaks, and the cue ball stays behind the baulk line while placin
   await boot(page);
   const s = await state(page);
   expect(s.match).toMatchObject({ phase: 'break', current: 0, ballInHand: 'baulk' });
-  expect(s.status).toContain('Mchezaji 1');
+  expect(s.status).toContain('Fundi');
   const cue = s.balls[0]!;
   await dragOnTable(page, cue, { x: 1.0, y: 0.3 });
   const after = (await state(page)).balls[0]!;
@@ -49,7 +49,7 @@ test('potting the black when on it wins, and New game starts a match with the ot
   const errors = trackErrors(page);
   await boot(page);
   await setUpBlackPot(page);
-  expect((await state(page)).status).toContain('Mchezaji 1');
+  expect((await state(page)).status).toContain('Fundi');
   await potTheBlack(page);
   const over = await waitUntilSettled(page);
   expect(over.verdict).toEqual({ kind: 'game-over', winner: 0, reason: 'black-potted' });

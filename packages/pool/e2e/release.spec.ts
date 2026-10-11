@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, SCENE, boot, menuState, pullPower, reopen, state, tap, waitForScene, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, SCENE, boot, confirmCharacters, menuState, pullPower, reopen, state, tap, waitForScene, waitUntilSettled } from './poolPage';
 
 /** Presses Android's back button (the app routes the real one to the same place). */
 const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
@@ -11,6 +11,7 @@ const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n
 async function startFirstGame(page: Page): Promise<void> {
   await tap(page, 'menu-play', MENU_SCENE);
   await tap(page, 'opponent-two', MENU_SCENE);
+  await confirmCharacters(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
 }
 
@@ -34,6 +35,7 @@ test('the first game explains the controls once, and the table waits until it is
   await tap(page, 'newGameButton');
   await tap(page, 'newGameButton');
   await tap(page, 'opponent-two');
+  await confirmCharacters(page, SCENE, 'two');
   expect((await state(page)).howToPlayShown).toBe(false);
   await reopen(page);
   await startFirstGame(page);

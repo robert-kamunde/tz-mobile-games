@@ -28,7 +28,7 @@ test("the computer plays its turn on its own, and the player's controls do nothi
   await waitUntilSettled(page);
   await layout(page, [], { phase: 'play', current: 1, ballInHand: null, groups: [null, null] });
   await expect.poll(async () => (await state(page)).computer).toBe('thinking');
-  expect((await state(page)).status).toContain('Kompyuta');
+  expect((await state(page)).status).toContain('Dogo Mbishi');
 
   // Try to shoot during the computer's turn: it must not count as a shot.
   await pullPower(page, 0.8);
@@ -68,7 +68,7 @@ test('New game mid-match stops the computer and opens the picker, and the table 
   expect((await state(page)).shots).toBe(0);
   await pickOpponent(page, 'two');
   expect((await state(page)).opponent).toEqual({ kind: 'human' });
-  expect((await state(page)).status).toContain('Mchezaji 1');
+  expect((await state(page)).status).toContain('Fundi');
 });
 
 /**

@@ -30,6 +30,10 @@ export interface PoolState {
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
+  setupStep: 'opponent' | 'characters' | null;
+  selectedCharacter: string | null;
+  players: [string, string];
+  picks: [string, string];
   howToPlayShown: boolean;
   spin: { side: number; height: number };
   lastShot: { direction: { x: number; y: number }; power: number; side: number; height: number } | null;
@@ -37,7 +41,8 @@ export interface PoolState {
 
 export interface MenuState {
   continueShown: boolean;
-  panel: 'picker' | 'stats' | 'rules' | 'settings' | null;
+  panel: 'picker' | 'characters' | 'stats' | 'rules' | 'settings' | null;
+  selectedCharacter: string | null;
   locale: string;
 }
 
@@ -56,18 +61,34 @@ export async function waitForScene(page: Page, key: string): Promise<void> {
 
 export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard';
 
-/** Picks an opponent on the table's picker (after New game) with a real tap. */
-export async function pickOpponent(page: Page, choice: OpponentChoice): Promise<void> {
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(true);
+/**
+ * On the character picker: keeps the selected characters (or taps the given ones) and confirms, once
+ * against the computer and twice (player 1, then player 2) for two players.
+ */
+export async function confirmCharacters(page: Page, scene: string, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
+  const seats = choice === 'two' ? 2 : 1;
+  for (let seat = 0; seat < seats; seat++) {
+    await page.waitForFunction(([s, n]) => window.__tzg!.elementCenter(s, n) !== null, [scene, 'character-confirm'] as const);
+    const id = characters[seat];
+    if (id) await tap(page, `character-${id}`, scene);
+    await tap(page, 'character-confirm', scene);
+  }
+}
+
+/** Picks an opponent on the table's picker (after New game) with a real tap, and keeps the characters. */
+export async function pickOpponent(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
+  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
   await tap(page, `opponent-${choice}`);
+  await confirmCharacters(page, SCENE, choice, characters);
   await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
 }
 
-/** From the main menu: Play, pick the opponent, and wait for the table. */
-export async function playFromMenu(page: Page, choice: OpponentChoice): Promise<void> {
+/** From the main menu: Play, pick the opponent and characters, and wait for the table. */
+export async function playFromMenu(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
   await tap(page, 'menu-play', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   await tap(page, `opponent-${choice}`, MENU_SCENE);
+  await confirmCharacters(page, MENU_SCENE, choice, characters);
   await waitForScene(page, SCENE);
   await dismissHowToPlay(page);
 }

@@ -2,9 +2,10 @@ import * as Phaser from 'phaser';
 import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { AI_LEVEL_IDS } from '../config/ai';
+import { COMPUTER_CHARACTERS } from '../config/characters';
 import { BUTTON, COLORS, MENU, PANEL, TEXT_STYLE } from '../config/layout';
 import type { PoolSlots } from '../progress/slots';
-import { OpponentPicker } from './OpponentPicker';
+import { MatchSetup } from './MatchSetup';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { TableStart } from './TableScene';
@@ -21,7 +22,7 @@ export interface MenuStart {
 }
 
 /**
- * The first screen: Continue (only when a game is saved), Play (opponent picker), Stats, Rules and
+ * The first screen: Continue (only when a game is saved), Play (opponent, then characters), Stats, Rules and
  * Settings (language). Buttons are named `menu-<item>`.
  */
 export class MenuScene extends Phaser.Scene {
@@ -29,7 +30,7 @@ export class MenuScene extends Phaser.Scene {
 
   private t!: Translator;
   private slots!: PoolSlots;
-  private picker!: OpponentPicker;
+  private setup!: MatchSetup;
   private panel: Panel | null = null;
   private openPanel: MenuPanel | null = null;
   private hasSavedGame = false;
@@ -51,7 +52,13 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(MENU.x, MENU.titleY, t.t('menu.title'), textStyle(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('menu-title');
     const items: { id: string; onTap: () => void }[] = [
       ...(this.hasSavedGame ? [{ id: 'continue', onTap: () => this.startTable({ resume: true }) }] : []),
-      { id: 'play', onTap: () => this.picker.show(this.slots.progress.load().data.lastOpponent, () => undefined) },
+      {
+        id: 'play',
+        onTap: () => {
+          const progress = this.slots.progress.load().data;
+          this.setup.show(progress.lastOpponent, progress.lastPicks, () => undefined);
+        },
+      },
       { id: 'stats', onTap: () => this.showPanel('stats') },
       { id: 'rules', onTap: () => this.showPanel('rules') },
       { id: 'settings', onTap: () => this.showPanel('settings') },
@@ -64,11 +71,11 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(1, 0.5)
       .setName('placeholderLabel');
 
-    this.picker = new OpponentPicker(this, t, PANEL.overMenu, (opponent) => this.startTable({ opponent }));
+    this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice));
     if (data.panel) this.showPanel(data.panel);
-    // Back closes the picker or a panel; on the menu itself it leaves the app.
+    // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
     onBackButton(this, () => {
-      if (this.picker.goBack()) return true;
+      if (this.setup.goBack()) return true;
       if (!this.panel) return false;
       this.closePanel();
       return true;
@@ -76,7 +83,8 @@ export class MenuScene extends Phaser.Scene {
 
     registerTestProbe('pool.menu', () => ({
       continueShown: this.hasSavedGame,
-      panel: this.picker.visible ? 'picker' : this.openPanel,
+      panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.openPanel,
+      selectedCharacter: this.setup.selectedCharacter,
       locale: this.t.locale,
     }));
   }
@@ -92,7 +100,7 @@ export class MenuScene extends Phaser.Scene {
     const common = { name: `${kind}Panel`, area: PANEL.overMenu, title: t.t(`${kind}.title`), back };
     if (kind === 'stats') {
       const progress = this.slots.progress.load().data;
-      const lines = AI_LEVEL_IDS.map((level) => t.t('stats.vsComputer', { level: t.t(`level.${level}`), ...progress.vsComputer[level] }));
+      const lines = AI_LEVEL_IDS.map((level) => t.t('stats.vsComputer', { name: COMPUTER_CHARACTERS[level].name, level: t.t(`level.${level}`), ...progress.vsComputer[level] }));
       lines.push(t.t('stats.twoPlayers', { n: progress.twoPlayerGames }));
       this.panel = new Panel(this, { ...common, body: lines.join('\n') });
     } else if (kind === 'rules') {
