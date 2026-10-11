@@ -145,9 +145,9 @@ export class MatchHud {
   showPlayers(state: MatchState, info: readonly [PlayerPanelInfo, PlayerPanelInfo]): void {
     for (const player of PLAYERS) {
       const { label, chip, face } = this.panels[player]!;
-      const { group, remaining, onBlack } = info[player];
-      // The chip shows the colour (white while the table is open, black once on the black); the number is balls left.
-      label.setText(group && !onBlack ? `${this.playerName(player)} · ${remaining}` : this.playerName(player));
+      const { group, onBlack } = info[player];
+      // The chip shows the colour (white while the table is open, black once on the black); the tray shows balls left (Robert: no number, 2026-10-11).
+      label.setText(this.playerName(player));
       chip.setFillStyle(onBlack ? COLORS.ball.black : group ? COLORS.ball[group] : COLORS.ball.cue);
       const active = state.phase !== 'over' && state.current === player;
       const alpha = active ? 1 : HUD.players.inactiveAlpha;

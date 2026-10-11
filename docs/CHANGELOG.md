@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1 (unreleased) - No ball count next to the names
+- The player panels show only the character's name. The number of balls left is gone (Robert, 2026-10-11): the tray under each name already shows it.
+- Robert approved the character names.
+
 ## 0.9.0 (unreleased) - Milestone 8: characters
 - Characters, for looks only (Robert, 2026-10-11): they change how a player is shown and named, never how the game plays.
 - 8 characters to play as, with fun Tanzanian street nicknames (Robert: nothing vulgar; 6 men, 2 women): Fundi, Malkia, Mwamba, Bonge, Shangazi, Mjanja, Bishoo, Kichwa.

@@ -55,7 +55,7 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Power: touch the bar on the right, drag down, let go to shoot. Letting go below 4% cancels; a system touch cancel never shoots.
 - Aiming and power can use two fingers at once. Controls are disabled while balls move.
 - Ball in hand: a ring shows round the cue ball; drag it to place it. It follows the finger only over free cloth (never onto a ball, cushion or pocket) and stays behind the baulk line before the break.
-- Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip and balls left, and a tray under each name that fills with that player's potted balls once colours are decided. The status line says what happened (foul, colours decided) and who plays next.
+- Pass-and-play: two players share the phone; the panel of the player to shoot is highlighted, with their colour chip, and a tray under each name that fills with that player's potted balls once colours are decided. The status line says what happened (foul, colours decided) and who plays next.
 - Main menu (Milestone 4): the first screen. Continue appears only when a game is saved and brings it back as it was after its last finished shot. Play opens the opponent picker. Stats shows games won and played against each computer level and the number of two-player games. Rules shows the rules as built. Settings switches between Kiswahili and English and turns sound on or off.
 - Menu: bottom left of the table. Goes back to the main menu and keeps the game (ignored while balls roll).
 - Saving: the game is saved at the start, after every shot and when the app goes to the background. A game closed mid-shot resumes from before that shot. A finished game is not kept.
@@ -74,7 +74,7 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - The computer is a character per level: Dogo Mbishi (Easy, the stubborn youngster), Mama Ntilie (Medium, the street food seller) and Mzee Kobe (Hard, the old tortoise). Its strength is still only its level.
 - Choosing: after the opponent, "Chagua mhusika" shows the 8 faces with last time's choice selected, so a repeat game is one more tap. Two players choose in turn and player 2 cannot take player 1's character (shown faded).
 - Shown in the player panels (face and name) and in all status and game-over messages. Stats count results per computer character, not per player character.
-- Names are kept in one config file (`config/characters.ts`) so Robert can change them.
+- Names are kept in one config file (`config/characters.ts`) so Robert can change them. Robert approved them on 2026-10-11.
 
 ### Computer opponent as built (Milestone 3)
 - One computer opponent with three levels. It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.

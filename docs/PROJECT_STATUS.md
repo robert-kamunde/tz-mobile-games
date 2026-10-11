@@ -3,7 +3,7 @@
 Last updated: 2026-10-11
 
 ## Current milestone
-None in progress. Milestone 8 (characters) finished on 2026-10-11. Next: Robert's go on the character names, the Play listing inputs, and Milestone 9 (art and sound).
+None in progress. Milestone 8 (characters) finished on 2026-10-11. Robert approved the names; 0.9.1 removed the ball count next to the names at his request. Next: the Play listing inputs and Milestone 9 (art and sound).
 
 ### Milestone 8 scope (done)
 Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.

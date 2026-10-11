@@ -112,5 +112,7 @@ test('the first ball potted on an open table fills the potter\'s tray straight a
   const after = await waitUntilSettled(page);
   expect(after.match.groups).toEqual(['red', 'yellow']);
   expect(after.trays[0]).toEqual({ potted: 1, slots: 7 });
+  // The tray shows what is left; the name has no ball count next to it (Robert, 2026-10-11).
+  expect(await page.evaluate(() => [window.__tzg!.textOf('Table', 'player-0'), window.__tzg!.textOf('Table', 'player-1')])).toEqual(['Fundi', 'Mwamba']);
   expect(errors).toEqual([]);
 });
