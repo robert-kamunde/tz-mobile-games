@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.16.0 (unreleased) - A stronger computer, Impossible, and a different break every game
+- Robert found Hard easy to beat (2026-10-11). Every level now aims and judges power more accurately and looks at more shots; Medium also checks its best shots hold up if slightly mishit. In 20 to 30 games each, the new level beat the old one of the same name: Easy 23/30, Medium 18/20, Hard 15/20.
+- New fifth opponent: **Bingwa (Haiwezekani / Impossible)**, almost no aiming or power error and the widest search. It beat the new Hard 24/30, potting about three shots in four and fouling on 2% of its shots. Bingwa has its own catchphrases. The name is Claude's choice, for Robert to confirm.
+- Stats show Bingwa too; older saves keep their stats and start Bingwa at zero.
+- The opponent picker on the table is taller so five choices and Back fit.
+- A different rack every game (Robert: the same full-power break always potted a ball): the reds and yellows are placed in a random order (the black stays in the middle, the back corners are always one of each), and each ball sits a hair off its exact spot, as in a real rack. In 24 identical full-power breaks this gave 14 different results, and 7 potted nothing. Saved games are unaffected: a ball's number always has the same colour.
+
 ## 0.15.0 (unreleased) - Backgrounds behind the table
 - From the personalisation list Robert approved (2026-10-11). A third button, "Mandhari" / "Scenery", joins Meza and Fimbo on one menu row and opens a picker of six backgrounds, all free: **Klasiki** (the plain dark screen, as before), **Mbao** (a wall of wooden planks), **Kanga** (an indigo kanga with printed borders above and below the table), **Bahari** (the sea at night with a crescent moon and dhow sails), **Nyota** (a starry sky with acacia trees), **Makuti** (woven palm leaves, like a beach bar's roof).
 - The table covers most of the screen, so each design puts its detail in the bands above and below the table and in the controls column. Those bands get a dark wash so names, status and hint stay easy to read; a unit test checks every background colour against the text colours.

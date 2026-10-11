@@ -15,6 +15,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
 | Backgrounds (pool) | Every background's large areas give white text a contrast of at least 7 and the grey text 4.5 (6 under the band wash); small details stay soft enough for white text over them; only known ids; progress keeps the choice, older saves and unknown values give Klasiki. |
+| Random rack (pool) | Over 300 random racks: ids keep their colours, nothing overlaps, the black stays on its spot, the back corners are a red and a yellow; the colours land in different places from game to game; the same full-power break gives many different results and does not always pot a ball. Older progress without the Impossible level keeps its stats. |
 | Left-handed layout (pool) | Right-handed is the layout as written; left-handed mirrors the table and the controls column exactly, keeps them on screen and apart. Progress keeps the hand; older saves and unknown values give right-handed. |
 | Catchphrases (pool) | Every character (player and computer) has a line for each moment in Swahili and English, none longer than the bubble allows, and no lines for characters that do not exist; string tables match. The shooter speaks after a pot, the other player after a foul, the winner at the end, nobody after a miss or re-rack. Lines come at the configured chance, stay quiet for the set number of shots after a line (a win still speaks), do not repeat straight away; over 3000 pots the share stays within bounds. |
 | Tables (pool) | Six tables, each with its own felt and rail style; every new felt differs from every ball by at least 25 (CIE76) in normal, deuteranopia and protanopia vision; the check catches a red felt; only known ids accepted. Progress keeps the table; older saves and unknown tables give Klasiki. |
@@ -171,6 +172,8 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 
 ### Strength ladder (`npm run ai:ladder -w @tzg/pool`, not part of `npm test`)
 Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), breaking alternately, with fixed seeds. Passes if every game finishes and the stronger level wins more than half. Takes several minutes.
+
+Results 2026-10-11 (0.16.0, 30 games each): Medium beat Easy 28/30, Hard beat Medium 24/30, Impossible beat Hard 24/30, every game finished (average 30, 19 and 14 shots). Fouls per shot: Easy 9%, Medium 5%, Hard 3 to 6%, Impossible 2%. Impossible potted on 74% of its shots; its longest decision was 313 000 physics steps. Each new level also played its old self (a temporary comparison, not kept): new Easy won 23/30, Medium 18/20, Hard 15/20.
 
 ### Release build check
 `npm run build -w @tzg/shell` and `npm run build -w @tzg/pool`, then confirm `__tzg` (and, for pool, `testLayout` and `continueShown`) do not appear in `dist/assets/*.js`.

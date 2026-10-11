@@ -79,16 +79,19 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Catchphrases (0.13.0, Robert's request): each character says a short line in a speech bubble under their name when they pot one of theirs and play on, when the other player fouls (a tease), and when they win, in the game's language. About 4 in 10 pots and 6 in 10 fouls get a line, then at least two quiet shots; a win always does. Lines are in `config/quips.ts`.
 
 ### Computer opponent as built (Milestone 3)
-- One computer opponent with three levels. It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.
+- One computer opponent with three levels (four since 0.16.0). It plays by the same rules and physics as the player, with no spin (players have no spin control yet, TD4) and no knowledge the player lacks: it sees the table, tries shots on a copy of it, and judges each with the rules engine.
 - What it looks for: pots of each legal ball into each pocket with clear paths, plain hits on a legal ball as a fallback, and, when nothing legal is found, shots in every direction (to escape snookers). Hard also replays its best few shots with the aim slightly off either way and prefers shots that still work, which cut its fouls from about 9% to 4% of its shots.
 - Ball in hand: it puts the cue ball straight behind a ball it can pot. On the break it breaks hard from behind the baulk line.
 - Levels differ in aiming error, power error, how many shots it considers, and whether it plans where the cue ball stops:
 
 | Level | Aim error (1 sd) | Power error | Shots considered | Cue ball position | Robustness check |
 |---|---|---|---|---|---|
-| Easy (Rahisi) | about 1.7° | 20% | 6 | no | no |
-| Medium (Wastani) | about 0.6° | 10% | 16 | yes | no |
-| Hard (Ngumu) | about 0.2° | 5% | 30 | yes | best 5 |
+| Easy (Rahisi) | about 1.1° | 15% | 12 | no | no |
+| Medium (Wastani) | about 0.34° | 7% | 24 | yes | best 3 |
+| Hard (Ngumu) | about 0.13° | 3.5% | 36 | yes | best 6 |
+| Impossible (Haiwezekani, 0.16.0) | about 0.02° | 1% | 48 | yes | best 8 |
+
+- 0.16.0 (Robert, 2026-10-11): every level made stronger and Impossible added, played by Bingwa, the champion of the street tables.
 
 - Pacing: it thinks for at least 0.7 s (so the turn change is readable) and at most 4 s on screen; on a slow phone the time limit ends the thinking and it plays the best shot found so far.
 
