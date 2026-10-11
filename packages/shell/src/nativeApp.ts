@@ -22,3 +22,9 @@ export function leaveApp(logger: Logger): void {
   if (!isNativeApp()) return;
   App.minimizeApp().catch((e: unknown) => logger.warn('could not leave the app', e));
 }
+
+/** Closes the app for good (the menu's Exit button). Nothing in a browser. */
+export function exitApp(logger: Logger): void {
+  if (!isNativeApp()) return;
+  App.exitApp().catch((e: unknown) => logger.warn('could not close the app', e));
+}

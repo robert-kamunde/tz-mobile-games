@@ -77,7 +77,7 @@ test('New game mid-match stops the computer and opens the picker, and the table 
  * hardest level thinks with the same table while the player is aiming: the difference is the AI's
  * share and must stay near its per-frame budget.
  */
-test('thinking adds little more than its budget to each frame on a 6x slower CPU', async ({ page }) => {
+test('thinking adds little more than its budget to each frame on a 6x slower CPU @timing', async ({ page }) => {
   await boot(page, 'hard');
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });

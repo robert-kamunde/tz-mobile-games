@@ -1,5 +1,6 @@
 import type * as Phaser from 'phaser';
 import {
+  AppExit,
   AppLifecycle,
   BackButton,
   createLogger,
@@ -14,7 +15,7 @@ import {
   type StringTables,
   type Translator,
 } from '@tzg/core';
-import { leaveApp } from './nativeApp';
+import { exitApp, isNativeApp, leaveApp } from './nativeApp';
 import { SoundBoard } from './sound';
 
 /**
@@ -31,6 +32,8 @@ export interface Services {
   readonly sound: SoundBoard;
   /** Android's back button: scenes add handlers with `onBackButton`. */
   readonly back: BackButton;
+  /** Closing the game from its menu; `available` is false on a web page, which cannot close itself. */
+  readonly exit: AppExit;
   getSettings(): Readonly<Settings>;
   /** Applies a partial change, persists it, and returns the new settings. */
   updateSettings(change: Partial<Settings>): Readonly<Settings>;
@@ -60,6 +63,14 @@ export function createServices(options: CreateServicesOptions): Services {
 
   const back = new BackButton(() => leaveApp(logger), logger.child('back'));
 
+  // Browser tests get the Exit button too; there closing only counts (exitApp does nothing off Android).
+  const exit = new AppExit(
+    isNativeApp() || import.meta.env.MODE === 'e2e',
+    () => settingsSlot.save(settings),
+    () => exitApp(logger),
+    logger.child('exit'),
+  );
+
   // Persist on every pause: Android may kill a backgrounded app without further notice.
   lifecycle.on('pause', () => settingsSlot.save(settings));
 
@@ -71,6 +82,7 @@ export function createServices(options: CreateServicesOptions): Services {
     lifecycle,
     sound,
     back,
+    exit,
     getSettings: () => settings,
     updateSettings(change) {
       settings = { ...settings, ...change };

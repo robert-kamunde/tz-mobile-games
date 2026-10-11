@@ -6,28 +6,25 @@
 export const TABLE_ART = {
   /** Shadow round the table on the background: the texture is this much bigger on every side. */
   shadow: { margin: 20, blur: 18, offsetY: 6, color: 'rgba(0, 0, 0, 0.6)' },
-  /** Wooden rail: a gradient across its width, grain lines, rounded outer corners and a bevel. */
+  /** Rail shape and finish shared by every table; colours and patterns are per table (config/tables.ts). */
   rail: {
-    light: '#8a5a2e',
-    mid: '#6b4220',
-    dark: '#3d2410',
     cornerRadius: 18,
     bevelWidth: 3,
     bevelLight: 'rgba(255, 230, 190, 0.35)',
     bevelDark: 'rgba(0, 0, 0, 0.45)',
     grainLines: 90,
-    grainAlpha: 0.1,
-    grainColor: '#24140a',
     seed: 7,
   },
   /** Sight marks on the rails: 3 between each pair of pockets on the long rails, 3 on each short rail. */
-  diamond: { color: '#efe2c4', halfSize: 4, perGap: 3 },
-  /** Rubber cushion strip between the cloth and the wood, and the pocket jaws. */
-  cushion: { width: 12, color: '#155a2e', nose: 'rgba(255, 255, 255, 0.16)', noseWidth: 1.5, jawWidth: 4 },
-  /** Cloth: lighter in the middle, darker to the edges, with faint speckle so it does not look flat. */
-  cloth: { centre: '#2a8f50', edge: '#1a6a38', speckles: 1800, speckleAlpha: 0.06, seed: 11 },
+  diamond: { perGap: 3, outline: 'rgba(0, 0, 0, 0.55)', outlineWidth: 1 },
+  /** Rubber cushion strip between the cloth and the rail, and the pocket jaws (colour per table). */
+  cushion: { width: 12, nose: 'rgba(255, 255, 255, 0.16)', noseWidth: 1.5, jawWidth: 4 },
+  /** Faint speckle on the felt so it does not look flat (colours per table). */
+  cloth: { speckles: 1800, speckleAlpha: 0.06, seed: 11 },
   pocket: { inner: '#000000', outer: '#1b1b1b', rim: '#1e120a', rimWidth: 4 },
   baulk: { color: 'rgba(255, 255, 255, 0.32)', width: 1.5 },
+  /** Small pictures of each table on the table picker: this fraction of the real size. */
+  previewScale: 0.27,
 } as const;
 
 export const BALL_ART = {

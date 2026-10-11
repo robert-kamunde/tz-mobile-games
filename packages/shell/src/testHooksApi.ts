@@ -28,6 +28,8 @@ export interface TestHooks {
   /** Presses Android's back button, and how many presses sent the app away. */
   back(): void;
   backLeaves(): number;
+  /** How many times the menu's Exit closed the game (browser tests only count; nothing closes). */
+  exits(): number;
   frameCpuStats(): { frames: number; averageMs: number; maxMs: number };
   resetFrameCpuStats(): void;
   /** Converts a point in design pixels (e.g. 1280x720 space) to page (CSS) pixels. */

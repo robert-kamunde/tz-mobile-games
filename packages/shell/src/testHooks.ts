@@ -58,6 +58,7 @@ export function installTestHooks(game: Phaser.Game, services: Services, rotateOv
     sound: () => ({ state: services.sound.state, played: [...services.sound.log] }),
     back: () => services.back.press(),
     backLeaves: () => services.back.leaveCount,
+    exits: () => services.exit.exitCount,
     frameCpuStats: () => ({ frames: cpu.frames, averageMs: cpu.frames ? cpu.totalMs / cpu.frames : 0, maxMs: cpu.maxMs }),
     resetFrameCpuStats() {
       cpu.frames = 0;

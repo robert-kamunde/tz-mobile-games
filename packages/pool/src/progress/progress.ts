@@ -1,4 +1,5 @@
 import { AI_LEVEL_IDS, type AiLevel } from '../config/ai';
+import { DEFAULT_TABLE, isTableId, type TableId } from '../config/tables';
 import type { PlayerId } from '../rules/blackball';
 import { validatePicks, type CharacterPicks } from './characters';
 import { validateOpponent, type Opponent } from './opponent';
@@ -18,6 +19,8 @@ export interface PoolProgress {
   readonly lastOpponent: Opponent | null;
   /** The characters chosen last time, selected on the picker. Saves from before 0.9 have none. */
   readonly lastPicks: CharacterPicks | null;
+  /** The table to play on (Meza on the menu). Saves from before 0.11 have none: Classic. */
+  readonly table: TableId;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -27,7 +30,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE };
 }
 
 /** Counts a finished game. */
@@ -58,5 +61,7 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   }
   // Missing (an older save) or unreadable picks only lose the remembered choice, never the stats.
   const lastPicks = validatePicks(r.lastPicks);
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks };
+  // Likewise a missing or unknown table (say, one removed in an update) falls back to Classic.
+  const table = isTableId(r.table) ? r.table : DEFAULT_TABLE;
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table };
 }

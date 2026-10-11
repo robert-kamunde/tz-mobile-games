@@ -114,7 +114,7 @@ test('asks to rotate when held upright, and clears after rotating', async ({ pag
   await expect(page.locator('#rotate-overlay')).toBeHidden();
 });
 
-test('stays inside the frame budget with a 6x slower CPU', async ({ page }) => {
+test('stays inside the frame budget with a 6x slower CPU @timing', async ({ page }) => {
   await boot(page);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });

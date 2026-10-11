@@ -8,6 +8,7 @@ import { AI_LEVELS } from '../config/ai';
 import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
+import { tableTheme } from '../config/tables';
 import { rotateAim } from '../controls/fineAim';
 import { computeAimGuide } from '../physics/aim';
 import { buildTableGeometry } from '../physics/geometry';
@@ -122,7 +123,7 @@ export class TableScene extends Phaser.Scene {
 
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
     this.view = new TableView(this, this.geometry, UK_7FT_TABLE);
-    this.view.drawTable();
+    this.view.drawTable(tableTheme(this.slots.progress.load().data.table));
     this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view);

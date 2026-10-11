@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 (unreleased) - Choose your table
+- Robert asked for different tables with African and local designs (2026-10-11). A new "Meza" (Tables) button on the main menu shows a small picture of each table; tap one, then "Chagua" (Choose). Back, or the phone's back button, leaves the choice as it was.
+- Six tables, all free: **Klasiki** (wood, green felt), **Zanzibar** (dark carved wood with a rope border and brass studs like the Zanzibar doors, teal felt), **Kitenge** (a kitenge print of rings and dots, blue felt), **Maasai** (red shuka check with a line of beads, slate-blue felt), **Tingatinga** (bold painted sections with dots and waves, purple felt), **Makonde** (ebony with carved zigzags, sage felt).
+- Patterns are on the rails only; the felt is plain. Every new felt keeps all four balls clearly visible, also for red-green colour blindness (checked by a unit test). Classic green is the hardest felt for that, which is why red balls carry a white spot.
+- The choice is saved (`table` in `pool.progress`) and used from the next time the table opens, a game in progress included. Older saves play on Klasiki.
+- Only the chosen table is kept in video memory at full size; the others are freed.
+- Menu buttons moved up a little so seven fit (`MENU`).
+- Tests: the frame-time checks on a 6x slower CPU (titles tagged `@timing`) now run in their own `timing` project, after all other tests and one at a time. With four tests sharing four CPUs, another browser could take the CPU in the middle of a measurement window, and the "computer thinking" check failed by a fraction of a millisecond. Run alone it passed 9 out of 9.
+
+## 0.10.1 (unreleased) - Exit button
+- Robert asked for an Exit button on the main menu (2026-10-11). "Toka" / "Exit" is the last menu button and closes the game.
+- With a game in progress it asks first: "Toka kwenye mchezo?" and says the game is saved and "Endelea na mchezo" brings it back (Robert chose "Keep it saved"). Back, or the phone's back button, closes the popup. With no game in progress Exit closes at once.
+- Settings are saved before closing. Exit shows only in the Android app: a web page cannot close itself, so the phone-browser build has no Exit button.
+- The menu buttons sit a little closer together (`MENU.firstButtonY` 225, `buttonSpacing` 78) so six fit.
+
 ## 0.10.0 (unreleased) - Milestone 9 Part A: table art
 - Robert chose "Claude now, designer later" for the art (2026-10-11). This is the first of three parts: the table and its controls.
 - Table: wooden rails with grain and diamond markers, a cushion strip, felt with a soft sheen and speckle, pockets with depth and cushion jaws, a shadow under the table.

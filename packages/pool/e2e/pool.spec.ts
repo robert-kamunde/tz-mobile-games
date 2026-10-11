@@ -106,7 +106,7 @@ test('going to the background mid-shot freezes the table and gives the same resu
  * measure that renderer, not a phone GPU (KNOWN_ISSUES U2). CPU time per frame is what this
  * environment can judge: it must stay well inside a 60 fps frame (16.7 ms) on a 6x slower CPU.
  */
-test('a full break stays inside the frame budget on a 6x slower CPU', async ({ page }) => {
+test('a full break stays inside the frame budget on a 6x slower CPU @timing', async ({ page }) => {
   await boot(page);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });

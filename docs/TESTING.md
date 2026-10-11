@@ -6,7 +6,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 
 ### Unit tests (`npm test`): 210 tests
 
-#### Core, `packages/core/test` (50)
+#### Core, `packages/core/test` (53)
 | Area | What is covered |
 |---|---|
 | Saves | Round trip; missing data; not-JSON, missing envelope, `null`, invalid payload, wrong type; newer version; step-by-step migration; missing migration step; throwing migration; failed write reported, not thrown; storage that throws or cannot be obtained; an unreadable value is copied to `<key>.backup`, a missing or good one is not. |
@@ -14,6 +14,8 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Tables (pool) | Six tables, each with its own felt and rail style; every new felt differs from every ball by at least 25 (CIE76) in normal, deuteranopia and protanopia vision; the check catches a red felt; only known ids accepted. Progress keeps the table; older saves and unknown tables give Klasiki. |
+| App exit | Saves, then closes; does nothing where the game cannot close itself; still closes if saving fails. |
 | Sound synth | Each layer kind makes a short, non-silent sound peaking exactly at the recipe level with a silent last sample; the same seed gives the same samples; bad sample rates and lengths are refused. |
 | Back button | No handler leaves the app; newest handler first, stopping at the first that handles it; a removed handler is not asked (removing twice is harmless); a throwing handler is logged and does not leave the app. |
 | Random | Same seed repeats, another seed differs; values in [0, 1); normal() mean about 0 and spread about 1; non-finite seed rejected. |
@@ -98,6 +100,14 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | New game | Mid-match (two taps) New game stops a thinking computer and opens the picker; pulling the power bar meanwhile does nothing; choosing two players restores "Mchezaji" names. |
 | Frame budget | 6x CPU throttle: average CPU per frame while Hard thinks minus the same table while the player aims stays under the 6 ms thinking budget plus 6 ms; Hard still shoots (time limit). |
 
+#### Tables (4 scenarios, `tables.spec.ts`)
+| Scenario | Checks |
+|---|---|
+| Choose a table | The picker opens with Klasiki selected; Back closes it; choosing Zanzibar saves it, the next game is drawn on it, and after reopening it is still chosen and selected on the picker. |
+| Back keeps the table | Selecting another table then Back, or the phone's back button, leaves the saved table unchanged and does not leave the app. |
+| Continue on a new table | A game in progress continues on a table chosen meanwhile, with the balls where they were. |
+| Every table | Each of the six tables draws and plays a break with no errors. |
+
 #### Spin and fine aim (4 scenarios, `controls.spec.ts`)
 | Scenario | Checks |
 |---|---|
@@ -106,11 +116,13 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Fine aim | 200 design pixels turn the aim clockwise by 190 to 210 times the per-pixel angle; dragging back returns it; a cancelled touch never shoots and the strip still works after it. |
 | Computer's turn | Spin and fine aim drags change nothing while the computer thinks, and it plays a centre-ball shot. |
 
-#### Menu and saving (8 scenarios, `menu.spec.ts`)
+#### Menu and saving (10 scenarios, `menu.spec.ts`)
 | Scenario | Checks |
 |---|---|
 | Menu first | The game opens on the menu in Kiswahili with Play, Stats, Rules, Settings and the placeholder label, and no Continue; Rules opens with the rules text and Back closes it; Back on the picker returns to the menu without starting a game. |
 | Menu and Continue | After a break, Menu then Continue brings back the same balls, match and opponent; after reopening the page the same again. |
+| Exit, no game | Exit ("Toka") closes the game at once with no popup. |
+| Exit during a game | The popup says the game is saved; its Back button and the phone's back button close it without closing the game; Exit then closes; after reopening, Continue brings back the same balls. |
 | Closed mid-shot | Reopening while balls roll, then Continue, gives the table, match and shot count from just before that shot. |
 | Finished game | Winning on the black against Easy removes the saved game; the menu shows no Continue; Stats reads "Kompyuta (Rahisi): umeshinda 1 kati ya 1" and zero for the others; the picker marks Easy. |
 | Language | Settings, English: the menu redraws in English with Settings still open and English marked; kept after reopening; the table is in English too. |
@@ -150,6 +162,8 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 ### Release build check
 `npm run build -w @tzg/shell` and `npm run build -w @tzg/pool`, then confirm `__tzg` (and, for pool, `testLayout` and `continueShown`) do not appear in `dist/assets/*.js`.
 
+Frame-time checks on a 6x slower CPU have `@timing` in their titles and run in the `timing` project: after all other tests, one at a time, on the small phone. Run just them with `npx playwright test --project=timing --no-deps`.
+
 ## Results log
 
 | Date | Milestone | Typecheck | Unit | Browser | Notes |
@@ -169,6 +183,8 @@ Each level plays the level below it over 40 games (set `AI_LADDER_GAMES`), break
 | 2026-10-11 | 8 | pass | 210/210 (+2 ladder tests skipped) | pool 141/144, then the menu tests 24/24 and screenshots rerun (shell unchanged) | Characters. The first full run failed one menu test on all three sizes: its expected menu probe lacked the new `selectedCharacter` field (test updated; rerun of the menu tests passed). Two planted bugs: player 2 allowed to take player 1's character (caught); characters shown but not saved after Continue (missed at first because the names on screen were right, so a second reopen was added to the test, which then caught it). Screenshots of the picker and table at three sizes checked: grid, names and buttons fit; the computer's name fits the right-hand panel. |
 | 2026-10-11 | 8.1 | pass | 210/210 | pool match and characters tests 39/39 | Ball count removed from the player names. The tray test now checks the names have no count; it fails on 0.9.0 and passes on 0.9.1. |
 | 2026-10-11 | 9A | pass | 210/210 (+2 ladder tests skipped) | pool 147/147 + shell 33/33 on the second run | Table art. First full run: 141/144; the spin test failed on all three sizes because its touch "while balls roll" came after a short shot had already stopped. It fails the same way on 0.9.1 under load, so a test timing fault, not the art; that check now runs on a full-power break and proves the balls are still moving. Break at 6x CPU throttle: 1.7 to 2.6 ms average CPU per frame (max 5.1 ms). Power-bar fill checked on a mid-pull screenshot; red/yellow checked on deuteranopia and protanopia simulations. |
+| 2026-10-11 | 0.10.1 | pass | 213/213 (+2 ladder tests skipped) | menu, release and characters tests 60/60 (3 sizes) | Exit button. Screenshots of the menu with six buttons and the popup checked on the small phone. Not testable here: that `App.exitApp()` really closes the Android app (device checklist 6f). |
+| 2026-10-11 | 0.11.0 | pass | 218/218 (+2 ladder tests skipped) | pool 161/161 + shell 31/31 (timing checks now once, in the `timing` project) | Tables and Exit together. Before the timing project, the 0.10.1 full run failed the "computer thinking" frame check on two sizes (12.3 and 12.2 ms against 12); run alone it passed 9/9 (gap -0.4 to 6.7 ms), so the cause was tests sharing the CPU. In the timing project: thinking gap 8.2 ms, break 1.44 ms average. Screenshots of every table and the picker checked; felt colours pass the colour-blind check. |
 | 2026-10-07 | 1 | pass | 76/76 | 63/63 | Break at 6x CPU throttle: 0.8 to 1.0 ms average CPU per frame (max 4.4 ms). Shell idle at 6x: 2.2 to 2.4 ms. Frame rate in the test browser is 16 to 20 fps during a 6x-throttled break and 26 fps idle unthrottled, limited by the software renderer's fill rate (a full-table rectangle alone halves it), so it says nothing about phones; see KNOWN_ISSUES U2. Found and fixed: a system touch cancel on the power bar fired a shot (test failed before the fix, passes after). |
 
 ## Not yet verified (needs a real device)
@@ -190,6 +206,7 @@ Target: at least one low-end Android phone (2-3 GB RAM). Record device, Android 
 6a. Pool: aim with one finger, pull power with another; aim lands where the finger is; a pull-and-swipe-down of the notification shade does not shoot.
 6d. Pool: sound. The first shot after opening is heard; harder shots are louder; Sound off in Settings silences it; the phone's own volume and silent mode behave as expected; press home mid-shot, no sound continues; a phone call stops it.
 6e. Android app (Milestone 7): the icon and name on the home screen; the splash at start; the game fills the screen with no status or navigation bar (a swipe from the edge shows them briefly); it stays landscape when the phone turns; the back button closes panels, goes from the table to the menu, and on the menu sends the app away; reopening from recent apps returns to the same screen.
+6f. Android app (0.10.1): Exit on the menu closes the game; during a game it asks first, and after opening the app again "Endelea na mchezo" brings the game back.
 6f. First install: the "how to play" panel appears on the first game only.
 6c. Pool: set spin with a thumb (top, back, each side) and check the dot is easy to place and returns to the centre after the shot; turn the aim with the fine-aim strip onto a thin cut and check it is precise enough without being slow.
 6b. Pool: play a full two-player game to the black; check every foul message reads correctly in Kiswahili; ball in hand drag is easy with a thumb; all text is readable without squinting.

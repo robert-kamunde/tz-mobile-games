@@ -113,12 +113,27 @@ export const CHARACTER_PICKER = {
   buttonOffsetX: 140,
 } as const;
 
+/** Table picker: a small picture of each table (TABLE_ART.previewScale) in a 3 by 2 grid, names below. */
+export const TABLE_PICKER = {
+  columns: 3,
+  columnSpacing: 345,
+  rowSpacing: 235,
+  /** Below the panel title. */
+  firstRowFromTop: 178,
+  /** Between a picture and its name. */
+  nameGap: 6,
+  selectedFrame: { width: 5, gap: 5, color: 0xf2c94c },
+  buttonsFromBottom: 46,
+  buttonOffsetX: 140,
+} as const;
+
 /** Main menu. */
 export const MENU = {
   x: DESIGN.width / 2,
-  titleY: 110,
-  firstButtonY: 250,
-  buttonSpacing: 82,
+  titleY: 90,
+  /** Up to seven buttons (Continue to Exit) fit between the title and the bottom edge. */
+  firstButtonY: 190,
+  buttonSpacing: 70,
   /** "Placeholder art" label, bottom right (anchored by its right edge). */
   placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;

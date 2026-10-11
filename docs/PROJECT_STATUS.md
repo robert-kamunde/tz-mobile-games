@@ -5,6 +5,8 @@ Last updated: 2026-10-11
 ## Current milestone
 Milestone 9: art and sound, in three parts, each sent to Robert as a phone build. Robert chose "Claude now, designer later" (2026-10-11): Claude draws the art in code, a designer may replace it later.
 - **Part A, the table (done, 0.10.0, 2026-10-11):** rails, felt, pockets, shaded balls with shadows, a wooden cue, styled power bar, spin control and fine-aim strip; a white spot on red balls for colour-blind players. Drawn at start-up (A24), no image files.
+- **Exit button (done, 0.10.1, 2026-10-11):** Robert's request; the game stays saved (his choice).
+- **Tables (done, 0.11.0, 2026-10-11; Robert's request):** six tables to choose from on a new "Meza" menu button: Classic, Zanzibar, Kitenge, Maasai, Tingatinga, Makonde. Patterns on the rails only, plain felt, each felt checked for colour blindness. All free.
 - **Part B, the screens (next):** a portrait for each of the 11 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
 - **Part C, store and sound:** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
 - Waiting on Robert: the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.

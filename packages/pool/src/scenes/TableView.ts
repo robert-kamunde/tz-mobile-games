@@ -1,13 +1,11 @@
 import * as Phaser from 'phaser';
-import { BALL_ART, TABLE_ART } from '../config/art';
+import { BALL_ART } from '../config/art';
 import { TABLE_DEPTH, TABLE_LAYOUT } from '../config/layout';
 import type { TableConfig } from '../config/table';
+import type { TableTheme } from '../config/tables';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
 import { ballShadowTexture, ballTexture } from './art/ballArt';
-import { canvasTexture } from './art/canvasArt';
-import { drawTable, type TableFrame } from './art/tableArt';
-
-const TABLE_TEXTURE = 'pool-table';
+import { dropOtherTableTextures, tableTexture } from './art/tableTexture';
 
 /**
  * Draws the table and balls with the drawn art (Milestone 9, `scenes/art/`).
@@ -47,26 +45,10 @@ export class TableView {
    * Draws the static table once into a texture (ARCHITECTURE A12): Phaser rebuilds Graphics
    * geometry every frame, so static art is never left as live Graphics.
    */
-  drawTable(): void {
-    const topLeft = this.toDesign(0, 0);
-    const rail = TABLE_LAYOUT.railWidth;
-    const margin = TABLE_ART.shadow.margin;
-    const outerW = this.px(this.geometry.length) + 2 * rail;
-    const outerH = this.px(this.geometry.width) + 2 * rail;
-    // Texture space: the outer edge of the rail is (margin, margin); the margin holds the shadow.
-    const left = topLeft.x - rail - margin;
-    const top = topLeft.y - rail - margin;
-    const frame: TableFrame = {
-      at: (x, y) => {
-        const p = this.toDesign(x, y);
-        return { x: p.x - left, y: p.y - top };
-      },
-      px: (m) => this.px(m),
-      outer: { x: margin, y: margin, width: outerW, height: outerH },
-      railWidth: rail,
-    };
-    canvasTexture(this.scene, TABLE_TEXTURE, outerW + 2 * margin, outerH + 2 * margin, (ctx) => drawTable(ctx, frame, this.geometry, this.config));
-    this.scene.add.image(left, top, TABLE_TEXTURE).setOrigin(0, 0).setName('table');
+  drawTable(theme: TableTheme): void {
+    const texture = tableTexture(this.scene, this.geometry, this.config, theme);
+    dropOtherTableTextures(this.scene, texture.key);
+    this.scene.add.image(texture.left, texture.top, texture.key).setOrigin(0, 0).setName('table').setData('theme', theme.id);
   }
 
   /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden. */

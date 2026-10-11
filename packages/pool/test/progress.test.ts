@@ -142,6 +142,15 @@ describe('progress', () => {
     expect(validateProgress({ ...p, lastPicks: ['fundi', 'fundi'] })?.lastPicks).toBeNull();
   });
 
+  it('keeps the chosen table; an older save, or a table that no longer exists, plays on Classic and keeps its stats', () => {
+    const p = { ...recordGame(defaultProgress(), { kind: 'human' }, 0), table: 'maasai' as const };
+    expect(validateProgress(viaJson(p))).toEqual(p);
+    const old = viaJson(p) as Record<string, unknown>;
+    delete old.table;
+    expect(validateProgress(old)).toEqual({ ...p, table: 'classic' });
+    expect(validateProgress({ ...p, table: 'gold' })).toEqual({ ...p, table: 'classic' });
+  });
+
   it('opponent validation accepts only known opponents', () => {
     expect(validateOpponent({ kind: 'human', extra: 1 })).toEqual({ kind: 'human' });
     expect(validateOpponent({ kind: 'computer', level: 'hard' })).toEqual({ kind: 'computer', level: 'hard' });

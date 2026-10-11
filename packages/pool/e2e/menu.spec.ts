@@ -39,8 +39,8 @@ async function menuAndContinue(page: Page): Promise<void> {
 test('the game opens on the menu, with no Continue before a game is played', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  expect(await menuState(page)).toEqual({ continueShown: false, panel: null, selectedCharacter: null, locale: 'sw' });
-  for (const name of ['menu-play', 'menu-stats', 'menu-rules', 'menu-settings', 'placeholderLabel']) await elementCenter(page, name, MENU_SCENE);
+  expect(await menuState(page)).toEqual({ continueShown: false, panel: null, selectedCharacter: null, selectedTable: null, table: 'classic', locale: 'sw' });
+  for (const name of ['menu-play', 'menu-tables', 'menu-stats', 'menu-rules', 'menu-settings', 'placeholderLabel']) await elementCenter(page, name, MENU_SCENE);
   expect(await page.evaluate(() => window.__tzg!.elementCenter('Menu', 'menu-continue'))).toBeNull();
 
   // Rules open over the menu and Back closes them.
@@ -205,5 +205,50 @@ test('after changing the language, Menu from the table opens the main menu, not 
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
   expect((await menuState(page)).panel).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+const exits = (page: Page) => page.evaluate(() => window.__tzg!.exits());
+
+test('Exit with no game in progress closes the game at once', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  expect(await textOf(page, MENU_SCENE, 'menu-exit')).toBe('Toka');
+  await tap(page, 'menu-exit', MENU_SCENE);
+  expect(await exits(page)).toBe(1);
+  expect((await menuState(page)).panel).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test('Exit during a game asks first, says the game is saved, and the game continues after reopening', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  await pullPower(page, 1);
+  const afterBreak = await waitUntilSettled(page);
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+
+  // Back (button or phone) closes the popup without closing the game.
+  await tap(page, 'menu-exit', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('exit');
+  expect(await textOf(page, MENU_SCENE, 'exitPanel-body')).toContain('umehifadhiwa');
+  await tap(page, 'exit-back', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  await tap(page, 'menu-exit', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('exit');
+  await page.evaluate(() => window.__tzg!.back());
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  expect(await exits(page)).toBe(0);
+
+  await tap(page, 'menu-exit', MENU_SCENE);
+  await tap(page, 'exit-confirm', MENU_SCENE);
+  expect(await exits(page)).toBe(1);
+
+  // What the player finds when they open the app again.
+  await reopen(page);
+  expect((await menuState(page)).continueShown).toBe(true);
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).balls).toEqual(afterBreak.balls);
   expect(errors).toEqual([]);
 });
