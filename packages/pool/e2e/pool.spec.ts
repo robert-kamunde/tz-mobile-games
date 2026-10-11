@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { setHidden, touchDrag, trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { boot, overlaps, playFromMenu, pullPower, reopen, state, tablePoint, waitUntilSettled } from './poolPage';
+import { boot, layout, overlaps, playFromMenu, pullPower, reopen, state, tablePoint, waitUntilSettled } from './poolPage';
 
 test('opens on a racked table in Kiswahili with no errors', async ({ page }) => {
   const errors = trackErrors(page);
@@ -83,11 +83,14 @@ test('going to the background mid-shot freezes the table and gives the same resu
   const errors = trackErrors(page);
   // Reference: the same break with no interruption.
   await boot(page);
+  // Every game racks differently (0.16.0), so the second game is given this game's rack.
+  const rack = (await state(page)).balls.map((b) => ({ id: b.id, x: b.x, y: b.y }));
   await pullPower(page, 0.9);
   const reference = await waitUntilSettled(page);
 
   await reopen(page);
   await playFromMenu(page, 'two');
+  await layout(page, rack, {});
   await pullPower(page, 0.9);
   await expect.poll(async () => (await state(page)).steps).toBeGreaterThan(200);
   await setHidden(page, true);
