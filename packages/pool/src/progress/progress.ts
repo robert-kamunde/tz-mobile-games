@@ -1,4 +1,5 @@
 import { AI_LEVEL_IDS, type AiLevel } from '../config/ai';
+import { DEFAULT_BACKGROUND, isBackgroundId, type BackgroundId } from '../config/backgrounds';
 import { DEFAULT_CUE, isCueId, type CueId } from '../config/cues';
 import { DEFAULT_HAND, isHand, type Hand } from '../config/layout';
 import { DEFAULT_TABLE, isTableId, type TableId } from '../config/tables';
@@ -27,6 +28,8 @@ export interface PoolProgress {
   readonly cue: CueId;
   /** Controls on the right or, for left-handed players, the left (Settings). Saves from before 0.14 have none: right. */
   readonly hand: Hand;
+  /** Behind the table (Mandhari on the menu). Saves from before 0.15 have none: Klasiki. */
+  readonly background: BackgroundId;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -36,7 +39,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND };
 }
 
 /** Counts a finished game. */
@@ -71,5 +74,6 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   const table = isTableId(r.table) ? r.table : DEFAULT_TABLE;
   const cue = isCueId(r.cue) ? r.cue : DEFAULT_CUE;
   const hand = isHand(r.hand) ? r.hand : DEFAULT_HAND;
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand };
+  const background = isBackgroundId(r.background) ? r.background : DEFAULT_BACKGROUND;
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand, background };
 }

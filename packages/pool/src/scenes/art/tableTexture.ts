@@ -16,6 +16,13 @@ export interface TableTexture {
   readonly top: number;
 }
 
+/** Design-pixel position of a full-size table texture's top-left corner (right hand, shadow margin included). */
+export function tableTextureOrigin(): { left: number; top: number } {
+  const l = TABLE_LAYOUT;
+  const outer = l.railWidth + TABLE_ART.shadow.margin;
+  return { left: l.originX - outer, top: l.originY - outer };
+}
+
 /**
  * The table in a theme, drawn once into a texture at `scale` of its real size (1 on the table, smaller
  * for the picker's previews). The shadow margin is inside the texture.
@@ -26,8 +33,7 @@ export function tableTexture(scene: Phaser.Scene, geometry: TableGeometry, confi
   const margin = TABLE_ART.shadow.margin;
   const outerW = geometry.length * l.scale + 2 * rail;
   const outerH = geometry.width * l.scale + 2 * rail;
-  const left = l.originX - rail - margin;
-  const top = l.originY - rail - margin;
+  const { left, top } = tableTextureOrigin();
   // Texture space: the outer edge of the rail is (margin, margin); the margin holds the shadow.
   const frame: TableFrame = {
     at: (x, y) => ({ x: l.originX + x * l.scale - left, y: l.originY + y * l.scale - top }),

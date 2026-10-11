@@ -14,6 +14,7 @@ Nothing is called working unless a test below (automated or manual) has shown it
 | Fixed step | Whole steps and remainder; same total steps at 30/60/144 fps; cap and drop after a long stall; negative/NaN frame times; reset; invalid config rejected. |
 | Lifecycle | Pause/resume once each; starts paused when opened hidden; throwing listener isolated; dispose removes listeners. |
 | Settings | Kiswahili default; per-game key; five invalid shapes rejected. |
+| Backgrounds (pool) | Every background's large areas give white text a contrast of at least 7 and the grey text 4.5 (6 under the band wash); small details stay soft enough for white text over them; only known ids; progress keeps the choice, older saves and unknown values give Klasiki. |
 | Left-handed layout (pool) | Right-handed is the layout as written; left-handed mirrors the table and the controls column exactly, keeps them on screen and apart. Progress keeps the hand; older saves and unknown values give right-handed. |
 | Catchphrases (pool) | Every character (player and computer) has a line for each moment in Swahili and English, none longer than the bubble allows, and no lines for characters that do not exist; string tables match. The shooter speaks after a pot, the other player after a foul, the winner at the end, nobody after a miss or re-rack. Lines come at the configured chance, stay quiet for the set number of shots after a line (a win still speaks), do not repeat straight away; over 3000 pots the share stays within bounds. |
 | Tables (pool) | Six tables, each with its own felt and rail style; every new felt differs from every ball by at least 25 (CIE76) in normal, deuteranopia and protanopia vision; the check catches a red felt; only known ids accepted. Progress keeps the table; older saves and unknown tables give Klasiki. |
@@ -109,6 +110,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Back keeps the table | Selecting another table then Back, or the phone's back button, leaves the saved table unchanged and does not leave the app. |
 | Continue on a new table | A game in progress continues on a table chosen meanwhile, with the balls where they were. |
 | Every table | Each of the six tables draws and plays a break with no errors. |
+| Mandhari | Meza, Fimbo and Mandhari share a row without overlapping. Each of the six backgrounds can be chosen and is drawn on the table screen; the picker marks the saved one; Back keeps it; it survives reopening. |
 | Choose a cue | Fimbo opens with Klasiki selected; choosing Maasai saves it; selecting another then the phone's back button keeps Maasai (and the table unchanged); the table scene draws the Maasai cue; kept after reopening. |
 
 #### Spin and fine aim (4 scenarios, `controls.spec.ts`)

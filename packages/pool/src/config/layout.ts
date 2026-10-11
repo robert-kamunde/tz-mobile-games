@@ -166,6 +166,8 @@ const LOOK_PICKER_COMMON = {
 export const LOOK_PICKER = {
   /** Tables at TABLE_ART.previewScale, 3 by 2, below the panel title. */
   table: { ...LOOK_PICKER_COMMON, columns: 3, columnSpacing: 345, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Backgrounds at BACKGROUND_ART.previewScale, 3 by 2, like the tables. */
+  background: { ...LOOK_PICKER_COMMON, columns: 3, columnSpacing: 345, rowSpacing: 235, firstRowFromTop: 178 },
   /** Cues at CUE_ART.previewScale, 2 by 3. */
   cue: { ...LOOK_PICKER_COMMON, columns: 2, columnSpacing: 500, rowSpacing: 130, firstRowFromTop: 150 },
 } as const;
@@ -179,6 +181,8 @@ export const MENU = {
   buttonSpacing: 70,
   /** Between two buttons sharing a row. */
   pairGap: 16,
+  /** A row of three (Meza, Fimbo, Mandhari) is wider than one button so each label fits. */
+  tripleRowWidth: 620,
   /** "Placeholder art" label, bottom right (anchored by its right edge). */
   placeholder: { right: DESIGN.width - 12, y: DESIGN.height - 22 },
 } as const;

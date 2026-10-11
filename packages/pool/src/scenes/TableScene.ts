@@ -11,6 +11,7 @@ import { UK_7FT_TABLE } from '../config/table';
 import { tableTheme } from '../config/tables';
 import { CUE_STYLES } from '../config/cues';
 import { QUIPS, quipKey } from '../config/quips';
+import { BACKGROUNDS } from '../config/backgrounds';
 import { QuipChooser } from '../rules/quips';
 import { rotateAim } from '../controls/fineAim';
 import { computeAimGuide } from '../physics/aim';
@@ -135,7 +136,7 @@ export class TableScene extends Phaser.Scene {
     const sides = screenSides(looks.hand, this.geometry.length);
     this.overTable = { ...PANEL.overTable, x: PANEL.overTable.x + sides.tableDx };
     this.view = new TableView(this, this.geometry, UK_7FT_TABLE, sides);
-    this.view.drawTable(tableTheme(looks.table));
+    this.view.drawTable(tableTheme(looks.table), BACKGROUNDS[looks.background]);
     this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
     this.aimView = new AimView(this, this.view, CUE_STYLES[looks.cue]);
@@ -650,7 +651,7 @@ export class TableScene extends Phaser.Scene {
       trays: this.hud.trayState,
       quip: this.hud.quip,
       hand: this.sides.hand,
-      controls: { spin: { x: this.spin.x, y: this.spin.y }, fineAim: { x: this.fineAim.x, y: this.fineAim.y }, tableLeft: this.view.toDesign(0, 0).x },
+      controls: { spin: { x: this.spin.x, y: this.spin.y }, fineAim: { x: this.fineAim.x, y: this.fineAim.y }, tableLeft: this.view.toDesign(0, 0).x, tableRight: this.view.toDesign(this.geometry.length, 0).x },
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.setup.visible,

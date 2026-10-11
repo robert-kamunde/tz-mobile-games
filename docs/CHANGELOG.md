@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.15.0 (unreleased) - Backgrounds behind the table
+- From the personalisation list Robert approved (2026-10-11). A third button, "Mandhari" / "Scenery", joins Meza and Fimbo on one menu row and opens a picker of six backgrounds, all free: **Klasiki** (the plain dark screen, as before), **Mbao** (a wall of wooden planks), **Kanga** (an indigo kanga with printed borders above and below the table), **Bahari** (the sea at night with a crescent moon and dhow sails), **Nyota** (a starry sky with acacia trees), **Makuti** (woven palm leaves, like a beach bar's roof).
+- The table covers most of the screen, so each design puts its detail in the bands above and below the table and in the controls column. Those bands get a dark wash so names, status and hint stay easy to read; a unit test checks every background colour against the text colours.
+- The choice is saved (`background` in `pool.progress`) and used from the next time the table opens. Older saves get Klasiki.
+- Performance: the background and the table are combined into one screen-sized picture when the table opens, so the screen is still drawn once per frame. Drawing them as two pictures doubled the drawing work, which slowed the test browser's software renderer enough to time out tests; a slow phone's graphics chip would feel it too. Klasiki draws only the table, exactly as before.
+
 ## 0.14.0 (unreleased) - Left-handed mode
 - From the personalisation list Robert approved (2026-10-11). Settings has a new row, "Mkono wa kuchezea" / "Playing hand": Kulia (Right, as before) or Kushoto (Left).
 - Left turns the table screen into a mirror image: the spin control and power bar move to the left edge, the table and everything on it (player panels, status, hint, fine-aim strip, game over, panels over the table) moves right by the same gap, and the Menu and New game buttons swap corners. Nothing changes in how the game plays.

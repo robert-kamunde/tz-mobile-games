@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
+import { BACKGROUND_IDS } from '../src/config/backgrounds';
 import { TABLE_IDS } from '../src/config/tables';
 import { MENU_SCENE, SCENE, menuState, playFromMenu, pullPower, reopen, state, tap, waitForScene, waitUntilSettled } from './poolPage';
 
@@ -115,5 +116,40 @@ test('Fimbo: the chosen cue is used on the table and kept after reopening; Back 
   expect(await cueOnScreen(page)).toBe('maasai');
   await reopen(page);
   expect((await menuState(page)).cue).toBe('maasai');
+  expect(errors).toEqual([]);
+});
+
+/** The background drawn behind the table (its id). */
+const backgroundOnScreen = (page: Page) => page.evaluate(() => window.__tzg!.dataOf('Table', 'table', 'background'));
+
+test('Mandhari: each background can be chosen and is drawn behind the table; the choice is kept, Back keeps the old one', async ({ page }) => {
+  test.slow();
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  // The three look buttons share a row and none covers another.
+  const row = await Promise.all(['menu-tables', 'menu-cues', 'menu-backgrounds'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
+  for (let i = 1; i < row.length; i++) expect(row[i]!.left).toBeGreaterThan(row[i - 1]!.right);
+  for (const b of row) expect(b!.top).toBe(row[0]!.top);
+
+  for (const id of BACKGROUND_IDS) {
+    await tap(page, 'menu-backgrounds', MENU_SCENE);
+    await expect.poll(async () => (await menuState(page)).panel).toBe('backgrounds');
+    await tap(page, `background-${id}`, MENU_SCENE);
+    expect((await menuState(page)).selectedBackground).toBe(id);
+    await tap(page, 'background-confirm', MENU_SCENE);
+    await expect.poll(async () => (await menuState(page)).background).toBe(id);
+    await playFromMenu(page, 'two');
+    expect(await backgroundOnScreen(page)).toBe(id);
+    await tap(page, 'menuButton');
+    await waitForScene(page, MENU_SCENE);
+  }
+
+  await tap(page, 'menu-backgrounds', MENU_SCENE);
+  expect((await menuState(page)).selectedBackground).toBe('makuti');
+  await tap(page, 'background-sea', MENU_SCENE);
+  await page.evaluate(() => window.__tzg!.back());
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  await reopen(page);
+  expect((await menuState(page)).background).toBe('makuti');
   expect(errors).toEqual([]);
 });

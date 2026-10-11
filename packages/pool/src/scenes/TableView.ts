@@ -5,7 +5,9 @@ import type { TableConfig } from '../config/table';
 import type { TableTheme } from '../config/tables';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
 import { ballShadowTexture, ballTexture } from './art/ballArt';
-import { dropOtherTableTextures, tableTexture } from './art/tableTexture';
+import type { BackgroundStyle } from '../config/backgrounds';
+import { dropOtherSceneTextures, sceneTexture } from './art/backgroundArt';
+import { dropOtherTableTextures, tableTexture, tableTextureOrigin } from './art/tableTexture';
 
 /**
  * Draws the table and balls with the drawn art (Milestone 9, `scenes/art/`).
@@ -52,10 +54,23 @@ export class TableView {
    * Draws the static table once into a texture (ARCHITECTURE A12): Phaser rebuilds Graphics
    * geometry every frame, so static art is never left as live Graphics.
    */
-  drawTable(theme: TableTheme): void {
-    const texture = tableTexture(this.scene, this.geometry, this.config, theme);
-    dropOtherTableTextures(this.scene, texture.key);
-    this.scene.add.image(texture.left + this.sides.tableDx, texture.top, texture.key).setOrigin(0, 0).setName('table').setData('theme', theme.id);
+  drawTable(theme: TableTheme, background: BackgroundStyle): void {
+    const draw = () => tableTexture(this.scene, this.geometry, this.config, theme).key;
+    const origin = tableTextureOrigin();
+    let image: Phaser.GameObjects.Image;
+    if (background.kind === 'plain') {
+      // The plain background is the screen's own colour: only the table is drawn, as before backgrounds.
+      const key = draw();
+      dropOtherTableTextures(this.scene, key);
+      dropOtherSceneTextures(this.scene, '');
+      image = this.scene.add.image(origin.left + this.sides.tableDx, origin.top, key);
+    } else {
+      const key = sceneTexture(this.scene, background, draw, { x: origin.left + this.sides.tableDx, y: origin.top }, theme.id);
+      dropOtherTableTextures(this.scene, '');
+      dropOtherSceneTextures(this.scene, key);
+      image = this.scene.add.image(0, 0, key);
+    }
+    image.setOrigin(0, 0).setName('table').setData('theme', theme.id).setData('background', background.id);
   }
 
   /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden. */

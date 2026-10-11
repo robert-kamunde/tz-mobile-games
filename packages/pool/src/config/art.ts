@@ -27,6 +27,26 @@ export const TABLE_ART = {
   previewScale: 0.27,
 } as const;
 
+/** Backgrounds behind the table (designs and colours per background in config/backgrounds.ts). */
+export const BACKGROUND_ART = {
+  /**
+   * The bands above and below the table hold the player names, status and hint, so they get a dark
+   * wash over the design (faded in over `fade` pixels) to keep the text easy to read.
+   */
+  textBands: { color: '#101418', alpha: 0.5, topEnd: 72, bottomStart: 648, fade: 18 },
+  /** Darker towards the edges of the screen. */
+  vignette: { alpha: 0.45 },
+  planks: { width: 64, gap: 3, grainLines: 260, grainAlpha: 0.18, nailRadius: 2.5, nailInset: 20 },
+  kanga: { border: 64, motifSpacing: 44, dotSpacing: 36, dotRadius: 2.5 },
+  sea: { horizonY: 600, moon: { x: 1240, y: 30, radius: 14 }, waveSpacing: 12, dhows: [90, 640, 1180], dhowSize: 34 },
+  stars: { count: 260, maxRadius: 1.6, trees: [60, 1225], treeHeight: 64 },
+  weave: { strip: 22 },
+  seed: 23,
+  /** Small pictures on the background picker, with a simple table on them so the choice is clear. */
+  previewScale: 0.24,
+  previewTable: { rail: '#5a3a1e', felt: '#1f7a46' },
+} as const;
+
 export const BALL_ART = {
   /** Shading: a soft highlight towards the top left and a darker edge. */
   highlightOffset: 0.35,

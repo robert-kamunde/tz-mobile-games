@@ -41,7 +41,6 @@ async function chooseHand(page: Page, hand: 'left' | 'right', locale: 'sw' | 'en
 async function expectClearLayout(page: Page): Promise<void> {
   const s = await state(page);
   const rail = TABLE_LAYOUT.railWidth;
-  const table = await boundsOf(page, 'table');
   const playLeft = s.controls.tableLeft;
   const controls = [await boundsOf(page, 'spinControl'), await boundsOf(page, 'powerTrack'), await boundsOf(page, 'powerHandle')];
   const strip: Box = {
@@ -51,10 +50,10 @@ async function expectClearLayout(page: Page): Promise<void> {
     bottom: s.controls.fineAim.y + FINE_AIM.height / 2,
   };
   const buttons = [await boundsOf(page, 'menuButton'), await boundsOf(page, 'newGameButton')];
-  // The rails, not the shadow margin, are what must stay clear.
-  const rails: Box = { left: playLeft - rail, right: table.right, top: table.top, bottom: table.bottom };
+  // The rails, not the shadow margin, are what must stay clear (the controls column is beside the table).
+  const rails = { left: playLeft - rail, right: s.controls.tableRight + rail };
   for (const c of controls) {
-    expect(overlaps(c, rails), 'control over the table').toBe(false);
+    expect(c.right <= rails.left || c.left >= rails.right, 'control over the table').toBe(true);
     expect(c.left).toBeGreaterThanOrEqual(0);
     expect(c.right).toBeLessThanOrEqual(DESIGN.width);
   }

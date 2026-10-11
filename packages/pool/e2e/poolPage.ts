@@ -31,7 +31,7 @@ export interface PoolState {
   quip: { speaker: number; text: string } | null;
   hand: 'right' | 'left';
   /** Design-pixel centres of the spin face and fine-aim strip, and the playing area's left edge: they move for left-handed players. */
-  controls: { spin: { x: number; y: number }; fineAim: { x: number; y: number }; tableLeft: number };
+  controls: { spin: { x: number; y: number }; fineAim: { x: number; y: number }; tableLeft: number; tableRight: number };
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
@@ -46,17 +46,20 @@ export interface PoolState {
 
 export interface MenuState {
   continueShown: boolean;
-  panel: 'picker' | 'characters' | 'tables' | 'cues' | 'stats' | 'rules' | 'settings' | 'exit' | null;
+  panel: 'picker' | 'characters' | 'tables' | 'cues' | 'backgrounds' | 'stats' | 'rules' | 'settings' | 'exit' | null;
   selectedCharacter: string | null;
   /** Selected on the open table picker. */
   selectedTable: string | null;
   selectedCue: string | null;
+  selectedBackground: string | null;
   /** The saved table choice. */
   table: string;
   /** The saved cue choice. */
   cue: string;
   /** The saved hand (Settings). */
   hand: 'right' | 'left';
+  /** The saved background. */
+  background: string;
   locale: string;
 }
 
