@@ -12,8 +12,9 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Part B, the screens (done, 0.17.0, 2026-10-11):** a portrait for each of the 12 characters, styled buttons and panels, a title logo, a menu background of a local bar (no drinks shown), shaded balls in the trays.
 - **Potted-ball tube (done, 0.18.0, 2026-10-11; Robert's idea):** a glass tube beside the table that potted balls roll into; table about 4% smaller to fit it. Robert dropped the 8-ball (stripes and solids) game type.
 - **Part C, store and sound (done, 0.19.0, 2026-10-11):** icon, splash, feature graphic and store screenshots redone in the new style; better synthesised sounds.
-- **Faces from picture files (done, 0.20.0, 2026-10-12; Robert's request):** each face is a replaceable file in `packages/pool/portraits/`, starting with the drawn faces; `docs/PORTRAIT_PROMPTS.md` has a prompt per character for an image tool. Next: Robert makes the pictures, Claude fits and checks them. Bingwa's name confirmed.
-- Waiting on Robert: the new face pictures, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
+- **Faces from picture files (done, 0.20.0, 2026-10-12; Robert's request):** each face is a replaceable file in `packages/pool/portraits/`, starting with the drawn faces; `docs/PORTRAIT_PROMPTS.md` has a prompt per character for an image tool. Bingwa's name confirmed.
+- **New faces (done, 0.21.0, 2026-10-12):** Robert's ChatGPT faces for all 12 characters, cut from his sheet. The store screenshots still show the old drawn faces in the small player panels; redo before release.
+- Waiting on Robert: confirming ChatGPT's terms allow the faces in a commercial app, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)
 Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.

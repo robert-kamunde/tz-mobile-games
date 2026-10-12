@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.21.0 (unreleased) - New character faces
+- Robert made the twelve faces with ChatGPT from `PORTRAIT_PROMPTS.md` (2026-10-12), as one 4 x 3 sheet in picker order. Each face was cut from the sheet with a little room around the head so caps and wraps stay in, resized to 512 x 512 and saved as a JPEG (about 35 to 50 KB each, 0.5 MB for all twelve). The sheet is kept in `portraits/source/` for re-cutting.
+- The store feature graphic shows the new faces of Malkia, Fundi and Bingwa.
+
 ## 0.20.0 (unreleased) - Character faces from picture files
 - Robert (2026-10-12): the drawn faces are too cartoonish, and he wants to be able to replace them with pictures at any time. Each character's face is now a picture file in `packages/pool/portraits/`, named after the character (`fundi.png`, `mama-ntilie.png`...). Swap a file and rebuild, and that face changes; no code changes. PNG or JPEG, square.
 - The first set of files is the current drawn faces, so the game looks the same until new pictures arrive. If a picture is missing or will not load, that character falls back to its drawn face.
