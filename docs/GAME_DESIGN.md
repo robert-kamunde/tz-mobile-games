@@ -140,6 +140,7 @@ More routes, vehicle upgrades, paint and slogan customisation, events, leaderboa
 
 ## Future improvements backlog (not approved, not scheduled)
 - Pool: guide line that shows the cue ball's path with top or back spin; computer that uses spin and plays safeties on purpose; music, menu click sounds and bar ambience, a volume slider; named computer opponents with personalities; online 1v1, more venues (Sinza, Kariakoo, Zanzibar beach), cosmetic cues and cloths, weekly tournaments, rewarded ad for an extra aiming guide, Pyramid mode.
+- Pool: story mode (Robert's idea, 2026-10-12, under discussion): today's game becomes Quick game; a journey of stops (Kariakoo, Sinza, Mwenge, Bagamoyo, Zanzibar...) against the characters from Dogo Mbishi to Bingwa, stars for wins and clean wins, saved progress. Open: what the rewards are (Claude suggests trophies, titles and new story-only tables/cues, keeping today's items free), and whether it comes before or after the first release (Claude suggests after).
 - Pool: an American 8-ball game type (striped and solid numbered balls) was raised and DROPPED by Robert (2026-10-11). The potted-ball tube he raised is approved and being built (keeps the name trays).
 - Daladala: new cities, upgradeable daladala, custom paint and slogans, daily events, city leaderboards, rewarded ad for a revive.
 - Both: optional analytics (retention), carrier-billing and mobile-money purchases, iOS build.
