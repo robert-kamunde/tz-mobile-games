@@ -221,7 +221,7 @@ export class StoryScene extends Phaser.Scene {
     this.picker.show({
       title: t.t('story.chooseCharacter'),
       selected: story.character ?? this.slots.progress.load().data.lastPicks?.[0] ?? DEFAULT_PICKS[0],
-      confirmLabel: t.t(first ? 'story.start' : 'ui.ok'),
+      confirmLabel: t.t(first ? 'story.start' : 'story.confirm'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => {
         this.slots.story.save({ ...this.journey, character: id });

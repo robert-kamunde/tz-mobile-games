@@ -11,6 +11,7 @@
 - If you play as a stop's rival, a stand-in takes the stop (Sinza: Kichwa for Mjanja; Mwenge: Mwamba for Bonge; Bagamoyo: Malkia for Shangazi; Zanzibar: Shangazi for Malkia).
 - A story game left half-way is saved like any game, with its stop, and Continue brings it back. Starting a stop replaces a saved Quick game, as starting any new game does.
 - The table and background pickers show four pictures per row to fit the new items.
+- Fix (Robert, 2026-10-12): the OK button when changing the journey's character showed "ui.ok" (a missing label). It now says Sawa / OK. A new unit test checks that every label the code uses exists in both languages.
 
 ## 0.23.0 (unreleased) - Rematch and back to the menu after a game
 - Robert (2026-10-12): the end-of-game panel (who won and why) now has two buttons. **Rudia** (Rematch) starts the next game at once with the same opponent and characters; the other player breaks, as with any rematch. **Menyu** goes to the menu.

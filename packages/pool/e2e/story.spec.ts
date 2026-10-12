@@ -107,9 +107,15 @@ test('the first visit asks for the journey character, and only the first stop is
   await back(page);
   await waitForScene(page, MENU_SCENE);
 
-  // The character is kept.
+  // The character is kept, and can be changed on the map.
   await openMap(page);
   expect((await storyState(page)).character).toBe('bonge');
+  await tap(page, 'story-change', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).choosing).toBe(true);
+  expect(await textOf(page, STORY_SCENE, 'character-confirm')).toBe('Sawa');
+  await tap(page, 'character-fundi', STORY_SCENE);
+  await tap(page, 'character-confirm', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).character).toBe('fundi');
   expect(errors).toEqual([]);
 });
 
