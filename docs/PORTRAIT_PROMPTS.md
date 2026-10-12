@@ -53,3 +53,29 @@ The computer plays as these four, one per level:
 | `mama-ntilie.png` | **Mama Ntilie**, medium level | A cheerful, round-faced woman in her forties who sells street food, with a big laughing smile. Red headwrap with yellow dots, gold earrings, red top under a white apron. Background colour raspberry #9c3d54. |
 | `mzee-kobe.png` | **Mzee Kobe**, hard level | A wise old man in his seventies with a full short grey beard, grey hair at the sides and round glasses, a calm patient look. White embroidered kofia cap with gold stitching, brown shirt. Background colour stone grey #5f6b73. |
 | `bingwa.png` | **Bingwa**, impossible level | The champion of the street pool tables, a man in his mid thirties with neat cornrows, a short goatee, dark sunglasses and a confident smirk. Gold chain, black shirt with a gold collar. Background colour dark gold #7a5c12. |
+
+## Story rivals (Safari ya Bingwa, chapters 2 and 3)
+
+Ten more faces, for rivals met only in story mode. They are from other parts of Tanzania, so in the
+shared style replace "from Dar es Salaam" with the place given. If the tool makes one sheet, ask for
+a 5 x 2 grid in this order, left to right, top row first (the same way as the first twelve).
+
+Chapter 2, Kaskazini (the north):
+
+| File | Character | Prompt line |
+|---|---|---|
+| `kaka-tunda.png` | **Kaka Tunda**, the fruit seller (Morogoro) | A cheerful young man in his twenties who sells fruit at the market, with a bright open smile and short hair. Green and white striped T-shirt. Background colour lime green #5a7d1e. |
+| `bwana-shamba.png` | **Bwana Shamba**, the farm officer (Dodoma) | A serious but friendly man in his forties, a farm extension officer, with a neat short beard and a wide-brimmed khaki bush hat. Khaki shirt with pockets. Background colour sand #9a7b4f. |
+| `mama-pweza.png` | **Mama Pweza**, the seafood cook (Tanga) | A lively woman in her forties who sells grilled octopus by the sea, with a confident laugh. Turquoise headwrap with white waves, small gold earrings, white top. Background colour sea blue #1d6a8a. |
+| `kahawa.png` | **Kahawa**, the coffee farmer (Moshi) | A calm young man in his thirties from the slopes of Kilimanjaro, short neat hair and a small smile. Warm brown knitted jumper over a collared shirt. Background colour coffee brown #5b3a29. |
+| `mzee-simba.png` | **Mzee Simba**, the north's champion (Arusha) | A proud, strong man in his fifties with short grey-black hair, a trimmed grey beard and a fierce but fair look. Dark red and black checked shuka cloth over one shoulder. Background colour dark red #6e1f1f. |
+
+Chapter 3, Magharibi hadi Visiwani (west and south to the islands):
+
+| File | Character | Prompt line |
+|---|---|---|
+| `sato.png` | **Sato**, the fisherman (Mwanza) | A lean, sun-weathered man in his thirties who fishes on Lake Victoria, with a relaxed grin and short hair. Faded blue T-shirt. Background colour lake blue #2b5c7a. |
+| `dada-ndizi.png` | **Dada Ndizi**, the banana trader (Bukoba) | A bright, quick-witted woman in her twenties with short natural hair and a warm smile. Yellow and green patterned top, small wooden bead earrings. Background colour leaf green #3f6b2a. |
+| `kapteni.png` | **Kapteni**, the boat captain (Kigoma) | A tough, cheerful man in his fifties who runs a lake boat, with a short white beard and laughing eyes. White captain's cap with a black peak, navy jacket. Background colour navy #24324f. |
+| `baridi.png` | **Baridi**, the cool one (Mbeya) | A relaxed young man in his twenties from the cold highlands, with a calm half smile. Grey woolly beanie and a thick dark green scarf. Background colour cold grey-blue #4d5d6b. |
+| `mzee-karafuu.png` | **Mzee Karafuu**, the clove grower (Pemba) | A gentle, wise man in his sixties with a short white beard and a quiet smile. White embroidered kofia and a white kanzu. Background colour clove brown #6b3f2a. |
