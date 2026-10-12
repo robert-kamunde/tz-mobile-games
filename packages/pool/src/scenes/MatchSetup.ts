@@ -16,15 +16,18 @@ export interface MatchChoice {
 export type SetupStep = 'opponent' | 'characters';
 
 /**
- * Choosing a new game: the opponent, then player 1's character, then (two players only) player 2's,
- * who cannot take player 1's. The last choices are selected, so a repeat game is one tap per step.
- * Back steps back; from the opponent step it calls `onCancel`.
+ * Choosing a new game (Robert, 2026-10-12: your character first): player 1's character, then the
+ * opponent, then (two players only) player 2's character, who cannot take player 1's. Against the
+ * computer, tapping a level starts the game. The last choices are selected, so a repeat game is one
+ * tap per step. Back steps back; from the first step it calls `onCancel`.
  */
 export class MatchSetup {
   private readonly opponents: OpponentPicker;
   private readonly characters: CharacterPicker;
   private stepNow: SetupStep | null = null;
   private last: { opponent: Opponent | null; picks: CharacterPicks } = { opponent: null, picks: DEFAULT_PICKS };
+  /** The characters chosen so far in this setup. */
+  private picks: CharacterPicks = DEFAULT_PICKS;
   private onCancel: (() => void) | undefined;
 
   constructor(
@@ -33,7 +36,10 @@ export class MatchSetup {
     area: PanelSpec['area'],
     private readonly onDone: (choice: MatchChoice) => void,
   ) {
-    this.opponents = new OpponentPicker(scene, t, area, (opponent) => this.chooseCharacter(opponent, 0, this.last.picks));
+    this.opponents = new OpponentPicker(scene, t, area, (opponent) => {
+      if (opponent.kind === 'human') this.chooseSecondCharacter(opponent);
+      else this.finish({ opponent, picks: this.picks });
+    });
     this.characters = new CharacterPicker(scene, area);
   }
 
@@ -50,48 +56,56 @@ export class MatchSetup {
     return this.characters.selected;
   }
 
-  /** `onCancel` adds Back on the opponent step. */
+  /** `onCancel` is what Back does on the first step. */
   show(lastOpponent: Opponent | null, lastPicks: CharacterPicks | null, onCancel?: () => void): void {
     this.last = { opponent: lastOpponent, picks: lastPicks ?? DEFAULT_PICKS };
+    this.picks = this.last.picks;
     this.onCancel = onCancel;
-    this.showOpponents();
+    this.chooseFirstCharacter();
+  }
+
+  private chooseFirstCharacter(): void {
+    this.opponents.hide();
+    this.stepNow = 'characters';
+    const t = this.t;
+    this.characters.show({
+      title: t.t('characters.title'),
+      selected: this.picks[0],
+      confirmLabel: t.t('characters.next'),
+      backLabel: t.t('ui.back'),
+      onConfirm: (id) => {
+        this.picks = withDistinctPicks(id, this.picks[1]);
+        this.showOpponents();
+      },
+      onBack: () => this.cancel(),
+    });
   }
 
   private showOpponents(): void {
     this.characters.hide();
     this.stepNow = 'opponent';
-    const cancel = this.onCancel;
-    this.opponents.show(
-      this.last.opponent,
-      cancel
-        ? () => {
-            this.stepNow = null;
-            cancel();
-          }
-        : undefined,
-    );
+    this.opponents.show(this.last.opponent, () => this.chooseFirstCharacter());
   }
 
-  /** Character step for one seat; `picks` holds what is selected so far. */
-  private chooseCharacter(opponent: Opponent, seat: 0 | 1, picks: CharacterPicks): void {
+  /** Two players: player 2 chooses, and cannot take player 1's character. */
+  private chooseSecondCharacter(opponent: Opponent): void {
     this.stepNow = 'characters';
-    const twoPlayers = opponent.kind === 'human';
-    const lastSeat = !twoPlayers || seat === 1;
     const t = this.t;
     this.characters.show({
       title: t.t('characters.title'),
-      ...(twoPlayers ? { subtitle: t.t('player.name', { n: seat + 1 }) } : {}),
-      selected: picks[seat],
-      ...(seat === 1 ? { taken: picks[0] } : {}),
-      confirmLabel: t.t(lastSeat ? 'characters.start' : 'characters.next'),
+      subtitle: t.t('player.name', { n: 2 }),
+      selected: this.picks[1],
+      taken: this.picks[0],
+      confirmLabel: t.t('characters.start'),
       backLabel: t.t('ui.back'),
-      onConfirm: (id) => {
-        const next = seat === 0 ? withDistinctPicks(id, picks[1]) : ([picks[0], id] as const);
-        if (lastSeat) this.finish({ opponent, picks: next });
-        else this.chooseCharacter(opponent, 1, next);
-      },
-      onBack: () => (seat === 1 ? this.chooseCharacter(opponent, 0, picks) : this.showOpponents()),
+      onConfirm: (id) => this.finish({ opponent, picks: [this.picks[0], id] }),
+      onBack: () => this.showOpponents(),
     });
+  }
+
+  private cancel(): void {
+    this.hide();
+    this.onCancel?.();
   }
 
   private finish(choice: MatchChoice): void {
@@ -102,11 +116,7 @@ export class MatchSetup {
   /** The phone's back button. False when nothing is showing. */
   goBack(): boolean {
     if (this.stepNow === 'characters') return this.characters.goBack();
-    if (this.stepNow === 'opponent') {
-      this.opponents.goBack();
-      this.stepNow = null;
-      return true;
-    }
+    if (this.stepNow === 'opponent') return this.opponents.goBack();
     return false;
   }
 

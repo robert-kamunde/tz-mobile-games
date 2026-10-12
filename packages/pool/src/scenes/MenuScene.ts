@@ -34,7 +34,7 @@ export interface MenuStart {
 }
 
 /**
- * The first screen: Continue (only when a game is saved), Play (opponent, then characters), Stats, Rules and
+ * The first screen: Continue (only when a game is saved), Play (your character, then the opponent), Stats, Rules and
  * Settings (language), and Exit in the Android app. Buttons are named `menu-<item>`.
  */
 export class MenuScene extends Phaser.Scene {

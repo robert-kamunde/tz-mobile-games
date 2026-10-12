@@ -222,7 +222,7 @@ export class TableScene extends Phaser.Scene {
   // ---- Match flow -------------------------------------------------------------------------
 
   /**
-   * New game: choose the opponent and characters first. The current game stays behind the picker,
+   * New game: choose the characters and opponent first. The current game stays behind the picker,
    * and is still the saved game, until a choice is made; Back returns to it.
    */
   private askForOpponent(): void {

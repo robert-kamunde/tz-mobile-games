@@ -4,7 +4,7 @@ import {
   MENU_SCENE,
   SCENE,
   boot,
-  confirmCharacters,
+  chooseMatch,
   elementCenter,
   layout,
   menuState,
@@ -51,10 +51,10 @@ test('the game opens on the menu, with no Continue before a game is played', asy
   await tap(page, 'rules-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
 
-  // Back on the picker returns to the menu without starting a game.
+  // Back on the first step (your character) returns to the menu without starting a game.
   await tap(page, 'menu-play', MENU_SCENE);
-  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
-  await tap(page, 'opponent-back', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+  await tap(page, 'character-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
   expect(await page.evaluate(() => window.__tzg!.activeScenes())).toEqual([MENU_SCENE]);
   expect(errors).toEqual([]);
@@ -126,6 +126,7 @@ test('a finished game leaves no Continue, and a win against the computer is coun
   // The picker marks the last opponent.
   await tap(page, 'stats-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
+  await tap(page, 'character-confirm', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   expect(await highlighted(page, MENU_SCENE, 'opponent-easy')).toBe(true);
   expect(await highlighted(page, MENU_SCENE, 'opponent-hard')).toBe(false);
@@ -148,8 +149,7 @@ test('the chosen language changes every label and is kept after reopening', asyn
   expect((await menuState(page)).locale).toBe('en');
   expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Play');
   await tap(page, 'menu-play', MENU_SCENE);
-  await tap(page, 'opponent-two', MENU_SCENE);
-  await confirmCharacters(page, MENU_SCENE, 'two');
+  await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   expect((await state(page)).status).toContain('Fundi');
   expect(await textOf(page, SCENE, 'menuButton')).toBe('Menu');
@@ -173,8 +173,7 @@ test('a damaged saved game is set aside: the menu opens normally with no Continu
   // A new game still starts and is saved over the damaged one.
   await tap(page, 'stats-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
-  await tap(page, 'opponent-two', MENU_SCENE);
-  await confirmCharacters(page, MENU_SCENE, 'two');
+  await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   expect(JSON.parse((await storage(page, 'pool.match'))!).data.shots).toBe(0);
   expect(errors).toEqual([]);
@@ -200,8 +199,7 @@ test('after changing the language, Menu from the table opens the main menu, not 
   await expect.poll(async () => (await menuState(page)).locale).toBe('en');
   await tap(page, 'settings-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
-  await tap(page, 'opponent-two', MENU_SCENE);
-  await confirmCharacters(page, MENU_SCENE, 'two');
+  await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
@@ -262,13 +260,18 @@ test('the opponent picker fits all five choices and Back without overlapping, on
   };
   await bootTo(page, MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
+  await tap(page, 'character-confirm', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   expectApart(await boxes(MENU_SCENE));
   await tap(page, 'opponent-back', MENU_SCENE);
+  await tap(page, 'character-back', MENU_SCENE);
   await playFromMenu(page, 'impossible');
   expect((await state(page)).opponent).toEqual({ kind: 'computer', level: 'impossible' });
   expect((await state(page)).players[1]).toBe('Bingwa');
   await tap(page, 'newGameButton');
   await tap(page, 'newGameButton');
+  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
+  await tap(page, 'character-confirm');
   await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
   expectApart(await boxes(SCENE));
 });

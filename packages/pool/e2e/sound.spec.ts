@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, setHidden, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, boot, confirmCharacters, dismissHowToPlay, menuState, pullPower, reopen, tap, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, boot, chooseMatch, dismissHowToPlay, menuState, pullPower, reopen, tap, waitUntilSettled } from './poolPage';
 
 interface SoundReport {
   state: string;
@@ -55,8 +55,7 @@ test('Sound off in Settings plays nothing, and stays off after reopening', async
   await expect.poll(() => page.evaluate(() => window.__tzg!.dataOf('Menu', 'sound-off', 'highlighted'))).toBe(true);
   await tap(page, 'settings-back', MENU_SCENE);
   await tap(page, 'menu-play', MENU_SCENE);
-  await tap(page, 'opponent-two', MENU_SCENE);
-  await confirmCharacters(page, MENU_SCENE, 'two');
+  await chooseMatch(page, MENU_SCENE, 'two');
   await page.waitForFunction(() => window.__tzg!.activeScenes()[0] === 'Table');
   await dismissHowToPlay(page);
   await expect.poll(async () => (await sound(page)).state).toBe('running');

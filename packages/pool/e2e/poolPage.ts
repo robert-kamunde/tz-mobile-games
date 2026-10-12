@@ -80,33 +80,34 @@ export async function waitForScene(page: Page, key: string): Promise<void> {
 export type OpponentChoice = 'two' | 'easy' | 'medium' | 'hard' | 'impossible';
 
 /**
- * On the character picker: keeps the selected characters (or taps the given ones) and confirms, once
- * against the computer and twice (player 1, then player 2) for two players.
+ * Goes through New game's choices with real taps: player 1's character (`characters[0]` if given,
+ * else the one selected), then the opponent, then player 2's character for two players.
  */
-export async function confirmCharacters(page: Page, scene: string, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
-  const seats = choice === 'two' ? 2 : 1;
-  for (let seat = 0; seat < seats; seat++) {
-    await page.waitForFunction(([s, n]) => window.__tzg!.elementCenter(s, n) !== null, [scene, 'character-confirm'] as const);
-    const id = characters[seat];
-    if (id) await tap(page, `character-${id}`, scene);
-    await tap(page, 'character-confirm', scene);
-  }
+export async function chooseMatch(page: Page, scene: string, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
+  const shown = (name: string) => page.waitForFunction(([s, n]) => window.__tzg!.elementCenter(s, n) !== null, [scene, name] as const);
+  await shown('character-confirm');
+  if (characters[0]) await tap(page, `character-${characters[0]}`, scene);
+  await tap(page, 'character-confirm', scene);
+  await shown(`opponent-${choice}`);
+  await tap(page, `opponent-${choice}`, scene);
+  if (choice !== 'two') return;
+  await shown('character-confirm');
+  if (characters[1]) await tap(page, `character-${characters[1]}`, scene);
+  await tap(page, 'character-confirm', scene);
 }
 
-/** Picks an opponent on the table's picker (after New game) with a real tap, and keeps the characters. */
+/** New game on the table: makes the choices with real taps, and waits for the picker to close. */
 export async function pickOpponent(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
-  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
-  await tap(page, `opponent-${choice}`);
-  await confirmCharacters(page, SCENE, choice, characters);
+  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
+  await chooseMatch(page, SCENE, choice, characters);
   await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
 }
 
-/** From the main menu: Play, pick the opponent and characters, and wait for the table. */
+/** From the main menu: Play, pick the characters and opponent, and wait for the table. */
 export async function playFromMenu(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
   await tap(page, 'menu-play', MENU_SCENE);
-  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
-  await tap(page, `opponent-${choice}`, MENU_SCENE);
-  await confirmCharacters(page, MENU_SCENE, choice, characters);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+  await chooseMatch(page, MENU_SCENE, choice, characters);
   await waitForScene(page, SCENE);
   await dismissHowToPlay(page);
 }

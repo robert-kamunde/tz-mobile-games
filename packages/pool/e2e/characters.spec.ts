@@ -7,30 +7,39 @@ const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n
 const taken = (page: Page, id: string) => page.evaluate((n) => window.__tzg!.dataOf('Menu', `character-${n}`, 'taken'), id);
 const selected = async (page: Page) => (await menuState(page)).selectedCharacter;
 
-async function openCharacters(page: Page, opponent: string): Promise<void> {
+/** Play: the first step is your own character. */
+async function openCharacters(page: Page): Promise<void> {
   await tap(page, 'menu-play', MENU_SCENE);
-  await tap(page, `opponent-${opponent}`, MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
 }
 
-async function start(page: Page): Promise<void> {
+/** Confirms your character and waits for the opponents. */
+async function toOpponents(page: Page): Promise<void> {
   await tap(page, 'character-confirm', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
+}
+
+async function start(page: Page): Promise<void> {
   await waitForScene(page, SCENE);
   await dismissHowToPlay(page);
 }
 
-test('against the computer: choose a character, see it on the table, keep it after reopening', async ({ page }) => {
+test('against the computer: choose your character, then the level, see it on the table, keep it after reopening', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await openCharacters(page, 'hard');
+  await openCharacters(page);
   expect(await selected(page)).toBe('fundi');
   // Every face comes from its picture file in portraits/, not the drawn backup.
   for (const id of ['fundi', 'malkia', 'bishoo', 'kichwa']) {
     expect(await page.evaluate((n) => window.__tzg!.dataOf('Menu', `character-${n}`, 'portrait'), id)).toMatch(new RegExp(`^portrait-${id}-\\d+-file$`));
   }
-  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Anza');
+  expect(await textOf(page, MENU_SCENE, 'characterPicker-body')).toBeNull();
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Endelea');
   await tap(page, 'character-bonge', MENU_SCENE);
   expect(await selected(page)).toBe('bonge');
+  await toOpponents(page);
+  // A computer level starts the game straight away.
+  await tap(page, 'opponent-hard', MENU_SCENE);
   await start(page);
   const s = await state(page);
   expect(s.players).toEqual(['Bonge', 'Mzee Kobe']);
@@ -50,19 +59,18 @@ test('against the computer: choose a character, see it on the table, keep it aft
   // The next game starts with the last choice selected.
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
-  await openCharacters(page, 'easy');
+  await openCharacters(page);
   expect(await selected(page)).toBe('bonge');
   expect(errors).toEqual([]);
 });
 
-test('two players each choose, and player 2 cannot take player 1’s character', async ({ page }) => {
+test('two players: player 1 chooses, then the opponent, then player 2, who cannot take player 1’s character', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await openCharacters(page, 'two');
-  expect(await textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 1');
-  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Endelea');
+  await openCharacters(page);
   await tap(page, 'character-mwamba', MENU_SCENE);
-  await tap(page, 'character-confirm', MENU_SCENE);
+  await toOpponents(page);
+  await tap(page, 'opponent-two', MENU_SCENE);
 
   await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
   expect(await taken(page, 'mwamba')).toBe(true);
@@ -72,6 +80,7 @@ test('two players each choose, and player 2 cannot take player 1’s character',
   expect(await selected(page)).not.toBe('mwamba');
   await tap(page, 'character-malkia', MENU_SCENE);
   expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Anza');
+  await tap(page, 'character-confirm', MENU_SCENE);
   await start(page);
   const s = await state(page);
   expect(s.players).toEqual(['Mwamba', 'Malkia']);
@@ -79,35 +88,39 @@ test('two players each choose, and player 2 cannot take player 1’s character',
   expect(errors).toEqual([]);
 });
 
-test('Back and the phone back button step back through the characters to the opponents', async ({ page }) => {
+test('Back and the phone back button step back through player 2, the opponents and your character', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await openCharacters(page, 'two');
+  await openCharacters(page);
   await tap(page, 'character-kichwa', MENU_SCENE);
-  await tap(page, 'character-confirm', MENU_SCENE);
+  await toOpponents(page);
+  await tap(page, 'opponent-two', MENU_SCENE);
   await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
 
   await back(page);
-  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 1');
-  expect(await selected(page)).toBe('kichwa');
-  await tap(page, 'character-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   await back(page);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+  expect(await selected(page)).toBe('kichwa');
+  await toOpponents(page);
+  await tap(page, 'opponent-back', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
+  await tap(page, 'character-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
   expect(await page.evaluate(() => window.__tzg!.backLeaves())).toBe(0);
   expect(errors).toEqual([]);
 });
 
-test('New game on the table: Back from the characters returns to the opponents, then to the game', async ({ page }) => {
+test('New game on the table: Back from the opponents returns to your character, then to the game', async ({ page }) => {
   const errors = trackErrors(page);
   await boot(page);
   await tap(page, 'newGameButton');
   await tap(page, 'newGameButton');
-  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
-  await tap(page, 'opponent-medium');
   await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
-  await back(page);
+  await tap(page, 'character-confirm');
   await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
+  await back(page);
+  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
   await back(page);
   await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
   expect((await state(page)).opponent).toEqual({ kind: 'human' });
@@ -119,19 +132,20 @@ test('New game on the table: Back from the characters returns to the opponents, 
   expect(errors).toEqual([]);
 });
 
-test('in English the picker is translated and the names stay as they are', async ({ page }) => {
+test('in English the pickers are translated and the names stay as they are', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   await tap(page, 'menu-settings', MENU_SCENE);
   await tap(page, 'language-en', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).locale).toBe('en');
   await tap(page, 'settings-back', MENU_SCENE);
-  await tap(page, 'menu-play', MENU_SCENE);
+  await openCharacters(page);
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Next');
+  await toOpponents(page);
   expect(await textOf(page, MENU_SCENE, 'opponent-easy')).toBe('Dogo Mbishi (Easy)');
   await tap(page, 'opponent-two', MENU_SCENE);
-  await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
-  expect(await textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Player 1');
-  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Next');
+  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Player 2');
+  expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Start');
   expect(errors).toEqual([]);
 });
 

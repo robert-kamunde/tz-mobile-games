@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.22.0 (unreleased) - Your character first
+- Robert (2026-10-12): Play and New game now start with "Chagua mhusika" (choose your character), then "Unacheza na nani?" (the opponent). Against the computer, tapping a level starts the game. With two players, player 2 then chooses ("Mchezaji 2") and cannot take player 1's character. Back and the phone's back button step back in the same order; Back on your character closes the choice.
+- The first step's button now says "Endelea" (Next) for everyone, since the opponent comes next.
+
 ## 0.21.0 (unreleased) - New character faces
 - Robert made the twelve faces with ChatGPT from `PORTRAIT_PROMPTS.md` (2026-10-12), as one 4 x 3 sheet in picker order. Each face was cut from the sheet with a little room around the head so caps and wraps stay in, resized to 512 x 512 and saved as a JPEG (about 35 to 50 KB each, 0.5 MB for all twelve). The sheet is kept in `portraits/source/` for re-cutting.
 - The store feature graphic shows the new faces of Malkia, Fundi and Bingwa.
