@@ -34,18 +34,21 @@ import {
   isTableLocked,
   nextStop,
   recordStop,
+  earnedCharacters,
   earnedRewards,
   starsFor,
   stopRival,
   storyStop,
   titleFor,
+  type Played,
   type StoryGame,
 } from '../progress/story';
 import type { CharacterPicks } from '../progress/characters';
 import type { StoryTwist } from '../config/story';
 import { STORY } from '../config/story';
+import { lockedCharacters } from './storyText';
 import { opponentId, type Opponent } from '../progress/opponent';
-import { recordGame } from '../progress/progress';
+import { computerWins, recordGame } from '../progress/progress';
 import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
 import type { PoolSlots } from '../progress/slots';
 import {
@@ -168,13 +171,13 @@ export class TableScene extends Phaser.Scene {
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
     this.story = null;
     const looks = this.slots.progress.load().data;
-    const journey = this.slots.story.load().data;
+    const played = this.played;
     const saved = 'resume' in start ? this.slots.match.load().data : null;
-    // A story stop is played on its own table and background; locked rewards fall back to the defaults.
+    // A story stop is played on its own table and background; locked looks fall back to the defaults.
     const stop = storyStop('story' in start ? start.story : (saved?.story?.stop ?? ''));
-    const table = stop?.table ?? (isTableLocked(looks.table, journey) ? DEFAULT_TABLE : looks.table);
-    const background = stop?.background ?? (isBackgroundLocked(looks.background, journey) ? DEFAULT_BACKGROUND : looks.background);
-    const cue = isCueLocked(looks.cue, journey) ? DEFAULT_CUE : looks.cue;
+    const table = stop?.table ?? (isTableLocked(looks.table, played) ? DEFAULT_TABLE : looks.table);
+    const background = stop?.background ?? (isBackgroundLocked(looks.background, played) ? DEFAULT_BACKGROUND : looks.background);
+    const cue = isCueLocked(looks.cue, played) ? DEFAULT_CUE : looks.cue;
     this.looks = { table, cue, background };
     const sides = screenSides(looks.hand, this.geometry.length);
     this.overTable = { ...PANEL.overTable, x: PANEL.overTable.x + sides.tableDx };
@@ -193,7 +196,7 @@ export class TableScene extends Phaser.Scene {
       leave: () => (this.story ? this.openStoryMap() : this.goToMenu()),
     });
     this.sides = sides;
-    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice));
+    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
     addButton(this, sides.controlX(HUD.menu.left), HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: sides.controlOriginX(0) }).setDepth(HUD.depth);
@@ -572,9 +575,12 @@ export class TableScene extends Phaser.Scene {
       const loser = this.hud.playerName(opponentOf(ending.winner));
       const title = this.t.t('over.title', { player: winner });
       const detail = this.t.t(`over.${ending.reason}`, { loser });
-      this.hud.showGameOver(this.story ? this.finishStop(ending.winner === PERSON, title, detail) : { title, detail });
-      this.hud.setStatus('');
+      const before = this.played;
+      const end = this.story ? this.finishStop(ending.winner === PERSON, title, detail) : { title, detail };
       this.recordResult(ending.winner);
+      const notes = [...this.unlockNotes(before, this.played), ...(end.note ? [end.note] : [])];
+      this.hud.showGameOver({ ...end, ...(notes.length ? { note: notes.join('\n') } : {}) });
+      this.hud.setStatus('');
     } else {
       messages.push(this.turnMessage());
       this.hud.setStatus(messages.join('\n'));
@@ -601,12 +607,29 @@ export class TableScene extends Phaser.Scene {
     const notes: string[] = [];
     const titleNow = titleFor(after);
     if (titleNow && titleNow !== titleFor(before)) notes.push(this.t.t('story.newTitle', { title: this.t.t(`story.title.${titleNow}`) }));
-    const was = earnedRewards(before);
-    for (const r of STORY.rewards) {
-      if (earnedRewards(after).includes(`${r.kind}:${r.id}`) && !was.includes(`${r.kind}:${r.id}`)) notes.push(this.t.t(`story.rewardNote.${r.kind}`, { name: this.t.t(`${r.kind}.${r.id}`) }));
-    }
     if (stars > 0 && stars <= (before.stars[stopId] ?? 0)) notes.push(this.t.t('story.bestKept', { stars: before.stars[stopId]! }));
     return { title, detail, stars, story: true, next: won && nextStop(stopId) !== undefined, ...(notes.length ? { note: notes.join('\n') } : {}) };
+  }
+
+  /** The journey and the wins so far, for what they unlock. */
+  private get played(): Played {
+    return { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) };
+  }
+
+  /** Looks and characters this game just unlocked, for the end panel. */
+  private unlockNotes(before: Played, after: Played): string[] {
+    const t = this.t;
+    const was = new Set([...earnedRewards(before), ...earnedCharacters(before)]);
+    const looks = earnedRewards(after)
+      .filter((key) => !was.has(key))
+      .map((key) => {
+        const [kind, id] = key.split(':');
+        return t.t(`story.rewardNote.${kind}`, { name: t.t(`${kind}.${id}`) });
+      });
+    const characters = earnedCharacters(after)
+      .filter((id) => !was.has(id))
+      .map((id) => t.t('story.rewardNote.character', { name: characterById(id)!.name }));
+    return [...looks, ...characters];
   }
 
   /** Counts a finished game in the stats. */

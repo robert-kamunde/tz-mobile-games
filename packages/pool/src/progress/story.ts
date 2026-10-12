@@ -86,36 +86,59 @@ export function isChapterDone(story: StoryProgress, chapter: string): boolean {
   return last !== undefined && (story.stars[last.id] ?? 0) > 0;
 }
 
-export function isNeedMet(story: StoryProgress, need: StoryNeed): boolean {
-  return (need.chapter === undefined || isChapterDone(story, need.chapter)) && totalStars(story) >= (need.stars ?? 0);
+/** What has been played so far, for what it earns: the journey, and games won against the computer. */
+export interface Played {
+  readonly story: StoryProgress;
+  readonly wins: number;
 }
 
-/** The title earned so far (an id under `story.title.*`), or null before the first one. */
+/** Any one part of the need is enough. */
+export function isNeedMet(played: Played, need: StoryNeed): boolean {
+  const { story, wins } = played;
+  return (
+    (need.chapter !== undefined && isChapterDone(story, need.chapter)) ||
+    (need.stop !== undefined && (story.stars[need.stop] ?? 0) > 0) ||
+    (need.stars !== undefined && totalStars(story) >= need.stars) ||
+    (need.wins !== undefined && wins >= need.wins)
+  );
+}
+
+/** The title earned so far (an id under `story.title.*`), or null before the first one. Titles come from the journey alone. */
 export function titleFor(story: StoryProgress): string | null {
-  return STORY.titles.find((t) => isNeedMet(story, t.need))?.id ?? null;
+  return STORY.titles.find((t) => isNeedMet({ story, wins: 0 }, t.need))?.id ?? null;
 }
 
-/** The story-only looks earned so far, as `<kind>:<id>`. */
-export function earnedRewards(story: StoryProgress): string[] {
-  return STORY.rewards.filter((r) => isNeedMet(story, r.need)).map((r) => `${r.kind}:${r.id}`);
+/** The locked looks earned so far, as `<kind>:<id>`. */
+export function earnedRewards(played: Played): string[] {
+  return STORY.rewards.filter((r) => isNeedMet(played, r.need)).map((r) => `${r.kind}:${r.id}`);
 }
 
 /** The reward that keeps a look locked, or undefined when the look is free or already earned. */
-export function lockedBy(kind: StoryReward['kind'], id: string, story: StoryProgress): StoryReward | undefined {
-  return STORY.rewards.find((r) => r.kind === kind && r.id === id && !isNeedMet(story, r.need));
+export function lockedBy(kind: StoryReward['kind'], id: string, played: Played): StoryReward | undefined {
+  return STORY.rewards.find((r) => r.kind === kind && r.id === id && !isNeedMet(played, r.need));
 }
 
-/** Looks that stay locked until story mode earns them. Everything else is free. */
-export function isTableLocked(id: TableId, story: StoryProgress): boolean {
-  return lockedBy('table', id, story) !== undefined;
+export function isTableLocked(id: TableId, played: Played): boolean {
+  return lockedBy('table', id, played) !== undefined;
 }
 
-export function isCueLocked(id: CueId, story: StoryProgress): boolean {
-  return lockedBy('cue', id, story) !== undefined;
+export function isCueLocked(id: CueId, played: Played): boolean {
+  return lockedBy('cue', id, played) !== undefined;
 }
 
-export function isBackgroundLocked(id: BackgroundId, story: StoryProgress): boolean {
-  return lockedBy('background', id, story) !== undefined;
+export function isBackgroundLocked(id: BackgroundId, played: Played): boolean {
+  return lockedBy('background', id, played) !== undefined;
+}
+
+/** What still earns a locked player character, or undefined when it can be played. */
+export function characterNeed(id: string, played: Played): StoryNeed | undefined {
+  const lock = STORY.characters.find((c) => c.id === id);
+  return lock && !isNeedMet(played, lock.need) ? lock.need : undefined;
+}
+
+/** The player characters earned so far, of those that start locked. */
+export function earnedCharacters(played: Played): string[] {
+  return STORY.characters.filter((c) => isNeedMet(played, c.need)).map((c) => c.id);
 }
 
 export function validateStory(raw: unknown): StoryProgress | null {

@@ -12,7 +12,10 @@ export interface LookItem {
 }
 
 export interface LookChoice {
-  /** Names objects: pictures `<prefix>-<id>`, buttons `<prefix>-confirm` and `<prefix>-back`, panel `<prefix>Picker`. */
+  /**
+   * Names objects: pictures `<prefix>-<id>`, buttons `<prefix>-confirm` and `<prefix>-back`, page
+   * arrows `<prefix>-prevPage` and `<prefix>-nextPage`, panel `<prefix>Picker`.
+   */
   readonly prefix: string;
   readonly title: string;
   readonly items: readonly LookItem[];
@@ -25,8 +28,8 @@ export interface LookChoice {
 }
 
 /**
- * Choosing how the game looks (tables, cues): a picture of each choice with its name, in a grid.
- * A tap selects one; Choose keeps it, Back leaves the choice as it was.
+ * Choosing how the game looks (tables, cues): a picture of each choice with its name, in a grid,
+ * a page at a time. A tap selects one; Choose keeps it, Back leaves the choice as it was.
  */
 export class LookPicker {
   private panel: Panel | null = null;
@@ -34,6 +37,7 @@ export class LookPicker {
   private frames = new Map<string, Phaser.GameObjects.Rectangle>();
   private selectedId: string | null = null;
   private choice: LookChoice | null = null;
+  private pageIndex = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -49,14 +53,41 @@ export class LookPicker {
     return this.selectedId;
   }
 
+  /** The page showing, from 0. */
+  get page(): number {
+    return this.pageIndex;
+  }
+
+  get pages(): number {
+    return this.choice ? Math.ceil(this.choice.items.length / this.perPage(this.choice)) : 0;
+  }
+
+  /** Opens on the page holding the current choice. */
   show(choice: LookChoice): void {
     this.hide();
     this.choice = choice;
+    const start = choice.items.find((item) => item.id === choice.selected && !item.locked) ?? choice.items.find((item) => !item.locked)!;
+    this.selectedId = start.id;
+    this.showPage(Math.floor(choice.items.indexOf(start) / this.perPage(choice)));
+  }
+
+  private perPage(choice: LookChoice): number {
+    return choice.layout.columns * choice.layout.rows;
+  }
+
+  /** Draws one page; the selection stays as it is, even when it is on another page. */
+  private showPage(page: number): void {
+    const choice = this.choice!;
+    this.clear();
+    this.pageIndex = page;
     const c = choice.layout;
     const { x, y, width, height } = this.area;
     const top = y - height / 2;
-    this.panel = new Panel(this.scene, { name: `${choice.prefix}Picker`, area: this.area, title: choice.title });
-    for (const [i, item] of choice.items.entries()) {
+    const pages = this.pages;
+    const title = pages > 1 ? `${choice.title}  ${page + 1}/${pages}` : choice.title;
+    this.panel = new Panel(this.scene, { name: `${choice.prefix}Picker`, area: this.area, title });
+    const perPage = this.perPage(choice);
+    for (const [i, item] of choice.items.slice(page * perPage, (page + 1) * perPage).entries()) {
       const col = i % c.columns;
       const row = Math.floor(i / c.columns);
       const px = x + (col - (c.columns - 1) / 2) * c.columnSpacing;
@@ -69,7 +100,7 @@ export class LookPicker {
         .setStrokeStyle(c.selectedFrame.width, c.selectedFrame.color)
         .setVisible(false);
       const label = this.scene.add
-        .text(px, py + frame.height / 2 + c.nameGap, item.locked ? `${item.label}\n${item.locked}` : item.label, { ...textStyle(TEXT_STYLE.bodySize, item.locked ? COLORS.textDim : COLORS.text), align: 'center' })
+        .text(px, py + frame.height / 2 + c.nameGap, lookLabel(item, c.lockOnOneLine), { ...textStyle(TEXT_STYLE.bodySize, item.locked ? COLORS.textDim : COLORS.text), align: 'center' })
         .setOrigin(0.5, 0)
         .setName(`${choice.prefix}-${item.id}-label`);
       hit.setData('locked', Boolean(item.locked));
@@ -91,8 +122,11 @@ export class LookPicker {
       addButton(this.scene, x - c.buttonOffsetX, buttonY, { name: `${choice.prefix}-back`, label: choice.backLabel, onTap: () => this.goBack() }, { width: buttonWidth }),
       addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: `${choice.prefix}-confirm`, label: choice.confirmLabel, onTap: () => this.selectedId && choice.onConfirm(this.selectedId) }, { width: buttonWidth }),
     );
+    const nav = c.pageNav;
+    if (page > 0) this.objects.push(addButton(this.scene, x - nav.arrowDx, buttonY, { name: `${choice.prefix}-prevPage`, label: '‹', onTap: () => this.showPage(page - 1) }, { width: nav.arrowWidth }));
+    if (page < pages - 1) this.objects.push(addButton(this.scene, x + nav.arrowDx, buttonY, { name: `${choice.prefix}-nextPage`, label: '›', onTap: () => this.showPage(page + 1) }, { width: nav.arrowWidth }));
     for (const o of this.objects) (o as unknown as Phaser.GameObjects.Components.Depth).setDepth(PANEL.depth);
-    this.select(this.frames.has(choice.selected) ? choice.selected : choice.items.find((item) => !item.locked)!.id);
+    if (this.selectedId) this.select(this.selectedId);
   }
 
   private select(id: string): void {
@@ -101,13 +135,18 @@ export class LookPicker {
   }
 
   hide(): void {
+    this.clear();
+    this.selectedId = null;
+    this.choice = null;
+    this.pageIndex = 0;
+  }
+
+  private clear(): void {
     this.panel?.destroy();
     this.panel = null;
     for (const o of this.objects) o.destroy();
     this.objects = [];
     this.frames.clear();
-    this.selectedId = null;
-    this.choice = null;
   }
 
   /** Back, or the phone's back button: closes without changing the choice. False when not showing. */
@@ -118,12 +157,18 @@ export class LookPicker {
   }
 }
 
-/** A padlock over a locked picture. */
-function padlock(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Graphics {
+/** A padlock over a locked picture or face. */
+export function padlock(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Graphics {
   const p = LOOK_PICKER.locked.padlock;
   const g = scene.add.graphics();
   g.lineStyle(4, p.color, 1).beginPath().arc(x, y - p.height / 2, p.shackle, Math.PI, 0).strokePath();
   g.fillStyle(p.color, 1).fillRoundedRect(x - p.width / 2, y - p.height / 2, p.width, p.height, 3);
   g.fillStyle(COLORS.overlay, 1).fillCircle(x, y, 3);
   return g;
+}
+
+/** A look's name, and while locked what earns it: below the name, or after it on the same line. */
+function lookLabel(item: LookItem, oneLine: boolean): string {
+  if (!item.locked) return item.label;
+  return oneLine ? `${item.label}: ${item.locked.replace(/\n/g, ' ')}` : `${item.label}\n${item.locked}`;
 }

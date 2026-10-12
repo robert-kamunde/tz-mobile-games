@@ -12,6 +12,7 @@ import {
   potTheBlack,
   pullPower,
   reopen,
+  seedWins,
   setUpBlackPot,
   state,
   tap,
@@ -388,5 +389,27 @@ test('twist: a shot limit counts down and running out loses, also after Continue
   expect(s.gameOverShown).toBe(true);
   expect(s.story).toMatchObject({ stop: 'ubungo', shots: 14 });
   expect(await textOf(page, SCENE, 'gameOverDetail')).toBe('Fundi amemaliza mapigo yake');
+  expect(errors).toEqual([]);
+});
+
+test('a story win counts toward wins: the third win opens the Kitenge table, said on the end panel', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedWins(page, 2);
+  await openMap(page, 'fundi');
+  await playStop(page, 'mtaani');
+  await winCleanly(page);
+  await expect.poll(() => textOf(page, SCENE, 'gameOverNote')).toBe('Zawadi: meza ya Kitenge!');
+  expect(errors).toEqual([]);
+});
+
+test('a stop card names the look it earns', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedJourney(page, 'fundi', upTo('kariakoo'));
+  await openMap(page);
+  await tap(page, 'stop-kariakoo', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).card).toBe('kariakoo');
+  expect(await textOf(page, STORY_SCENE, 'stopCard-body')).toContain('Zawadi: meza ya Kitenge!');
   expect(errors).toEqual([]);
 });

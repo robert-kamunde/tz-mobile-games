@@ -6,8 +6,9 @@ import { COLORS, PANEL, STORY_MAP, TEXT_STYLE } from '../config/layout';
 import { STORY, STORY_CHAPTERS, STORY_STOPS, type StoryStop } from '../config/story';
 import { playerCharacter } from '../progress/characters';
 import type { PoolSlots } from '../progress/slots';
-import { MAX_STARS, chapterOf, characterById, earnedRewards, isNeedMet, isStopOpen, stopRival, titleFor, totalStars, type StoryProgress } from '../progress/story';
-import { needText, twistText } from './storyText';
+import { MAX_STARS, chapterOf, characterById, earnedRewards, isNeedMet, isStopOpen, stopRival, titleFor, totalStars, type Played, type StoryProgress } from '../progress/story';
+import { computerWins } from '../progress/progress';
+import { lockedCharacters, needText, twistText } from './storyText';
 import { drawCup } from './art/backgroundArt';
 import { canvasTexture } from './art/canvasArt';
 import { menuBackgroundTexture } from './art/menuArt';
@@ -81,7 +82,7 @@ export class StoryScene extends Phaser.Scene {
         stars: story.stars,
         total: totalStars(story),
         title: titleFor(story),
-        rewards: earnedRewards(story),
+        rewards: earnedRewards(this.played),
         open: STORY_STOPS.filter((s) => isStopOpen(story, s.id)).map((s) => s.id),
         chapter: STORY_CHAPTERS[this.chapter]!.id,
         card: this.card?.stop ?? null,
@@ -94,6 +95,10 @@ export class StoryScene extends Phaser.Scene {
 
   private get journey(): StoryProgress {
     return this.slots.story.load().data;
+  }
+
+  private get played(): Played {
+    return { story: this.journey, wins: computerWins(this.slots.progress.load().data) };
   }
 
   private drawMap(): void {
@@ -121,7 +126,7 @@ export class StoryScene extends Phaser.Scene {
     this.drawPath(stops.length);
     const cup = canvasTexture(this, CUP_KEY, M.cup.size, M.cup.size, (ctx, w, h) => drawCup(ctx, w / 2, h, h * 0.95, '#ffe58a', '#9a6f1c'));
     stops.forEach((stop, i) => this.drawStop(stop, M.stops[i]!, story, cup));
-    this.drawRewards(story);
+    this.drawRewards();
     addButton(this, M.back.left, M.back.y, { name: 'story-back', label: t.t('ui.back'), onTap: () => this.openMenu() }).setOrigin(0, 0.5);
   }
 
@@ -188,14 +193,18 @@ export class StoryScene extends Phaser.Scene {
     g.fillStyle(COLORS.overlay, 1).fillCircle(x, y, 3);
   }
 
-  /** This chapter's rewards and the star rewards along the bottom, earned or with what earns them. */
-  private drawRewards(story: StoryProgress): void {
+  /**
+   * This chapter's rewards and the star rewards along the bottom, earned or with what earns them.
+   * A look earned at a single stop shows on that stop's card instead.
+   */
+  private drawRewards(): void {
     const t = this.t;
+    const played = this.played;
     const chapter = STORY_CHAPTERS[this.chapter]!.id;
-    const shown = STORY.rewards.filter((r) => r.need.chapter === chapter || r.need.chapter === undefined);
+    const shown = STORY.rewards.filter((r) => r.need.chapter === chapter || (r.need.stars !== undefined && r.need.stop === undefined));
     shown.forEach((r, i) => {
       const x = M.title.x + (i - (shown.length - 1) / 2) * M.rewards.spacing;
-      const earned = isNeedMet(story, r.need);
+      const earned = isNeedMet(played, r.need);
       this.add
         .text(x, M.rewards.y, `${t.t(`menu.${r.kind}s`)}: ${t.t(`${r.kind}.${r.id}`)}\n${earned ? t.t('story.earned') : needText(t, r.need)}`, { ...textStyle(TEXT_STYLE.bodySize, earned ? COLORS.accent : COLORS.textDim), align: 'center' })
         .setOrigin(0.5)
@@ -208,9 +217,11 @@ export class StoryScene extends Phaser.Scene {
     const story = this.journey;
     const rival = characterById(stopRival(stop, story.character ?? DEFAULT_PICKS[0]))!;
     const best = story.stars[stop.id] ?? 0;
+    const reward = STORY.rewards.find((r) => r.need.stop === stop.id);
     const body = [
       t.t('story.rival', { name: rival.name, level: t.t(`level.${stop.level}`) }),
       ...(stop.twist ? [twistText(t, stop.twist)] : []),
+      ...(reward ? [t.t(`story.rewardNote.${reward.kind}`, { name: t.t(`${reward.kind}.${reward.id}`) })] : []),
       '',
       t.t('story.star1'),
       t.t('story.star2'),
@@ -246,6 +257,7 @@ export class StoryScene extends Phaser.Scene {
     this.picker.show({
       title: t.t('story.chooseCharacter'),
       selected: story.character ?? this.slots.progress.load().data.lastPicks?.[0] ?? DEFAULT_PICKS[0],
+      locked: lockedCharacters(t, this.played),
       confirmLabel: t.t(first ? 'story.start' : 'story.confirm'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => {

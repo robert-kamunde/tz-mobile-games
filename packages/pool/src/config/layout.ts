@@ -159,10 +159,13 @@ export const CHARACTER_PICKER = {
   columns: 4,
   faceRadius: 38,
   columnSpacing: 125,
-  rowSpacing: 125,
+  /** Room under each face for its name and, while locked, what earns it (wrapped to the column). */
+  rowSpacing: 150,
   firstRowFromTop: 175,
   /** Between a face and its name. */
   nameGap: 8,
+  /** A name and its lock text wrap to the column, less this gap between neighbours. */
+  labelGap: 8,
   selectedRing: { width: 5, color: 0xf2c94c },
   /** A character player 1 already took, shown faded to player 2. */
   takenAlpha: 0.3,
@@ -180,15 +183,20 @@ const LOOK_PICKER_COMMON = {
   minTouchHeight: 44,
   buttonsFromBottom: 46,
   buttonOffsetX: 140,
+  /**
+   * More choices than one page holds: ‹ › page arrows in the bottom corners, level with Back and
+   * Choose (Robert chose pages over scrolling, 2026-10-12). The page number follows the title.
+   */
+  pageNav: { arrowDx: 440, arrowWidth: 64 },
 } as const;
 
 export const LOOK_PICKER = {
-  /** Tables at TABLE_ART.previewScale, 4 by 2 (seven since story mode's gold table), below the panel title. */
-  table: { ...LOOK_PICKER_COMMON, columns: 4, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
-  /** Backgrounds at BACKGROUND_ART.previewScale, 4 by 2, like the tables. */
-  background: { ...LOOK_PICKER_COMMON, columns: 4, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
-  /** Cues at CUE_ART.previewScale, 2 by 4. */
-  cue: { ...LOOK_PICKER_COMMON, columns: 2, columnSpacing: 500, rowSpacing: 108, firstRowFromTop: 140 },
+  /** Tables at TABLE_ART.previewScale, 4 by 2 a page, below the panel title. */
+  table: { ...LOOK_PICKER_COMMON, columns: 4, rows: 2, lockOnOneLine: false, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Backgrounds at BACKGROUND_ART.previewScale, 4 by 2 a page, like the tables. */
+  background: { ...LOOK_PICKER_COMMON, columns: 4, rows: 2, lockOnOneLine: false, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Cues at CUE_ART.previewScale, 2 by 4 a page; rows are low, so a locked cue's name and what earns it share one line. */
+  cue: { ...LOOK_PICKER_COMMON, columns: 2, rows: 4, lockOnOneLine: true, columnSpacing: 500, rowSpacing: 108, firstRowFromTop: 140 },
   /** A look story mode has not earned yet: faded, with a padlock and what earns it. */
   locked: { alpha: 0.35, padlock: { width: 26, height: 20, shackle: 9, color: 0xd0d6d3 } },
 } as const;

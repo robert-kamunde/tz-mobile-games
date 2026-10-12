@@ -79,7 +79,7 @@ You can replay any opened stop to earn more stars.
   - a gold-trimmed table "Dhahabu" for beating Bingwa;
   - a cue "Fimbo ya Bingwa" at 18 stars;
   - a background "Usiku wa Bingwa" (the bar at night with your trophies) at all 24 stars.
-- A locked item shows a padlock and what earns it. Nothing that exists today gets locked.
+- A locked item shows a padlock and what earns it. Nothing that exists today gets locked. (Changed in 0.26.0, below.)
 
 ## Screens
 
@@ -117,3 +117,17 @@ You can replay any opened stop to earn more stars.
 3. The star rules above, or simpler (one star per win)?
 4. Before November 1st or as the first update? Claude suggests building it now and deciding by
    how the Play account's closed test goes.
+
+## Earned looks and characters (0.26.0)
+
+Robert, 2026-10-12: "lock all items except 2 in every category" and lock one or two characters,
+earned by story and by Quick game wins (his answers: pages, A, A).
+
+- Free: tables Klasiki and Zanzibar, cues Klasiki and Zanzibar, backgrounds Klasiki and Mbao.
+- Twelve looks open in journey order, each at its stop or after 3 more wins against the computer
+  (story wins count), whichever first: Kitenge table (Kariakoo, 3 wins), Kitenge cue (Sinza, 6),
+  Kanga (Mwenge, 9), Maasai table (Bagamoyo, 12), Maasai cue (Dodoma, 15), Bahari (Tanga, 18),
+  Tingatinga table (Babati, 21), Tingatinga cue (Karatu, 24), Nyota (Bukoba, 27), Makonde table
+  (Mbeya, 30), Makonde cue (Mtwara, 33), Makuti (Pemba, 36).
+- Characters: Bishoo (finish chapter 1) and Kichwa (10 wins). Both women stay free.
+- The stop card names its look; the end panel announces anything a game opened.

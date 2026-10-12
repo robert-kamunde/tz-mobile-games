@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.26.0 (unreleased) - Picker pages, earned looks and characters
+- Fix (Robert, 2026-10-12): in Meza and Mandhari the ninth item (Ziwa) was cut off and could not be reached. The table, cue and scenery pickers now show a page at a time (8 per page) with ‹ › arrows beside Back and Chagua, and the page number after the title ("Chagua meza 1/2"). Robert chose pages over scrolling. A picker opens on the page of the current choice.
+- **Only two of each look are free** (Robert, 2026-10-12): tables Klasiki and Zanzibar, cues Klasiki and Zanzibar, scenery Klasiki and Mbao. The other twelve open by playing, in this order, each at its story stop **or** after enough wins against the computer (3, 6, 9 ... 36), whichever comes first: Kitenge table (Kariakoo), Kitenge cue (Sinza), Kanga scenery (Mwenge), Maasai table (Bagamoyo), Maasai cue (Dodoma), Bahari scenery (Tanga), Tingatinga table (Babati), Tingatinga cue (Karatu), Nyota scenery (Bukoba), Makonde table (Mbeya), Makonde cue (Mtwara), Makuti scenery (Pemba). Story wins count toward the wins too. The chapter and star rewards of 0.25.0 are unchanged. No coins, no buying.
+- **Two characters start locked** (Robert, 2026-10-12; both women stay free): Bishoo opens when chapter 1 is finished, Kichwa after 10 wins against the computer. Locked faces are faded with a padlock and what earns them, in every character picker.
+- The end panel says when a game opened something ("Zawadi: meza ya Kitenge!", "Mhusika mpya: Kichwa!"), in Quick game too. A stop card names the look that stop earns.
+- A look chosen before it was locked falls back to Klasiki until earned again.
+
 ## 0.25.0 (unreleased) - Safari ya Bingwa in three chapters
 - Robert chose "3 chapters now" (2026-10-12). The journey is now 27 stops in three chapters of nine: **Sura 1: Dar es Salaam** (Mtaani to Mzee Kobe's club), **Sura 2: Kaskazini** (Morogoro to Arusha) and **Sura 3: Hadi Visiwani** (Mwanza to Zanzibar and the final against Bingwa). The map shows one chapter at a time, with arrows to the others; it opens on the chapter you are playing.
 - **Ten new rivals** met only in story mode, named by Claude, with faces Robert made with ChatGPT (cut from his 5 x 2 sheet) and their own catchphrases: Kaka Tunda, Bwana Shamba, Mama Pweza, Kahawa, Mzee Simba, Sato, Dada Ndizi, Kapteni, Baridi, Mzee Karafuu.

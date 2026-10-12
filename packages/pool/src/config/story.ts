@@ -105,10 +105,16 @@ export const STORY_CHAPTERS: readonly StoryChapter[] = [
 /** Every stop in journey order. */
 export const STORY_STOPS: readonly StoryStop[] = STORY_CHAPTERS.flatMap((c) => c.stops);
 
-/** What earns a reward or title: finishing a chapter (its last stop won), a star total, or both. */
+/**
+ * What earns a reward, a title or a character. Any one part is enough: finishing a chapter (its
+ * last stop won), winning a stop, a star total, or games won against the computer (story games
+ * count too).
+ */
 export interface StoryNeed {
   readonly chapter?: string;
+  readonly stop?: string;
   readonly stars?: number;
+  readonly wins?: number;
 }
 
 export interface StoryReward {
@@ -116,6 +122,27 @@ export interface StoryReward {
   readonly id: TableId | CueId | BackgroundId;
   readonly need: StoryNeed;
 }
+
+/**
+ * Looks that start locked (Robert, 2026-10-12: only two free in each kind, the rest earned by
+ * playing; no buying). In journey order, each opens at its stop or after `UNLOCK_WINS_EACH` more
+ * wins against the computer, whichever comes first, so quick games alone also open them all.
+ */
+const UNLOCK_WINS_EACH = 3;
+const PLAY_UNLOCKS: readonly (readonly [StoryReward['kind'], StoryReward['id'], string])[] = [
+  ['table', 'kitenge', 'kariakoo'],
+  ['cue', 'kitenge', 'sinza'],
+  ['background', 'kanga', 'mwenge'],
+  ['table', 'maasai', 'bagamoyo'],
+  ['cue', 'maasai', 'dodoma'],
+  ['background', 'sea', 'tanga'],
+  ['table', 'tingatinga', 'babati'],
+  ['cue', 'tingatinga', 'karatu'],
+  ['background', 'stars', 'bukoba'],
+  ['table', 'makonde', 'mbeya'],
+  ['cue', 'makonde', 'mtwara'],
+  ['background', 'makuti', 'pemba'],
+];
 
 export const STORY = {
   /** Stars for a win, plus one for no foul, plus one more for also leaving this many of the rival's balls. */
@@ -128,7 +155,10 @@ export const STORY = {
     { id: 'fundi', need: { stars: 35 } },
     { id: 'mtaa', need: { stars: 15 } },
   ],
-  /** Story-only looks, locked in the pickers until earned. Everything else is free. */
+  /**
+   * Looks locked in the pickers until earned; everything else is free. The first group is earned
+   * only in story mode; the rest by story mode or by wins (PLAY_UNLOCKS).
+   */
   rewards: [
     { kind: 'cue', id: 'champion', need: { chapter: 'dar' } },
     { kind: 'table', id: 'kilimanjaro', need: { chapter: 'kaskazini' } },
@@ -137,5 +167,14 @@ export const STORY = {
     { kind: 'background', id: 'lake', need: { chapter: 'visiwani' } },
     { kind: 'table', id: 'gold', need: { chapter: 'visiwani' } },
     { kind: 'background', id: 'trophies', need: { stars: 70 } },
+    ...PLAY_UNLOCKS.map(([kind, id, stop], i) => ({ kind, id, need: { stop, wins: (i + 1) * UNLOCK_WINS_EACH } })),
   ] satisfies readonly StoryReward[] as readonly StoryReward[],
+  /**
+   * Player characters that start locked (Robert, 2026-10-12: two men, both women stay free). The
+   * rest are free; DEFAULT_PICKS must stay free.
+   */
+  characters: [
+    { id: 'bishoo', need: { chapter: 'dar' } },
+    { id: 'kichwa', need: { wins: 10 } },
+  ] satisfies readonly { id: string; need: StoryNeed }[] as readonly { readonly id: string; readonly need: StoryNeed }[],
 } as const;

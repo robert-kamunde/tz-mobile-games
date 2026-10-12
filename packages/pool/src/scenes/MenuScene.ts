@@ -20,8 +20,9 @@ import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { StoryStart } from './StoryScene';
+import { computerWins } from '../progress/progress';
 import { lockedBy } from '../progress/story';
-import { needText } from './storyText';
+import { lockedCharacters, needText } from './storyText';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 import { loadPortraitFiles } from './art/portraitFiles';
@@ -106,7 +107,9 @@ export class MenuScene extends Phaser.Scene {
       });
     });
 
-    this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice));
+    this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice), () =>
+      lockedCharacters(t, { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) }),
+    );
     this.looks = new LookPicker(this, PANEL.overMenu);
     if (data.panel) this.showPanel(data.panel);
     // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
@@ -124,6 +127,8 @@ export class MenuScene extends Phaser.Scene {
       selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
       selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
       selectedBackground: this.looks.showing === 'background' ? this.looks.selected : null,
+      lookPage: this.looks.page,
+      lookPages: this.looks.pages,
       table: this.slots.progress.load().data.table,
       cue: this.slots.progress.load().data.cue,
       hand: this.slots.progress.load().data.hand,
@@ -140,11 +145,11 @@ export class MenuScene extends Phaser.Scene {
   private showLooks(kind: 'table' | 'cue' | 'background'): void {
     const t = this.t;
     const progress = this.slots.progress.load().data;
-    const story = this.slots.story.load().data;
+    const played = { story: this.slots.story.load().data, wins: computerWins(progress) };
     const geometry = buildTableGeometry(UK_7FT_TABLE);
-    // Story mode's rewards show locked, with what earns them, until earned.
+    // Locked looks show with what earns them, until earned.
     const locked = (kind: 'table' | 'cue' | 'background', id: string) => {
-      const reward = lockedBy(kind, id, story);
+      const reward = lockedBy(kind, id, played);
       return reward ? { locked: needText(t, reward.need) } : {};
     };
     const items =

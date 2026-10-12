@@ -1,6 +1,7 @@
 import type * as Phaser from 'phaser';
 import { PLAYER_CHARACTERS } from '../config/characters';
-import { BUTTON, CHARACTER_PICKER, PANEL, TEXT_STYLE } from '../config/layout';
+import { BUTTON, CHARACTER_PICKER, COLORS, PANEL, TEXT_STYLE } from '../config/layout';
+import { padlock } from './LookPicker';
 import { Face } from './Face';
 import { Panel, addButton, textStyle, type PanelSpec } from './ui';
 
@@ -12,6 +13,8 @@ export interface CharacterChoice {
   readonly selected: string;
   /** A character player 1 already took: faded and cannot be chosen. */
   readonly taken?: string;
+  /** Characters not earned yet, with what earns them: faded, padlocked, and cannot be chosen. */
+  readonly locked?: ReadonlyMap<string, string>;
   /** "Next" for player 1 of two, otherwise "Start". */
   readonly confirmLabel: string;
   readonly backLabel: string;
@@ -59,13 +62,20 @@ export class CharacterPicker {
       const fx = x + (col - (inRow - 1) / 2) * c.columnSpacing;
       const fy = top + c.firstRowFromTop + row * c.rowSpacing;
       const taken = character.id === choice.taken;
+      const need = choice.locked?.get(character.id);
       const ring = this.scene.add
         .circle(fx, fy, c.faceRadius + c.selectedRing.width)
         .setStrokeStyle(c.selectedRing.width, c.selectedRing.color)
         .setVisible(false);
       const face = new Face(this.scene, fx, fy, c.faceRadius, `character-${character.id}`).show(character);
-      const label = this.scene.add.text(fx, fy + c.faceRadius + c.nameGap, character.name, textStyle(TEXT_STYLE.bodySize)).setOrigin(0.5, 0);
-      if (taken) {
+      const label = this.scene.add
+        .text(fx, fy + c.faceRadius + c.nameGap, need ? `${character.name}\n${need}` : character.name, { ...textStyle(TEXT_STYLE.bodySize, need ? COLORS.textDim : COLORS.text), align: 'center', wordWrap: { width: c.columnSpacing - c.labelGap } })
+        .setOrigin(0.5, 0)
+        .setName(`character-${character.id}-label`);
+      if (need) {
+        face.setAlpha(c.takenAlpha);
+        this.objects.push(padlock(this.scene, fx, fy));
+      } else if (taken) {
         face.setAlpha(c.takenAlpha);
         label.setAlpha(c.takenAlpha);
       } else {
@@ -74,7 +84,7 @@ export class CharacterPicker {
           if (!pointer.wasCanceled) this.select(character.id);
         });
       }
-      face.circle.setData('taken', taken);
+      face.circle.setData('taken', taken).setData('locked', Boolean(need));
       this.rings.set(character.id, ring);
       this.objects.push(ring, ...face.objects, label);
     });
@@ -85,7 +95,7 @@ export class CharacterPicker {
       addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: 'character-confirm', label: choice.confirmLabel, onTap: () => this.confirm() }, { width: buttonWidth }),
     );
     for (const o of this.objects) (o as unknown as Phaser.GameObjects.Components.Depth).setDepth(PANEL.depth);
-    const usable = (id: string) => id !== choice.taken && this.rings.has(id);
+    const usable = (id: string) => id !== choice.taken && !choice.locked?.has(id) && this.rings.has(id);
     this.select(usable(choice.selected) ? choice.selected : PLAYER_CHARACTERS.find((ch) => usable(ch.id))!.id);
   }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AI_LEVEL_IDS } from '../src/config/ai';
 import { BACKGROUND_IDS } from '../src/config/backgrounds';
-import { COMPUTER_CHARACTERS, PLAYER_CHARACTERS, STORY_CHARACTERS } from '../src/config/characters';
+import { COMPUTER_CHARACTERS, DEFAULT_PICKS, PLAYER_CHARACTERS, STORY_CHARACTERS } from '../src/config/characters';
 import { CUE_IDS } from '../src/config/cues';
 import { QUIP_LINES } from '../src/config/quips';
 import { STORY, STORY_CHAPTERS, STORY_STOPS } from '../src/config/story';
@@ -17,6 +17,8 @@ import {
   isTableLocked,
   nextStop,
   recordStop,
+  characterNeed,
+  earnedCharacters,
   earnedRewards,
   isChapterDone,
   starsFor,
@@ -111,18 +113,42 @@ describe('story mode', () => {
     expect(isChapterDone(withStars({}), 'nowhere')).toBe(false);
   });
 
-  it('locks only the story rewards, each until its chapter is done or its stars are earned', () => {
-    const none = defaultStory();
-    const rewardIds = (kind: string) => STORY.rewards.filter((r) => r.kind === kind).map((r) => r.id as string);
-    for (const id of TABLE_IDS) expect(isTableLocked(id, none), id).toBe(rewardIds('table').includes(id));
-    for (const id of CUE_IDS) expect(isCueLocked(id, none), id).toBe(id === 'champion');
-    for (const id of BACKGROUND_IDS) expect(isBackgroundLocked(id, none), id).toBe(rewardIds('background').includes(id));
-    expect(earnedRewards(withStars({ klabu: 1 }))).toEqual(['cue:champion']);
-    expect(earnedRewards(withStars({ klabu: 1, arusha: 1 }))).toEqual(['cue:champion', 'table:kilimanjaro', 'background:mountain']);
-    expect(earnedRewards(withStars(allStops(1)))).toEqual(['cue:champion', 'table:kilimanjaro', 'background:mountain', 'table:ziwa', 'background:lake', 'table:gold']);
-    expect(earnedRewards(withStars(allStops(3)))).toHaveLength(STORY.rewards.length);
-    expect(isTableLocked('gold', withStars(allStops(1)))).toBe(false);
-    expect(isBackgroundLocked('trophies', withStars(allStops(2)))).toBe(true);
+  it('locks the story rewards until their chapter or stars, and all but two of each look until a stop or enough wins', () => {
+    const none = { story: defaultStory(), wins: 0 };
+    const free = { table: ['classic', 'zanzibar'], cue: ['classic', 'zanzibar'], background: ['classic', 'wood'] };
+    for (const id of TABLE_IDS) expect(isTableLocked(id, none), id).toBe(!free.table.includes(id));
+    for (const id of CUE_IDS) expect(isCueLocked(id, none), id).toBe(!free.cue.includes(id));
+    for (const id of BACKGROUND_IDS) expect(isBackgroundLocked(id, none), id).toBe(!free.background.includes(id));
+    const story = (stars: Record<string, number>) => ({ story: withStars(stars), wins: 0 });
+    expect(earnedRewards(story({ klabu: 1 }))).toEqual(['cue:champion']);
+    expect(earnedRewards(story({ klabu: 1, arusha: 1 }))).toEqual(['cue:champion', 'table:kilimanjaro', 'background:mountain']);
+    expect(earnedRewards(story(allStops(1)))).toEqual(STORY.rewards.filter((r) => r.need.stars === undefined).map((r) => `${r.kind}:${r.id}`));
+    expect(earnedRewards(story(allStops(3)))).toHaveLength(STORY.rewards.length);
+    expect(isTableLocked('gold', story(allStops(1)))).toBe(false);
+    expect(isBackgroundLocked('trophies', story(allStops(2)))).toBe(true);
+    // A stop or wins, whichever comes first.
+    expect(isTableLocked('kitenge', story({ kariakoo: 1 }))).toBe(false);
+    expect(isTableLocked('kitenge', { story: defaultStory(), wins: 2 })).toBe(true);
+    expect(isTableLocked('kitenge', { story: defaultStory(), wins: 3 })).toBe(false);
+    expect(isCueLocked('kitenge', { story: defaultStory(), wins: 3 })).toBe(true);
+    expect(earnedRewards({ story: defaultStory(), wins: 36 })).toHaveLength(12);
+    expect(isBackgroundLocked('makuti', { story: defaultStory(), wins: 35 })).toBe(true);
+    // Every stop-earned look sits at a real stop, at most one per stop, and wins rise in journey order.
+    const byStop = STORY.rewards.filter((r) => r.need.stop !== undefined);
+    expect(byStop).toHaveLength(12);
+    expect(new Set(byStop.map((r) => r.need.stop)).size).toBe(12);
+    const order = byStop.map((r) => STORY_STOPS.findIndex((s) => s.id === r.need.stop));
+    expect(order.every((i, k) => i >= 0 && (k === 0 || i > order[k - 1]!))).toBe(true);
+  });
+
+  it('locks two player characters, both men, until chapter 1 or ten wins', () => {
+    const none = { story: defaultStory(), wins: 0 };
+    expect(STORY.characters.map((c) => characterNeed(c.id, none) !== undefined)).toEqual([true, true]);
+    for (const c of STORY.characters) expect(PLAYER_CHARACTERS.find((p) => p.id === c.id)?.gender).toBe('male');
+    for (const id of DEFAULT_PICKS) expect(characterNeed(id, none)).toBeUndefined();
+    expect(characterNeed('bishoo', { story: withStars({ klabu: 1 }), wins: 0 })).toBeUndefined();
+    expect(characterNeed('kichwa', { story: defaultStory(), wins: 9 })).toBeDefined();
+    expect(earnedCharacters({ story: defaultStory(), wins: 10 })).toEqual(['kichwa']);
   });
 
   it('reads saves: an empty journey by default, unknown stops dropped, damaged values rejected', () => {

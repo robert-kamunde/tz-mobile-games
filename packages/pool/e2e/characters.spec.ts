@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, SCENE, boot, dismissHowToPlay, menuState, pickOpponent, playFromMenu, reopen, state, tap, waitForScene } from './poolPage';
+import { MENU_SCENE, SCENE, boot, dismissHowToPlay, menuState, pickOpponent, playFromMenu, reopen, seedWins, state, tap, waitForScene } from './poolPage';
 
 const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
 const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n]) => window.__tzg!.textOf(s, n), [scene, name] as const);
@@ -92,7 +92,7 @@ test('Back and the phone back button step back through player 2, the opponents a
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   await openCharacters(page);
-  await tap(page, 'character-kichwa', MENU_SCENE);
+  await tap(page, 'character-mjanja', MENU_SCENE);
   await toOpponents(page);
   await tap(page, 'opponent-two', MENU_SCENE);
   await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
@@ -101,7 +101,7 @@ test('Back and the phone back button step back through player 2, the opponents a
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   await back(page);
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
-  expect(await selected(page)).toBe('kichwa');
+  expect(await selected(page)).toBe('mjanja');
   await toOpponents(page);
   await tap(page, 'opponent-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
@@ -166,5 +166,38 @@ test('a game saved before characters existed continues with the default characte
   await tap(page, 'menu-continue', MENU_SCENE);
   await waitForScene(page, SCENE);
   expect((await state(page)).players).toEqual(['Fundi', 'Dogo Mbishi']);
+  expect(errors).toEqual([]);
+});
+
+const locked = (page: Page, id: string) => page.evaluate((n) => window.__tzg!.dataOf('Menu', `character-${n}`, 'locked'), id);
+
+test('Bishoo and Kichwa start locked, with what earns them; ten wins open Kichwa', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openCharacters(page);
+  expect(await locked(page, 'bishoo')).toBe(true);
+  expect(await locked(page, 'kichwa')).toBe(true);
+  expect(await locked(page, 'malkia')).toBe(false);
+  expect(await textOf(page, MENU_SCENE, 'character-bishoo-label')).toBe('Bishoo\nMaliza Sura 1');
+  expect(await textOf(page, MENU_SCENE, 'character-kichwa-label')).toBe('Kichwa\nShinda mechi 10');
+  await tap(page, 'character-kichwa', MENU_SCENE);
+  expect(await selected(page)).toBe('fundi');
+  // Player 2 cannot take a locked one either.
+  await toOpponents(page);
+  await tap(page, 'opponent-two', MENU_SCENE);
+  await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Mchezaji 2');
+  await tap(page, 'character-bishoo', MENU_SCENE);
+  expect(await selected(page)).not.toBe('bishoo');
+  await back(page);
+  await back(page);
+  await back(page);
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+
+  await seedWins(page, 10);
+  await openCharacters(page);
+  expect(await locked(page, 'kichwa')).toBe(false);
+  expect(await locked(page, 'bishoo')).toBe(true);
+  await tap(page, 'character-kichwa', MENU_SCENE);
+  expect(await selected(page)).toBe('kichwa');
   expect(errors).toEqual([]);
 });

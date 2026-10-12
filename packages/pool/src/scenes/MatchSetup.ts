@@ -35,6 +35,8 @@ export class MatchSetup {
     private readonly t: Translator,
     area: PanelSpec['area'],
     private readonly onDone: (choice: MatchChoice) => void,
+    /** Characters not earned yet, with what earns them. */
+    private readonly lockedCharacters: () => ReadonlyMap<string, string>,
   ) {
     this.opponents = new OpponentPicker(scene, t, area, (opponent) => {
       if (opponent.kind === 'human') this.chooseSecondCharacter(opponent);
@@ -71,6 +73,7 @@ export class MatchSetup {
     this.characters.show({
       title: t.t('characters.title'),
       selected: this.picks[0],
+      locked: this.lockedCharacters(),
       confirmLabel: t.t('characters.next'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => {
@@ -96,6 +99,7 @@ export class MatchSetup {
       subtitle: t.t('player.name', { n: 2 }),
       selected: this.picks[1],
       taken: this.picks[0],
+      locked: this.lockedCharacters(),
       confirmLabel: t.t('characters.start'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => this.finish({ opponent, picks: [this.picks[0], id] }),

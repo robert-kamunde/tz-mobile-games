@@ -60,6 +60,9 @@ export interface MenuState {
   selectedTable: string | null;
   selectedCue: string | null;
   selectedBackground: string | null;
+  /** The open look picker's page (from 0) and how many it has. */
+  lookPage: number;
+  lookPages: number;
   /** The saved table choice. */
   table: string;
   /** The saved cue choice. */
@@ -238,3 +241,15 @@ export async function dragFineAim(page: Page, designDx: number, options: { cance
 }
 
 export const aimAngle = (aim: { x: number; y: number }) => Math.atan2(aim.y, aim.x);
+
+/** Writes games won against the computer straight into the save, as earlier play would have, and reopens the game. */
+export async function seedWins(page: Page, wins: number): Promise<void> {
+  await page.evaluate((won) => {
+    const raw = window.localStorage.getItem('pool.progress');
+    const data = raw ? (JSON.parse(raw) as { data: Record<string, unknown> }).data : null;
+    const vsComputer = { ...((data?.vsComputer as Record<string, unknown>) ?? {}), easy: { played: won, won } };
+    const base = data ?? { twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: 'classic', cue: 'classic', hand: 'right', background: 'classic' };
+    window.localStorage.setItem('pool.progress', JSON.stringify({ v: 1, data: { ...base, vsComputer } }));
+  }, wins);
+  await reopen(page);
+}

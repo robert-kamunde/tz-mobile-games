@@ -42,6 +42,11 @@ export function defaultProgress(): PoolProgress {
   return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND };
 }
 
+/** Games won against the computer at every level, story games included. */
+export function computerWins(progress: PoolProgress): number {
+  return AI_LEVEL_IDS.reduce((sum, level) => sum + progress.vsComputer[level].won, 0);
+}
+
 /** Counts a finished game. */
 export function recordGame(progress: PoolProgress, opponent: Opponent, winner: PlayerId): PoolProgress {
   if (opponent.kind === 'human') return { ...progress, twoPlayerGames: progress.twoPlayerGames + 1 };
