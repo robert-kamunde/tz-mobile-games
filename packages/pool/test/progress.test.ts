@@ -155,7 +155,7 @@ describe('progress', () => {
     const old = viaJson(p) as Record<string, unknown>;
     delete old.table;
     expect(validateProgress(old)).toEqual({ ...p, table: 'classic' });
-    expect(validateProgress({ ...p, table: 'gold' })).toEqual({ ...p, table: 'classic' });
+    expect(validateProgress({ ...p, table: 'velvet' })).toEqual({ ...p, table: 'classic' });
   });
 
   it('keeps the chosen cue; an older save or an unknown cue gives Klasiki', () => {

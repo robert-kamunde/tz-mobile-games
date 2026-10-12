@@ -2,11 +2,12 @@ import * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE, type ScreenSides } from '../config/layout';
 import { countInRack } from '../physics/rack';
-import { DEFAULT_PICKS } from '../config/characters';
+import { DEFAULT_PICKS, type Character } from '../config/characters';
 import { QUIPS } from '../config/quips';
 import { seatCharacter, type CharacterPicks } from '../progress/characters';
 import type { Opponent } from '../progress/opponent';
 import type { Group, MatchState, PlayerId } from '../rules/blackball';
+import { EndPanel, type EndChoices, type EndSpec } from './EndPanel';
 import { Face } from './Face';
 import { ballTexture } from './art/ballArt';
 import { panelTexture } from './art/uiArt';
@@ -41,14 +42,9 @@ export class MatchHud {
   private readonly status: Phaser.GameObjects.Text;
   private readonly hint: Phaser.GameObjects.Text;
   private readonly newGame: Phaser.GameObjects.Text;
-  private readonly overPanel: Phaser.GameObjects.Image;
-  private readonly overTitle: Phaser.GameObjects.Text;
-  private readonly overDetail: Phaser.GameObjects.Text;
-  private readonly overRematch: Phaser.GameObjects.Text;
-  private readonly overMenu: Phaser.GameObjects.Text;
-  /** When the end panel goes to the menu on its own, or null once a touch stopped the count. */
-  private autoMenuAt: number | null = null;
-  private autoMenuTimer: Phaser.Time.TimerEvent | null = null;
+  private readonly end: EndPanel;
+  /** A story stop's character in the computer's seat, instead of its level's. */
+  private rival: Character | undefined;
   private readonly quipBox: Phaser.GameObjects.Graphics;
   private readonly quipLabel: Phaser.GameObjects.Text;
   private quipTimer: Phaser.Time.TimerEvent | null = null;
@@ -63,7 +59,7 @@ export class MatchHud {
     private readonly t: Translator,
     onNewGame: () => void,
     private readonly sides: ScreenSides,
-    private readonly onEnd: { readonly rematch: () => void; readonly menu: () => void },
+    onEnd: EndChoices,
   ) {
     const text = textStyle;
     const p = this.panelEdges;
@@ -100,15 +96,7 @@ export class MatchHud {
       .setName('status');
     this.hint = scene.add.text(HUD.hint.x + dx, HUD.hint.y, '', text(TEXT_STYLE.hintSize, COLORS.textDim)).setOrigin(0.5).setName('hint');
 
-    const g = { ...HUD.gameOver, x: HUD.gameOver.x + dx };
-    this.overPanel = scene.add.image(g.x, g.y, panelTexture(scene, g.width, g.height)).setAlpha(g.alpha).setName('gameOverPanel').setVisible(false);
-    this.overTitle = scene.add.text(g.x, g.y + g.titleDy, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
-    this.overDetail = scene.add.text(g.x, g.y + g.detailDy, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
-    const half = (g.buttonWidth + g.buttonGap) / 2;
-    this.overRematch = addButton(scene, g.x - half, g.y + g.buttonsDy, { name: 'gameOver-rematch', label: t.t('over.rematch'), highlighted: true, onTap: () => this.endChoice(onEnd.rematch) }, { width: g.buttonWidth }).setVisible(false);
-    this.overMenu = addButton(scene, g.x + half, g.y + g.buttonsDy, { name: 'gameOver-menu', label: t.t('pool.menu'), onTap: () => this.endChoice(onEnd.menu) }, { width: g.buttonWidth }).setVisible(false);
-    // Any touch while the count runs stops it: the player is still here.
-    scene.input.on('pointerdown', () => this.stopAutoMenu());
+    this.end = new EndPanel(scene, t, HUD.gameOver.x + dx, onEnd);
 
     const q = HUD.quip;
     this.quipBox = scene.add.graphics().setName('quipBubble').setVisible(false);
@@ -143,7 +131,7 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.overRematch, this.overMenu, this.quipBox, this.quipLabel, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, ...this.end.objects, this.quipBox, this.quipLabel, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
   }
@@ -155,19 +143,24 @@ export class MatchHud {
   }
 
   /** Who plays: the opponent decides whether player 2 is the computer's character or a pick. */
-  setCast(opponent: Opponent, picks: CharacterPicks): void {
+  setCast(opponent: Opponent, picks: CharacterPicks, rival?: Character): void {
     this.opponent = opponent;
     this.picks = picks;
-    for (const player of PLAYERS) this.panels[player]!.face.show(seatCharacter(player, opponent, picks));
+    this.rival = rival;
+    for (const player of PLAYERS) this.panels[player]!.face.show(this.seat(player));
+  }
+
+  private seat(player: PlayerId): Character {
+    return seatCharacter(player, this.opponent, this.picks, this.rival);
   }
 
   playerName(player: PlayerId): string {
-    return seatCharacter(player, this.opponent, this.picks).name;
+    return this.seat(player).name;
   }
 
   /** Id of the character in a seat, for their catchphrases. */
   characterId(player: PlayerId): string {
-    return seatCharacter(player, this.opponent, this.picks).id;
+    return this.seat(player).id;
   }
 
     groupName(group: Group): string {
@@ -261,66 +254,31 @@ export class MatchHud {
   }
 
   get gameOverVisible(): boolean {
-    return this.overPanel.visible;
+    return this.end.visible;
+  }
+
+  /** Seconds before the end panel leaves on its own, or null when it will not (tests). */
+  get endButtons(): string[] {
+    return this.end.buttonNames;
+  }
+
+  get autoMenuSeconds(): number | null {
+    return this.end.leaveSeconds;
   }
 
   setStatus(message: string): void {
     this.status.setText(message);
   }
 
-  /** Seconds left before the end panel goes to the menu on its own, or null when it will not (tests). */
-  get autoMenuSeconds(): number | null {
-    return this.autoMenuAt === null ? null : Math.max(0, Math.ceil((this.autoMenuAt - this.scene.time.now) / 1000));
-  }
-
-  showGameOver(title: string, detail: string): void {
+  showGameOver(spec: EndSpec): void {
     this.matchActive = false;
     this.resetNewGameLabel();
-    for (const o of this.overObjects) o.setVisible(true);
-    this.overTitle.setText(title);
-    this.overDetail.setText(detail);
-    this.startAutoMenu();
+    this.end.show(spec);
   }
 
   hideGameOver(): void {
     this.matchActive = true;
-    this.stopAutoMenu();
-    for (const o of this.overObjects) o.setVisible(false);
-  }
-
-  private get overObjects(): (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] {
-    return [this.overPanel, this.overTitle, this.overDetail, this.overRematch, this.overMenu];
-  }
-
-  private endChoice(choice: () => void): void {
-    this.stopAutoMenu();
-    choice();
-  }
-
-  private startAutoMenu(): void {
-    const g = HUD.gameOver;
-    this.stopAutoMenu();
-    this.autoMenuAt = this.scene.time.now + g.autoMenuMs;
-    this.showCount();
-    this.autoMenuTimer = this.scene.time.addEvent({
-      delay: g.tickMs,
-      loop: true,
-      callback: () => {
-        if (this.autoMenuSeconds === 0) this.endChoice(this.onEnd.menu);
-        else this.showCount();
-      },
-    });
-  }
-
-  private stopAutoMenu(): void {
-    this.autoMenuTimer?.remove();
-    this.autoMenuTimer = null;
-    this.autoMenuAt = null;
-    this.overMenu.setText(this.t.t('pool.menu'));
-  }
-
-  private showCount(): void {
-    this.overMenu.setText(this.t.t('over.menuIn', { seconds: this.autoMenuSeconds ?? 0 }));
+    this.end.hide();
   }
 
   private resetNewGameLabel(): void {

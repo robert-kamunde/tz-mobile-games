@@ -19,6 +19,9 @@ import { logoTexture, menuBackgroundTexture } from './art/menuArt';
 import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
+import type { StoryStart } from './StoryScene';
+import { STORY } from '../config/story';
+import { isBackgroundLocked, isCueLocked, isTableLocked } from '../progress/story';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 import { loadPortraitFiles } from './art/portraitFiles';
@@ -80,6 +83,7 @@ export class MenuScene extends Phaser.Scene {
             this.setup.show(progress.lastOpponent, progress.lastPicks, () => undefined);
           },
         },
+        { id: 'story', onTap: () => this.scene.start(SCENE_KEYS.story, {} satisfies StoryStart) },
       ],
       [
         { id: 'tables', onTap: () => this.showLooks('table') },
@@ -94,7 +98,7 @@ export class MenuScene extends Phaser.Scene {
       ...(services.exit.available ? [[{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : services.exit.exit()) }]] : []),
     ];
     rows.forEach((row, i) => {
-      const rowWidth = row.length > 2 ? MENU.tripleRowWidth : BUTTON.width;
+      const rowWidth = row.length > 1 ? MENU.tripleRowWidth : BUTTON.width;
       const width = (rowWidth - (row.length - 1) * MENU.pairGap) / row.length;
       row.forEach((item, j) => {
         const x = MENU.x - rowWidth / 2 + width / 2 + j * (width + MENU.pairGap);
@@ -136,17 +140,30 @@ export class MenuScene extends Phaser.Scene {
   private showLooks(kind: 'table' | 'cue' | 'background'): void {
     const t = this.t;
     const progress = this.slots.progress.load().data;
+    const story = this.slots.story.load().data;
     const geometry = buildTableGeometry(UK_7FT_TABLE);
+    // Story mode's rewards show locked, with what earns them, until earned.
+    const lockedBy = (locked: boolean, kind: 'table' | 'cue' | 'background') => {
+      if (!locked) return {};
+      const r = STORY.rewards[kind];
+      return { locked: r.needsFinal ? t.t('story.needsFinal') : t.t('story.needsStars', { stars: r.stars }) };
+    };
     const items =
       kind === 'table'
         ? TABLE_IDS.map((id) => ({
             id,
             label: t.t(`table.${id}`),
             texture: tableTexture(this, geometry, UK_7FT_TABLE, TABLE_THEMES[id], TABLE_ART.previewScale).key,
+            ...lockedBy(isTableLocked(id, story), 'table'),
           }))
         : kind === 'cue'
-          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale) }))
-          : BACKGROUND_IDS.map((id) => ({ id, label: t.t(`background.${id}`), texture: backgroundTexture(this, BACKGROUNDS[id], previewTable(geometry.length)) }));
+          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale), ...lockedBy(isCueLocked(id, story), 'cue') }))
+          : BACKGROUND_IDS.map((id) => ({
+              id,
+              label: t.t(`background.${id}`),
+              texture: backgroundTexture(this, BACKGROUNDS[id], previewTable(geometry.length)),
+              ...lockedBy(isBackgroundLocked(id, story), 'background'),
+            }));
     this.looks.show({
       prefix: kind,
       title: t.t(`${kind}s.title`),

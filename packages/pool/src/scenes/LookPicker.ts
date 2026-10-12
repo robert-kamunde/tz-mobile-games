@@ -1,5 +1,5 @@
 import type * as Phaser from 'phaser';
-import { BUTTON, PANEL, TEXT_STYLE, type LOOK_PICKER } from '../config/layout';
+import { BUTTON, COLORS, LOOK_PICKER, PANEL, TEXT_STYLE } from '../config/layout';
 import { Panel, addButton, textStyle, type PanelSpec } from './ui';
 
 export interface LookItem {
@@ -7,6 +7,8 @@ export interface LookItem {
   readonly label: string;
   /** Texture of the item's picture, already drawn. */
   readonly texture: string;
+  /** Not earned yet (story mode): what earns it. It cannot be chosen. */
+  readonly locked?: string;
 }
 
 export interface LookChoice {
@@ -14,7 +16,7 @@ export interface LookChoice {
   readonly prefix: string;
   readonly title: string;
   readonly items: readonly LookItem[];
-  readonly layout: (typeof LOOK_PICKER)[keyof typeof LOOK_PICKER];
+  readonly layout: (typeof LOOK_PICKER)['table' | 'background' | 'cue'];
   readonly selected: string;
   readonly confirmLabel: string;
   readonly backLabel: string;
@@ -54,7 +56,7 @@ export class LookPicker {
     const { x, y, width, height } = this.area;
     const top = y - height / 2;
     this.panel = new Panel(this.scene, { name: `${choice.prefix}Picker`, area: this.area, title: choice.title });
-    choice.items.forEach((item, i) => {
+    for (const [i, item] of choice.items.entries()) {
       const col = i % c.columns;
       const row = Math.floor(i / c.columns);
       const px = x + (col - (c.columns - 1) / 2) * c.columnSpacing;
@@ -66,14 +68,23 @@ export class LookPicker {
         .rectangle(px, py, hit.width, hit.height + 2 * c.selectedFrame.gap)
         .setStrokeStyle(c.selectedFrame.width, c.selectedFrame.color)
         .setVisible(false);
-      const label = this.scene.add.text(px, py + frame.height / 2 + c.nameGap, item.label, textStyle(TEXT_STYLE.bodySize)).setOrigin(0.5, 0);
+      const label = this.scene.add
+        .text(px, py + frame.height / 2 + c.nameGap, item.locked ? `${item.label}\n${item.locked}` : item.label, { ...textStyle(TEXT_STYLE.bodySize, item.locked ? COLORS.textDim : COLORS.text), align: 'center' })
+        .setOrigin(0.5, 0)
+        .setName(`${choice.prefix}-${item.id}-label`);
+      hit.setData('locked', Boolean(item.locked));
+      this.objects.push(hit, frame, image, label);
+      if (item.locked) {
+        image.setAlpha(LOOK_PICKER.locked.alpha);
+        this.objects.push(padlock(this.scene, px, py));
+        continue;
+      }
       hit.setInteractive({ useHandCursor: true });
       hit.on('pointerup', (pointer: Phaser.Input.Pointer) => {
         if (!pointer.wasCanceled) this.select(item.id);
       });
       this.frames.set(item.id, frame);
-      this.objects.push(hit, frame, image, label);
-    });
+    }
     const buttonY = top + height - c.buttonsFromBottom;
     const buttonWidth = Math.min(BUTTON.rowWidth, width / 2 - PANEL.sideMargin);
     this.objects.push(
@@ -81,7 +92,7 @@ export class LookPicker {
       addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: `${choice.prefix}-confirm`, label: choice.confirmLabel, onTap: () => this.selectedId && choice.onConfirm(this.selectedId) }, { width: buttonWidth }),
     );
     for (const o of this.objects) (o as unknown as Phaser.GameObjects.Components.Depth).setDepth(PANEL.depth);
-    this.select(choice.items.some((item) => item.id === choice.selected) ? choice.selected : choice.items[0]!.id);
+    this.select(this.frames.has(choice.selected) ? choice.selected : choice.items.find((item) => !item.locked)!.id);
   }
 
   private select(id: string): void {
@@ -105,4 +116,14 @@ export class LookPicker {
     this.choice.onBack();
     return true;
   }
+}
+
+/** A padlock over a locked picture. */
+function padlock(scene: Phaser.Scene, x: number, y: number): Phaser.GameObjects.Graphics {
+  const p = LOOK_PICKER.locked.padlock;
+  const g = scene.add.graphics();
+  g.lineStyle(4, p.color, 1).beginPath().arc(x, y - p.height / 2, p.shackle, Math.PI, 0).strokePath();
+  g.fillStyle(p.color, 1).fillRoundedRect(x - p.width / 2, y - p.height / 2, p.width, p.height, 3);
+  g.fillStyle(COLORS.overlay, 1).fillCircle(x, y, 3);
+  return g;
 }

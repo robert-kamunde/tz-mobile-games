@@ -29,6 +29,8 @@ export interface PoolState {
   gameOverShown: boolean;
   /** Seconds before the end panel goes to the menu on its own; null when it will not. */
   autoMenuSeconds: number | null;
+  /** The end panel's buttons showing, left to right. */
+  endButtons: string[];
   trays: { potted: number; slots: number }[];
   /** The catchphrase showing and whose it is. */
   quip: { speaker: number; text: string } | null;
@@ -45,6 +47,9 @@ export interface PoolState {
   howToPlayShown: boolean;
   spin: { side: number; height: number };
   lastShot: { direction: { x: number; y: number }; power: number; side: number; height: number } | null;
+  /** The story stop being played and the person's fouls; null in Quick game. */
+  story: { stop: string; fouls: number } | null;
+  looks: { table: string; cue: string; background: string };
 }
 
 export interface MenuState {

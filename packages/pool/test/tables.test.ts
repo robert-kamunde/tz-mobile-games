@@ -46,12 +46,13 @@ function worstDifference(ball: Rgb, felt: Rgb): number {
 const MIN_DIFFERENCE = 25;
 
 describe('tables', () => {
-  it('has six tables, each with its own look, and Classic is the default', () => {
-    expect(TABLE_IDS).toHaveLength(6);
+  it('has six free tables, each with its own look, the story gold table, and Classic is the default', () => {
+    expect(TABLE_IDS).toHaveLength(7);
     expect(DEFAULT_TABLE).toBe('classic');
     for (const id of TABLE_IDS) expect(TABLE_THEMES[id].id).toBe(id);
-    expect(new Set(TABLE_IDS.map((id) => TABLE_THEMES[id].cloth.centre)).size).toBe(6);
-    expect(new Set(TABLE_IDS.map((id) => TABLE_THEMES[id].rail.kind)).size).toBe(6);
+    expect(new Set(TABLE_IDS.map((id) => TABLE_THEMES[id].cloth.centre)).size).toBe(7);
+    const free = TABLE_IDS.filter((id) => id !== 'gold');
+    expect(new Set(free.map((id) => TABLE_THEMES[id].rail.kind)).size).toBe(6);
   });
 
   it('every new felt keeps every ball easy to see, also for colour-blind players', () => {
@@ -76,6 +77,6 @@ describe('tables', () => {
 
   it('accepts only known table ids', () => {
     expect(isTableId('zanzibar')).toBe(true);
-    for (const bad of ['', 'Classic', 'gold', null, 3, undefined]) expect(isTableId(bad)).toBe(false);
+    for (const bad of ['', 'Classic', 'velvet', null, 3, undefined]) expect(isTableId(bad)).toBe(false);
   });
 });

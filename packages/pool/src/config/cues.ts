@@ -4,7 +4,7 @@
  * stay in `CUE_ART` (config/art.ts).
  */
 
-export const CUE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde'] as const;
+export const CUE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde', 'champion'] as const;
 export type CueId = (typeof CUE_IDS)[number];
 
 export const DEFAULT_CUE: CueId = 'classic';
@@ -74,6 +74,14 @@ export const CUE_STYLES: Readonly<Record<CueId, CueStyle>> = {
     butt: { light: '#3a2c22', dark: '#0e0a07' },
     decor: { kind: 'inlay', color: '#e9dfc6', spacing: 14, wrap: '#16100b' },
     buttCap: '#e9dfc6',
+  },
+  // Fimbo ya Bingwa, story mode's reward at 18 stars: black and gold.
+  champion: {
+    id: 'champion',
+    shaft: { light: '#f3e2b8', dark: '#cfae72' },
+    butt: { light: '#26201a', dark: '#080706' },
+    decor: { kind: 'rings', at: [0.6, 0.64, 0.7, 0.88, 0.92, 0.96], width: 3, light: '#fff2b0', dark: '#b8860b', wrap: '#14100c' },
+    buttCap: '#c9a227',
   },
 };
 

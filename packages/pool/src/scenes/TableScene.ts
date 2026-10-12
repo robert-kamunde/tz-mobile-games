@@ -22,6 +22,24 @@ import { PoolSimulation } from '../physics/simulation';
 import type { Shot, TableGeometry, Vec2 } from '../physics/types';
 import type { TipOffset } from '../controls/spin';
 import { DEFAULT_PICKS } from '../config/characters';
+import { DEFAULT_BACKGROUND } from '../config/backgrounds';
+import { DEFAULT_CUE } from '../config/cues';
+import { DEFAULT_TABLE } from '../config/tables';
+import { firstOtherThan } from '../progress/characters';
+import {
+  characterById,
+  isBackgroundLocked,
+  isCueLocked,
+  isTableLocked,
+  nextStop,
+  recordStop,
+  rewardsFor,
+  starsFor,
+  stopRival,
+  storyStop,
+  titleFor,
+  type StoryGame,
+} from '../progress/story';
 import type { CharacterPicks } from '../progress/characters';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { recordGame } from '../progress/progress';
@@ -43,6 +61,8 @@ import { AimView } from './AimView';
 import { ComputerTurn } from './ComputerTurn';
 import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
+import type { EndSpec } from './EndPanel';
+import type { StoryStart } from './StoryScene';
 import { MatchSetup, type MatchChoice } from './MatchSetup';
 import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
@@ -59,9 +79,10 @@ const BREAK_AIM: Vec2 = { x: 1, y: 0 };
 
 /** Against the computer, the computer is player 2 and the person always breaks the first game. */
 const COMPUTER_PLAYER: PlayerId = 1;
+const PERSON: PlayerId = 0;
 
-/** How the table is opened from the menu: a new game (opponent and characters), or the saved game. */
-export type TableStart = MatchChoice | { readonly resume: true };
+/** How the table is opened: a new game (opponent and characters), the saved game, or a story stop. */
+export type TableStart = MatchChoice | { readonly resume: true } | { readonly story: string };
 
 /**
  * A Blackball match on one table, against another person on the same phone or the computer.
@@ -86,6 +107,10 @@ export class TableScene extends Phaser.Scene {
   private computer!: ComputerTurn;
   private opponent: Opponent = { kind: 'human' };
   private picks: CharacterPicks = DEFAULT_PICKS;
+  /** A story mode game: its stop and the person's fouls so far; null in Quick game. */
+  private story: StoryGame | null = null;
+  /** The table, cue and background this game is drawn with. */
+  private looks: { table: string; cue: string; background: string } = { table: DEFAULT_TABLE, cue: DEFAULT_CUE, background: DEFAULT_BACKGROUND };
   /** Where the table and controls sit for the player's hand (Settings). */
   private sides!: ScreenSides;
   /** Panels over the table (opponent picker, how to play) follow it when it moves for left-handed players. */
@@ -137,21 +162,31 @@ export class TableScene extends Phaser.Scene {
     loadPoolSounds(this);
 
     this.geometry = buildTableGeometry(UK_7FT_TABLE);
+    this.story = null;
     const looks = this.slots.progress.load().data;
+    const journey = this.slots.story.load().data;
+    const saved = 'resume' in start ? this.slots.match.load().data : null;
+    // A story stop is played on its own table and background; locked rewards fall back to the defaults.
+    const stop = storyStop('story' in start ? start.story : (saved?.story?.stop ?? ''));
+    const table = stop?.table ?? (isTableLocked(looks.table, journey) ? DEFAULT_TABLE : looks.table);
+    const background = stop?.background ?? (isBackgroundLocked(looks.background, journey) ? DEFAULT_BACKGROUND : looks.background);
+    const cue = isCueLocked(looks.cue, journey) ? DEFAULT_CUE : looks.cue;
+    this.looks = { table, cue, background };
     const sides = screenSides(looks.hand, this.geometry.length);
     this.overTable = { ...PANEL.overTable, x: PANEL.overTable.x + sides.tableDx };
     this.view = new TableView(this, this.geometry, UK_7FT_TABLE, sides);
-    this.view.drawTable(tableTheme(looks.table), BACKGROUNDS[looks.background]);
+    this.view.drawTable(tableTheme(table), BACKGROUNDS[background]);
     this.sim = this.newSimulation();
     this.view.syncBalls(this.sim.balls);
-    this.aimView = new AimView(this, this.view, CUE_STYLES[looks.cue]);
+    this.aimView = new AimView(this, this.view, CUE_STYLES[cue]);
     this.powerBar = new PowerBar(this, this.t.t('pool.power'), sides);
     this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset, sides);
     this.fineAim = new FineAim(this, sides);
     this.hud = new MatchHud(this, this.t, () => this.askForOpponent(), sides, {
+      next: () => this.playNextStop(),
       // Rudia: the same opponent and characters; the break alternates as for any rematch.
-      rematch: () => this.onMatchChosen({ opponent: this.opponent, picks: this.picks }),
-      menu: () => this.goToMenu(),
+      rematch: () => this.rematch(),
+      leave: () => (this.story ? this.openStoryMap() : this.goToMenu()),
     });
     this.sides = sides;
     this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice));
@@ -194,17 +229,25 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.registerProbes();
-    // Back closes the help or steps back through choosing a game, otherwise does what Menu does (nothing while balls roll).
+    // Back closes the help or steps back through choosing a game, otherwise does what Menu does (nothing while balls roll),
+    // or on a story game's end panel goes to the map.
     onBackButton(this, () => {
       if (this.howToPlay) this.closeHowToPlay();
-      else if (!this.setup.goBack()) this.goToMenu();
+      else if (this.setup.goBack()) return true;
+      // On the end panel Back does what its last button does: the map in story mode.
+      else if (this.story && this.hud.gameOverVisible) this.openStoryMap();
+      else this.goToMenu();
       return true;
     });
     if ('opponent' in start) {
       this.onMatchChosen(start);
       return;
     }
-    const saved = this.slots.match.load().data;
+    if ('story' in start) {
+      if (stop) this.startStory(stop.id);
+      else this.openStoryMap();
+      return;
+    }
     if (saved) {
       this.resumeMatch(saved);
       return;
@@ -231,6 +274,11 @@ export class TableScene extends Phaser.Scene {
    */
   private askForOpponent(): void {
     if (this.sim.isMoving) return;
+    // In story mode New game replays the stop: the opponent is the stop's.
+    if (this.story) {
+      this.rematch();
+      return;
+    }
     this.computer.cancel();
     this.cancelGestures();
     const progress = this.slots.progress.load().data;
@@ -239,6 +287,40 @@ export class TableScene extends Phaser.Scene {
       this.startComputerTurnIfDue();
     });
     this.refresh();
+  }
+
+  /** Rudia: the same game again, with the other player breaking. */
+  private rematch(): void {
+    if (this.story) {
+      this.story = { stop: this.story.stop, fouls: 0 };
+      this.startNewMatch(opponentOf(this.match.breaker));
+      return;
+    }
+    this.onMatchChosen({ opponent: this.opponent, picks: this.picks });
+  }
+
+  /** A story stop: the journey's character against the stop's rival, the person breaking. */
+  private startStory(stopId: string): void {
+    const stop = storyStop(stopId)!;
+    const person = this.slots.story.load().data.character ?? DEFAULT_PICKS[0];
+    this.opponentChosen = true;
+    this.story = { stop: stop.id, fouls: 0 };
+    this.setCast({ kind: 'computer', level: stop.level }, [person, firstOtherThan(person)]);
+    this.startNewMatch(0);
+  }
+
+  /** Endelea: the next stop, on its own table, so the scene starts again. */
+  private playNextStop(): void {
+    const next = this.story ? nextStop(this.story.stop) : undefined;
+    if (!next || this.sim.isMoving) return;
+    this.scene.start(SCENE_KEYS.table, { story: next.id } satisfies TableStart);
+  }
+
+  private openStoryMap(): void {
+    if (this.sim.isMoving) return;
+    this.computer.cancel();
+    this.saveMatch();
+    this.scene.start(SCENE_KEYS.story, {} satisfies StoryStart);
   }
 
   private onMatchChosen({ opponent, picks }: MatchChoice): void {
@@ -275,6 +357,7 @@ export class TableScene extends Phaser.Scene {
 
   /** Puts a saved game back on the table, as it was after its last finished shot. */
   private resumeMatch(saved: SavedMatch): void {
+    this.story = saved.story ?? null;
     this.setCast(saved.opponent, saved.picks);
     this.opponentChosen = true;
     this.computerSeed = Date.now() >>> 0;
@@ -297,7 +380,8 @@ export class TableScene extends Phaser.Scene {
   private setCast(opponent: Opponent, picks: CharacterPicks): void {
     this.opponent = opponent;
     this.picks = picks;
-    this.hud.setCast(opponent, picks);
+    const stop = this.story ? storyStop(this.story.stop) : undefined;
+    this.hud.setCast(opponent, picks, stop ? characterById(stopRival(stop, picks[0])) : undefined);
   }
 
   /** Back to the main menu. The game is saved and Continue brings it back. Ignored while balls roll. */
@@ -318,7 +402,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   private snapshot(): SavedMatch {
-    return { opponent: this.opponent, picks: this.picks, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots };
+    return { opponent: this.opponent, picks: this.picks, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots, ...(this.story ? { story: this.story } : {}) };
   }
 
   /**
@@ -454,10 +538,13 @@ export class TableScene extends Phaser.Scene {
     }
     this.view.syncBalls(this.sim.balls);
 
+    if (this.story && verdict.kind === 'foul' && shooter === PERSON) this.story = { ...this.story, fouls: this.story.fouls + 1 };
     if (verdict.kind === 'game-over') {
       const winner = this.hud.playerName(verdict.winner);
       const loser = this.hud.playerName(opponentOf(verdict.winner));
-      this.hud.showGameOver(this.t.t('over.title', { player: winner }), this.t.t(`over.${verdict.reason}`, { loser }));
+      const title = this.t.t('over.title', { player: winner });
+      const detail = this.t.t(`over.${verdict.reason}`, { loser });
+      this.hud.showGameOver(this.story ? this.finishStop(verdict.winner === PERSON, title, detail) : { title, detail });
       this.hud.setStatus('');
       this.recordResult(verdict.winner);
     } else {
@@ -469,6 +556,28 @@ export class TableScene extends Phaser.Scene {
     this.saveMatch();
     this.refresh();
     this.startComputerTurnIfDue();
+  }
+
+  /**
+   * A story game ended: stars for it, the best kept, and what the end panel says, including a title
+   * or reward earned just now.
+   */
+  private finishStop(won: boolean, title: string, detail: string): EndSpec {
+    const stopId = this.story!.stop;
+    const rivalGroup = this.match.groups[COMPUTER_PLAYER];
+    const rivalLeft = rivalGroup ? countGroups(this.sim.balls)[rivalGroup] : 0;
+    const stars = starsFor(won, this.story!.fouls, rivalLeft);
+    const before = this.slots.story.load().data;
+    const after = recordStop(before, stopId, stars);
+    if (after !== before) this.slots.story.save(after);
+    const notes: string[] = [];
+    const titleNow = titleFor(after);
+    if (titleNow && titleNow !== titleFor(before)) notes.push(this.t.t('story.newTitle', { title: this.t.t(`story.title.${titleNow}`) }));
+    const was = rewardsFor(before);
+    const now = rewardsFor(after);
+    for (const kind of ['table', 'cue', 'background'] as const) if (now[kind] && !was[kind]) notes.push(this.t.t(`story.reward.${kind}`));
+    if (stars > 0 && stars <= (before.stars[stopId] ?? 0)) notes.push(this.t.t('story.bestKept', { stars: before.stars[stopId]! }));
+    return { title, detail, stars, story: true, next: won && nextStop(stopId) !== undefined, ...(notes.length ? { note: notes.join('\n') } : {}) };
   }
 
   /** Counts a finished game in the stats. */
@@ -660,6 +769,7 @@ export class TableScene extends Phaser.Scene {
       status: this.hud.statusText,
       gameOverShown: this.hud.gameOverVisible,
       autoMenuSeconds: this.hud.autoMenuSeconds,
+      endButtons: this.hud.endButtons,
       trays: this.hud.trayState,
       quip: this.hud.quip,
       hand: this.sides.hand,
@@ -674,6 +784,8 @@ export class TableScene extends Phaser.Scene {
       howToPlayShown: this.howToPlay !== null,
       spin: this.spin.tip,
       lastShot: this.lastShot,
+      story: this.story,
+      looks: this.looks,
     }));
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
     // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game

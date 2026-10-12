@@ -5,7 +5,7 @@
  * Shared sizes (rail width, cushion width, pockets) stay in `config/art.ts` and `config/layout.ts`.
  */
 
-export const TABLE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde'] as const;
+export const TABLE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde', 'gold'] as const;
 export type TableId = (typeof TABLE_IDS)[number];
 
 export const DEFAULT_TABLE: TableId = 'classic';
@@ -168,6 +168,23 @@ export const TABLE_THEMES: Readonly<Record<TableId, TableTheme>> = {
     cloth: { centre: '#6d7d78', edge: '#56645f' },
     cushion: '#47534f',
     marker: { kind: 'inlay', color: '#e9dfc6', rim: '#5a4636', radius: 3.5 },
+  },
+  // Dhahabu (gold), story mode's reward for beating Bingwa: ebony with gold rope and studs.
+  gold: {
+    id: 'gold',
+    rail: {
+      kind: 'zanzibar',
+      light: '#2e2620',
+      mid: '#1a1410',
+      dark: '#0a0806',
+      grainColor: '#000000',
+      grainAlpha: 0.2,
+      rope: { color: '#c9a227', width: 2, twist: 6 },
+      stud: { light: '#fff2b0', dark: '#b8860b', radius: 2.8, spacing: 20 },
+    },
+    cloth: { centre: '#3d4fa8', edge: '#2b3a80' },
+    cushion: '#24316b',
+    marker: { kind: 'stud', light: '#fff2b0', dark: '#b8860b', radius: 4.5 },
   },
 };
 

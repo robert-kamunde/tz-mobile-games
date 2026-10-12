@@ -41,7 +41,7 @@ test('the game opens on the menu, with no Continue before a game is played', asy
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   expect(await menuState(page)).toEqual({ continueShown: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw' });
-  for (const name of ['menu-play', 'menu-tables', 'menu-cues', 'menu-stats', 'menu-rules', 'menu-settings', 'menu-title', 'menu-background']) await elementCenter(page, name, MENU_SCENE);
+  for (const name of ['menu-play', 'menu-story', 'menu-tables', 'menu-cues', 'menu-stats', 'menu-rules', 'menu-settings', 'menu-title', 'menu-background']) await elementCenter(page, name, MENU_SCENE);
   expect(await page.evaluate(() => window.__tzg!.elementCenter('Menu', 'menu-continue'))).toBeNull();
 
   // Rules open over the menu and Back closes them.
@@ -143,11 +143,11 @@ test('the chosen language changes every label and is kept after reopening', asyn
   // Settings stays open, now in English.
   expect((await menuState(page)).panel).toBe('settings');
   expect(await highlighted(page, MENU_SCENE, 'language-en')).toBe(true);
-  expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Play');
+  expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Quick game');
 
   await reopen(page);
   expect((await menuState(page)).locale).toBe('en');
-  expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Play');
+  expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Quick game');
   await tap(page, 'menu-play', MENU_SCENE);
   await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);

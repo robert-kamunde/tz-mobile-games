@@ -6,7 +6,7 @@
  * (config/art.ts).
  */
 
-export const BACKGROUND_IDS = ['classic', 'wood', 'kanga', 'sea', 'stars', 'makuti'] as const;
+export const BACKGROUND_IDS = ['classic', 'wood', 'kanga', 'sea', 'stars', 'makuti', 'trophies'] as const;
 export type BackgroundId = (typeof BACKGROUND_IDS)[number];
 
 export const DEFAULT_BACKGROUND: BackgroundId = 'classic';
@@ -14,8 +14,9 @@ export const DEFAULT_BACKGROUND: BackgroundId = 'classic';
 /**
  * What is drawn: plain (the original dark), wooden planks, a kanga with printed borders, the sea at
  * night with dhows, a starry sky with acacia trees, and a woven palm-leaf (makuti) wall.
+ * Story mode adds a wall of gold cups (trophies) for all 24 stars.
  */
-export type BackgroundKind = 'plain' | 'planks' | 'kanga' | 'sea' | 'stars' | 'weave';
+export type BackgroundKind = 'plain' | 'planks' | 'kanga' | 'sea' | 'stars' | 'weave' | 'trophies';
 
 /** Every colour a background uses. */
 export interface BackgroundPalette {
@@ -39,6 +40,7 @@ export const BACKGROUNDS: Readonly<Record<BackgroundId, BackgroundStyle>> = {
   sea: { id: 'sea', kind: 'sea', palette: { base: '#0f2a40', dark: '#07141f', light: '#1a4566', accent: '#8a8a70', accent2: '#2a2018' } },
   stars: { id: 'stars', kind: 'stars', palette: { base: '#1c1638', dark: '#0b0918', light: '#3a2a52', accent: '#9a9a90', accent2: '#060507' } },
   makuti: { id: 'makuti', kind: 'weave', palette: { base: '#4a3a1c', dark: '#2a200e', light: '#5e4a24', accent: '#3a2d14', accent2: '#1c150a' } },
+  trophies: { id: 'trophies', kind: 'trophies', palette: { base: '#2a1418', dark: '#140a0c', light: '#3a1c22', accent: '#8a6a1c', accent2: '#4a3410' } },
 };
 
 export function isBackgroundId(value: unknown): value is BackgroundId {

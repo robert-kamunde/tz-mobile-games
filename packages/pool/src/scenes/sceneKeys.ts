@@ -2,4 +2,5 @@
 export const SCENE_KEYS = {
   menu: 'Menu',
   table: 'Table',
+  story: 'Story',
 } as const;

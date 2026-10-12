@@ -90,15 +90,26 @@ export const HUD = {
   hint: { x: 590, y: 668 },
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
   newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
-  /** Game-over panel over the middle of the table. */
   /**
-   * End-of-game panel: who won and why, then Rudia (a rematch) and Menyu. Menyu counts down and
-   * goes to the menu on its own unless the screen is touched (Robert, 2026-10-12: 10 seconds).
+   * End-of-game panel over the middle of the table (scenes/EndPanel.ts): who won and why, stars in
+   * story mode, then Endelea (story: next stop), Rudia (a rematch) and Menyu (story: Ramani, the map).
+   * The last counts down and leaves on its own unless the screen is touched (Robert, 2026-10-12: 10 s).
    */
   gameOver: {
-    x: 590, y: 330, width: 640, height: 280, alpha: 0.82,
-    titleDy: -84, detailDy: -24, buttonsDy: 74, buttonWidth: 230, buttonGap: 28,
-    autoMenuMs: 10_000, tickMs: 250,
+    x: 590,
+    y: 330,
+    width: 640,
+    height: 320,
+    alpha: 0.86,
+    padTop: 26,
+    lineGap: 12,
+    /** Button row, from the panel's centre; wider buttons when there are only two. */
+    buttonsDy: 108,
+    buttonWidths: { two: 230, three: 186 },
+    buttonGap: 18,
+    star: { radius: 19, inner: 8.5, spacing: 50, lit: 0xf2c94c, unlit: 0x3a4248, outline: 0x101418 },
+    autoMenuMs: 10_000,
+    tickMs: 250,
   },
   /** A second tap on New game within this time confirms it mid-match. */
   confirmMs: 3000,
@@ -172,12 +183,14 @@ const LOOK_PICKER_COMMON = {
 } as const;
 
 export const LOOK_PICKER = {
-  /** Tables at TABLE_ART.previewScale, 3 by 2, below the panel title. */
-  table: { ...LOOK_PICKER_COMMON, columns: 3, columnSpacing: 345, rowSpacing: 235, firstRowFromTop: 178 },
-  /** Backgrounds at BACKGROUND_ART.previewScale, 3 by 2, like the tables. */
-  background: { ...LOOK_PICKER_COMMON, columns: 3, columnSpacing: 345, rowSpacing: 235, firstRowFromTop: 178 },
-  /** Cues at CUE_ART.previewScale, 2 by 3. */
-  cue: { ...LOOK_PICKER_COMMON, columns: 2, columnSpacing: 500, rowSpacing: 130, firstRowFromTop: 150 },
+  /** Tables at TABLE_ART.previewScale, 4 by 2 (seven since story mode's gold table), below the panel title. */
+  table: { ...LOOK_PICKER_COMMON, columns: 4, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Backgrounds at BACKGROUND_ART.previewScale, 4 by 2, like the tables. */
+  background: { ...LOOK_PICKER_COMMON, columns: 4, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
+  /** Cues at CUE_ART.previewScale, 2 by 4. */
+  cue: { ...LOOK_PICKER_COMMON, columns: 2, columnSpacing: 500, rowSpacing: 108, firstRowFromTop: 140 },
+  /** A look story mode has not earned yet: faded, with a padlock and what earns it. */
+  locked: { alpha: 0.35, padlock: { width: 26, height: 20, shackle: 9, color: 0xd0d6d3 } },
 } as const;
 
 /** Main menu. */
@@ -305,4 +318,35 @@ export const TEXT_STYLE = {
   labelSize: '20px',
   /** Longer text in panels (rules, stats). */
   bodySize: '22px',
+} as const;
+
+/**
+ * Story mode's map (scenes/StoryScene.ts): the eight stops on a winding path, the person's face,
+ * title and stars at the top, the three story rewards along the bottom.
+ */
+export const STORY_MAP = {
+  title: { x: DESIGN.width / 2, y: 40 },
+  /** The person: face, name, title and stars, top left. */
+  person: { x: 70, y: 112, faceRadius: 34, textX: 116 },
+  change: { right: DESIGN.width - 24, y: 112 },
+  /** Stop centres, left to right, in two rows the path zigzags between. */
+  stops: [
+    { x: 150, y: 270 }, { x: 410, y: 330 }, { x: 670, y: 270 }, { x: 930, y: 330 },
+    { x: 1130, y: 440 }, { x: 870, y: 500 }, { x: 610, y: 440 }, { x: 350, y: 500 },
+  ],
+  stopRadius: 40,
+  ring: { width: 5, won: 0xf2c94c, open: 0xffffff },
+  lockedAlpha: 0.35,
+  path: { color: 0xc9a227, alpha: 0.6, width: 6, dash: 14, gap: 10 },
+  /** Under each stop: its place, then its stars. */
+  placeGap: 8,
+  starsGap: 34,
+  star: { radius: 9, inner: 4, spacing: 22, lit: 0xf2c94c, unlit: 0x3a4248 },
+  cup: { size: 30, dx: 36, dy: -34 },
+  padlock: { width: 22, height: 18, shackle: 8, color: 0xd0d6d3 },
+  rewards: { y: 628, spacing: 330, iconRadius: 22 },
+  back: { left: 24, y: DESIGN.height - 30 },
+  /** The stop card over the map. */
+  card: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 700, height: 520, alpha: 1 },
+  dim: { color: 0x05070a, alpha: 0.72 },
 } as const;

@@ -12,9 +12,12 @@ export function playerCharacter(id: string): Character | undefined {
   return PLAYER_CHARACTERS.find((c) => c.id === id);
 }
 
-/** Who sits in a seat: the computer's character for its level, otherwise the pick for that seat. */
-export function seatCharacter(seat: PlayerId, opponent: Opponent, picks: CharacterPicks): Character {
-  if (opponent.kind === 'computer' && seat === COMPUTER_SEAT) return COMPUTER_CHARACTERS[opponent.level];
+/**
+ * Who sits in a seat: the computer's character for its level (or `rival`, a story stop's character),
+ * otherwise the pick for that seat.
+ */
+export function seatCharacter(seat: PlayerId, opponent: Opponent, picks: CharacterPicks, rival?: Character): Character {
+  if (opponent.kind === 'computer' && seat === COMPUTER_SEAT) return rival ?? COMPUTER_CHARACTERS[opponent.level];
   return playerCharacter(picks[seat]) ?? playerCharacter(DEFAULT_PICKS[seat])!;
 }
 

@@ -1,7 +1,15 @@
-# Story mode plan (proposal, for Robert to approve)
+# Story mode: Safari ya Bingwa
 
-Status: proposal, 2026-10-12. Nothing is built yet. Robert agreed to the idea and to the rewards
-choice (trophies, titles and story-only items; everything that exists today stays free, no coins).
+Status: built in 0.24.0 (2026-10-12). Robert agreed to the idea and the rewards (trophies, titles and
+story-only items; everything that existed stays free, no coins), then to Claude's picks for the four
+questions at the end: this name, eight stops, these star rules, build it now ("launch can wait").
+
+Differences from the plan below, found while building:
+- Titles show on the map (under your name) and on the end panel when earned, not in the player
+  panel on the table: there is no room beside the name there.
+- Starting a stop replaces a saved Quick game, as starting any new game does.
+- The trophy for a beaten stop is a small gold cup on the stop's face; Bingwa's is the same cup.
+- The rewards are named Dhahabu (table), Bingwa (cue) and Vikombe (background) in the pickers.
 
 ## What changes for the player
 
@@ -82,7 +90,7 @@ You can replay any opened stop to earn more stars.
   and Kiswahili; three screen sizes.
 - The full existing suite still passes.
 
-## Questions for Robert
+## Questions for Robert (answered 2026-10-12: Claude's picks)
 
 1. Name: "Safari ya Bingwa"? (Claude's pick; any name works.)
 2. Eight stops with player characters as some opponents, or only the four computer characters

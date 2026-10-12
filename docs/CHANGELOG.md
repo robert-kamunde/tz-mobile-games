@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.24.0 (unreleased) - Story mode: Safari ya Bingwa
+- Robert (2026-10-12): "lets continue with the story mode, launch can wait". Built to `STORY_MODE.md` with Claude's picks for the open questions: the name **Safari ya Bingwa**, eight stops, three stars per stop.
+- The menu's Play is now two buttons: **Mchezo wa haraka** (Quick game, the game as before) and **Safari ya Bingwa**.
+- **The map:** eight stops on a path, Mtaani to the final against Bingwa, each with its rival's face, place and best stars. A beaten stop gets a small gold cup; a closed stop is faded with a padlock. Your character, title and total stars at the top; the three story rewards and what earns them along the bottom. The first visit asks for the journey's character ("Badilisha mhusika" changes it).
+- **Stop card:** the rival and level, how to earn each star, and Cheza. Each stop plays on its own table and background.
+- **Stars:** 1 for a win, 2 for a win with no foul, 3 for a win with no foul and at least 3 of the rival's balls still on the table. The best result is kept.
+- **End panel in story mode:** the stars earned, any new title or reward, and **Endelea** (next stop), **Rudia** and **Ramani** (map). Untouched, it goes to the map after 10 seconds. The phone's back button there also goes to the map. The panel grows when a note needs two lines.
+- **Rewards**, locked in the pickers with a padlock and what earns them: the **Dhahabu** table (beat Bingwa), the **Bingwa** cue (18 stars) and the **Vikombe** background, a trophy shelf wall (all 24 stars). Titles: Mchezaji wa Mtaa (6 stars), Fundi wa Meza (12), Mkali wa Bongo (18), Bingwa wa Bongo (beat Bingwa). Nothing that existed before is locked.
+- If you play as a stop's rival, a stand-in takes the stop (Sinza: Kichwa for Mjanja; Mwenge: Mwamba for Bonge; Bagamoyo: Malkia for Shangazi; Zanzibar: Shangazi for Malkia).
+- A story game left half-way is saved like any game, with its stop, and Continue brings it back. Starting a stop replaces a saved Quick game, as starting any new game does.
+- The table and background pickers show four pictures per row to fit the new items.
+
 ## 0.23.0 (unreleased) - Rematch and back to the menu after a game
 - Robert (2026-10-12): the end-of-game panel (who won and why) now has two buttons. **Rudia** (Rematch) starts the next game at once with the same opponent and characters; the other player breaks, as with any rematch. **Menyu** goes to the menu.
 - If nobody touches the screen, the panel goes to the menu on its own after 10 seconds (Robert chose 10 on the card), counting down on the button: "Menyu (10)", "Menyu (9)"... Any touch stops the count, so a player who is looking at the table or about to tap is never pulled away.

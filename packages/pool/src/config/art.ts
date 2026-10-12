@@ -24,7 +24,7 @@ export const TABLE_ART = {
   pocket: { inner: '#000000', outer: '#1b1b1b', rim: '#1e120a', rimWidth: 4 },
   baulk: { color: 'rgba(255, 255, 255, 0.32)', width: 1.5 },
   /** Small pictures of each table on the table picker: this fraction of the real size. */
-  previewScale: 0.27,
+  previewScale: 0.22,
 } as const;
 
 /** Backgrounds behind the table (designs and colours per background in config/backgrounds.ts). */
@@ -41,9 +41,11 @@ export const BACKGROUND_ART = {
   sea: { horizonY: 600, moon: { x: 1240, y: 30, radius: 14 }, waveSpacing: 12, dhows: [90, 640, 1180], dhowSize: 34 },
   stars: { count: 260, maxRadius: 1.6, trees: [60, 1225], treeHeight: 64 },
   weave: { strip: 22 },
+  /** Shelves at these heights (in the bands above and below the table and between), cups along them. */
+  trophies: { rows: [62, 360, 700], shelf: 5, spacing: 56, cupHeight: 34, sparkles: 120 },
   seed: 23,
   /** Small pictures on the background picker, with a simple table on them so the choice is clear. */
-  previewScale: 0.24,
+  previewScale: 0.18,
   previewTable: { rail: '#5a3a1e', felt: '#1f7a46' },
 } as const;
 

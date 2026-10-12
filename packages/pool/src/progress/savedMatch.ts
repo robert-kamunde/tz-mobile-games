@@ -5,6 +5,7 @@ import { validateMatchState, type MatchState } from '../rules/blackball';
 import { DEFAULT_PICKS } from '../config/characters';
 import { validatePicks, type CharacterPicks } from './characters';
 import { validateOpponent, type Opponent } from './opponent';
+import { validateStoryGame, type StoryGame } from './story';
 
 /**
  * A game in progress, as saved on the phone (ARCHITECTURE A17). Only what cannot be derived is
@@ -25,6 +26,8 @@ export interface SavedMatch {
   readonly balls: readonly SavedBall[];
   /** Shots played in this game so far (seeds the computer's aim and numbers the log). */
   readonly shots: number;
+  /** A story mode game: its stop and the person's fouls so far. Missing for Quick game and older saves. */
+  readonly story?: StoryGame;
 }
 
 export const SAVED_MATCH_VERSION = 1;
@@ -91,5 +94,7 @@ export function validateSavedMatch(raw: unknown, table: TableConfig): SavedMatch
   }
   // A game saved before characters existed, or with unreadable picks, plays on with the default ones.
   const picks = validatePicks(r.picks) ?? DEFAULT_PICKS;
-  return { opponent, picks, match, balls, shots: r.shots as number };
+  const story = r.story === undefined ? null : validateStoryGame(r.story);
+  if (r.story !== undefined && !story) return null;
+  return { opponent, picks, match, balls, shots: r.shots as number, ...(story ? { story } : {}) };
 }

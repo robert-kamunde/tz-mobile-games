@@ -90,6 +90,9 @@ function drawBackground(ctx: CanvasRenderingContext2D, style: BackgroundStyle): 
     case 'weave':
       drawWeave(ctx, p);
       break;
+    case 'trophies':
+      drawTrophies(ctx, p, random);
+      break;
   }
   // Vignette, then the washes behind the text.
   const v = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, w * 0.7);
@@ -294,4 +297,56 @@ function drawWeave(ctx: CanvasRenderingContext2D, p: BackgroundPalette): void {
   ctx.globalAlpha = 0.5;
   for (let y = s / 2; y < h; y += 2 * s) ctx.fillRect(0, y, w, 1);
   ctx.globalAlpha = 1;
+}
+
+/** Story mode's reward: a dark wine wall with rows of gold cups and a few sparkles. */
+function drawTrophies(ctx: CanvasRenderingContext2D, p: BackgroundPalette, random: Random): void {
+  const c = BACKGROUND_ART.trophies;
+  const w = DESIGN.width;
+  const h = DESIGN.height;
+  const wall = ctx.createLinearGradient(0, 0, 0, h);
+  wall.addColorStop(0, p.dark);
+  wall.addColorStop(0.5, p.light);
+  wall.addColorStop(1, p.dark);
+  ctx.fillStyle = wall;
+  ctx.fillRect(0, 0, w, h);
+  for (const y of c.rows) {
+    // A shelf, then cups standing on it.
+    ctx.fillStyle = p.accent2;
+    ctx.fillRect(0, y, w, c.shelf);
+    for (let x = c.spacing / 2; x < w; x += c.spacing) drawCup(ctx, x, y, c.cupHeight, p.accent, p.accent2);
+  }
+  ctx.fillStyle = p.accent;
+  for (let i = 0; i < c.sparkles; i++) {
+    ctx.globalAlpha = 0.3 + random.next() * 0.5;
+    ctx.beginPath();
+    ctx.arc(random.next() * w, random.next() * h, 0.6 + random.next(), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** A cup standing on `baseY`: base, stem, bowl and two handles, shaded from `light` to `dark`. */
+export function drawCup(ctx: CanvasRenderingContext2D, x: number, baseY: number, height: number, light: string, dark: string): void {
+  const g = ctx.createLinearGradient(x - height / 2, 0, x + height / 2, 0);
+  g.addColorStop(0, dark);
+  g.addColorStop(0.4, light);
+  g.addColorStop(1, dark);
+  ctx.fillStyle = g;
+  ctx.strokeStyle = g;
+  const s = height / 10;
+  ctx.fillRect(x - 3 * s, baseY - s, 6 * s, s);
+  ctx.fillRect(x - s / 2, baseY - 4 * s, s, 3 * s);
+  ctx.beginPath();
+  ctx.moveTo(x - 3.5 * s, baseY - height);
+  ctx.lineTo(x + 3.5 * s, baseY - height);
+  ctx.quadraticCurveTo(x + 3.5 * s, baseY - 4 * s, x, baseY - 4 * s);
+  ctx.quadraticCurveTo(x - 3.5 * s, baseY - 4 * s, x - 3.5 * s, baseY - height);
+  ctx.fill();
+  ctx.lineWidth = s * 0.8;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.arc(x + side * 3.5 * s, baseY - height + 2.2 * s, 1.6 * s, side < 0 ? Math.PI / 2 : -Math.PI / 2, side < 0 ? (3 * Math.PI) / 2 : Math.PI / 2, side > 0);
+    ctx.stroke();
+  }
 }

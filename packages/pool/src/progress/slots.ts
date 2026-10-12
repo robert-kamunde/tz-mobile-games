@@ -3,6 +3,7 @@ import type { TableConfig } from '../config/table';
 import { PROGRESS_VERSION, defaultProgress, validateProgress, type PoolProgress } from './progress';
 import { TIPS_VERSION, defaultTips, validateTips, type PoolTips } from './tips';
 import { SAVED_MATCH_VERSION, validateSavedMatch, type SavedMatch } from './savedMatch';
+import { STORY_VERSION, defaultStory, validateStory, type StoryProgress } from './story';
 
 /** The pool game's save slots, under the game's key prefix (e.g. `pool.match`). */
 export interface PoolSlots {
@@ -10,6 +11,8 @@ export interface PoolSlots {
   readonly match: SaveSlot<SavedMatch | null>;
   readonly progress: SaveSlot<PoolProgress>;
   readonly tips: SaveSlot<PoolTips>;
+  /** Story mode: the journey's character and the stars won (0.24.0). */
+  readonly story: SaveSlot<StoryProgress>;
 }
 
 export function createPoolSlots(gameId: string, store: KeyValueStore, table: TableConfig, logger?: Logger): PoolSlots {
@@ -36,6 +39,14 @@ export function createPoolSlots(gameId: string, store: KeyValueStore, table: Tab
       version: TIPS_VERSION,
       defaults: defaultTips,
       validate: validateTips,
+      store,
+      ...log,
+    }),
+    story: createSaveSlot<StoryProgress>({
+      key: `${gameId}.story`,
+      version: STORY_VERSION,
+      defaults: defaultStory,
+      validate: validateStory,
       store,
       ...log,
     }),
