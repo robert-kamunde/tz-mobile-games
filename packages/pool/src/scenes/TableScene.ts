@@ -148,7 +148,11 @@ export class TableScene extends Phaser.Scene {
     this.powerBar = new PowerBar(this, this.t.t('pool.power'), sides);
     this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset, sides);
     this.fineAim = new FineAim(this, sides);
-    this.hud = new MatchHud(this, this.t, () => this.askForOpponent(), sides);
+    this.hud = new MatchHud(this, this.t, () => this.askForOpponent(), sides, {
+      // Rudia: the same opponent and characters; the break alternates as for any rematch.
+      rematch: () => this.onMatchChosen({ opponent: this.opponent, picks: this.picks }),
+      menu: () => this.goToMenu(),
+    });
     this.sides = sides;
     this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
@@ -655,6 +659,7 @@ export class TableScene extends Phaser.Scene {
       verdict: this.lastResult?.verdict ?? null,
       status: this.hud.statusText,
       gameOverShown: this.hud.gameOverVisible,
+      autoMenuSeconds: this.hud.autoMenuSeconds,
       trays: this.hud.trayState,
       quip: this.hud.quip,
       hand: this.sides.hand,

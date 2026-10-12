@@ -91,7 +91,15 @@ export const HUD = {
   /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
   newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
   /** Game-over panel over the middle of the table. */
-  gameOver: { x: 590, y: 330, width: 640, height: 200, alpha: 0.82 },
+  /**
+   * End-of-game panel: who won and why, then Rudia (a rematch) and Menyu. Menyu counts down and
+   * goes to the menu on its own unless the screen is touched (Robert, 2026-10-12: 10 seconds).
+   */
+  gameOver: {
+    x: 590, y: 330, width: 640, height: 280, alpha: 0.82,
+    titleDy: -84, detailDy: -24, buttonsDy: 74, buttonWidth: 230, buttonGap: 28,
+    autoMenuMs: 10_000, tickMs: 250,
+  },
   /** A second tap on New game within this time confirms it mid-match. */
   confirmMs: 3000,
   /**

@@ -1,7 +1,17 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { boot, dragOnTable, layout, pickOpponent, potTheBlack, pullPower, setUpBlackPot, state, tap, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, SCENE, boot, dragOnTable, layout, menuState, pickOpponent, potTheBlack, pullPower, setUpBlackPot, state, tablePoint, tap, waitForScene, waitUntilSettled } from './poolPage';
+
+const textOf = (page: Page, name: string) => page.evaluate((n) => window.__tzg!.textOf('Table', n), name);
+
+/** Plays a game to a win by player 1 (Fundi). */
+async function winGame(page: Page): Promise<void> {
+  await boot(page);
+  await setUpBlackPot(page);
+  await potTheBlack(page);
+  expect((await waitUntilSettled(page)).gameOverShown).toBe(true);
+}
 
 test('player 1 breaks, and the cue ball stays behind the baulk line while placing it', async ({ page }) => {
   await boot(page);
@@ -114,5 +124,48 @@ test('the first ball potted on an open table fills the potter\'s tray straight a
   expect(after.trays[0]).toEqual({ potted: 1, slots: 7 });
   // The tray shows what is left; the name has no ball count next to it (Robert, 2026-10-11).
   expect(await page.evaluate(() => [window.__tzg!.textOf('Table', 'player-0'), window.__tzg!.textOf('Table', 'player-1')])).toEqual(['Fundi', 'Mwamba']);
+  expect(errors).toEqual([]);
+});
+
+test('after a win, the end panel goes to the menu on its own after 10 seconds', async ({ page }) => {
+  const errors = trackErrors(page);
+  await winGame(page);
+  expect(await textOf(page, 'gameOver-rematch')).toBe('Rudia');
+  const seconds = (await state(page)).autoMenuSeconds!;
+  expect(seconds).toBeGreaterThanOrEqual(8);
+  expect(seconds).toBeLessThanOrEqual(10);
+  expect(await textOf(page, 'gameOver-menu')).toMatch(/^Menyu \((9|10|8)\)$/);
+  await waitForScene(page, MENU_SCENE);
+  // The finished game is not offered again.
+  expect((await menuState(page)).continueShown).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('after a win, a touch stops the countdown, and Menyu still goes to the menu', async ({ page }) => {
+  const errors = trackErrors(page);
+  await winGame(page);
+  const p = await tablePoint(page, UK_7FT_TABLE.playLength / 2, UK_7FT_TABLE.playWidth / 2);
+  await page.mouse.click(p.x, p.y);
+  await expect.poll(async () => (await state(page)).autoMenuSeconds).toBeNull();
+  expect(await textOf(page, 'gameOver-menu')).toBe('Menyu');
+  await page.waitForTimeout(11_000);
+  expect(await page.evaluate(() => window.__tzg!.activeScenes())).toEqual([SCENE]);
+  await tap(page, 'gameOver-menu');
+  await waitForScene(page, MENU_SCENE);
+  expect(errors).toEqual([]);
+});
+
+test('after a win, Rudia starts a rematch with the same players and the other player breaking', async ({ page }) => {
+  const errors = trackErrors(page);
+  await winGame(page);
+  const before = await state(page);
+  await tap(page, 'gameOver-rematch');
+  await expect.poll(async () => (await state(page)).gameOverShown).toBe(false);
+  const fresh = await state(page);
+  expect(fresh.match).toMatchObject({ phase: 'break', breaker: 1, current: 1 });
+  expect(fresh.players).toEqual(before.players);
+  expect(fresh.opponent).toEqual({ kind: 'human' });
+  expect(fresh.autoMenuSeconds).toBeNull();
+  expect(fresh.balls.filter((b) => b.pocketed)).toEqual([]);
   expect(errors).toEqual([]);
 });

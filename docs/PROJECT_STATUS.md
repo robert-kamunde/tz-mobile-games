@@ -15,6 +15,7 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Faces from picture files (done, 0.20.0, 2026-10-12; Robert's request):** each face is a replaceable file in `packages/pool/portraits/`, starting with the drawn faces; `docs/PORTRAIT_PROMPTS.md` has a prompt per character for an image tool. Bingwa's name confirmed.
 - **New faces (done, 0.21.0, 2026-10-12):** Robert's ChatGPT faces for all 12 characters, cut from his sheet. The store screenshots still show the old drawn faces in the small player panels; redo before release.
 - **Your character first (done, 0.22.0, 2026-10-12; Robert's request):** New game asks for your character, then the opponent, then player 2's character.
+- **Rematch and auto-menu (done, 0.23.0, 2026-10-12; Robert's request):** Rudia and Menyu on the end panel; back to the menu after 10 seconds unless the screen is touched.
 - Waiting on Robert: confirming ChatGPT's terms allow the faces in a commercial app, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)

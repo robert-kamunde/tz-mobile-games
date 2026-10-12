@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.23.0 (unreleased) - Rematch and back to the menu after a game
+- Robert (2026-10-12): the end-of-game panel (who won and why) now has two buttons. **Rudia** (Rematch) starts the next game at once with the same opponent and characters; the other player breaks, as with any rematch. **Menyu** goes to the menu.
+- If nobody touches the screen, the panel goes to the menu on its own after 10 seconds (Robert chose 10 on the card), counting down on the button: "Menyu (10)", "Menyu (9)"... Any touch stops the count, so a player who is looking at the table or about to tap is never pulled away.
+
 ## 0.22.0 (unreleased) - Your character first
 - Robert (2026-10-12): Play and New game now start with "Chagua mhusika" (choose your character), then "Unacheza na nani?" (the opponent). Against the computer, tapping a level starts the game. With two players, player 2 then chooses ("Mchezaji 2") and cannot take player 1's character. Back and the phone's back button step back in the same order; Back on your character closes the choice.
 - The first step's button now says "Endelea" (Next) for everyone, since the opponent comes next.

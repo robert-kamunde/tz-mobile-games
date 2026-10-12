@@ -44,6 +44,11 @@ export class MatchHud {
   private readonly overPanel: Phaser.GameObjects.Image;
   private readonly overTitle: Phaser.GameObjects.Text;
   private readonly overDetail: Phaser.GameObjects.Text;
+  private readonly overRematch: Phaser.GameObjects.Text;
+  private readonly overMenu: Phaser.GameObjects.Text;
+  /** When the end panel goes to the menu on its own, or null once a touch stopped the count. */
+  private autoMenuAt: number | null = null;
+  private autoMenuTimer: Phaser.Time.TimerEvent | null = null;
   private readonly quipBox: Phaser.GameObjects.Graphics;
   private readonly quipLabel: Phaser.GameObjects.Text;
   private quipTimer: Phaser.Time.TimerEvent | null = null;
@@ -58,6 +63,7 @@ export class MatchHud {
     private readonly t: Translator,
     onNewGame: () => void,
     private readonly sides: ScreenSides,
+    private readonly onEnd: { readonly rematch: () => void; readonly menu: () => void },
   ) {
     const text = textStyle;
     const p = this.panelEdges;
@@ -96,8 +102,13 @@ export class MatchHud {
 
     const g = { ...HUD.gameOver, x: HUD.gameOver.x + dx };
     this.overPanel = scene.add.image(g.x, g.y, panelTexture(scene, g.width, g.height)).setAlpha(g.alpha).setName('gameOverPanel').setVisible(false);
-    this.overTitle = scene.add.text(g.x, g.y - 30, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
-    this.overDetail = scene.add.text(g.x, g.y + 34, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
+    this.overTitle = scene.add.text(g.x, g.y + g.titleDy, '', text(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5).setName('gameOverTitle').setVisible(false);
+    this.overDetail = scene.add.text(g.x, g.y + g.detailDy, '', text(TEXT_STYLE.playerSize)).setOrigin(0.5).setName('gameOverDetail').setVisible(false);
+    const half = (g.buttonWidth + g.buttonGap) / 2;
+    this.overRematch = addButton(scene, g.x - half, g.y + g.buttonsDy, { name: 'gameOver-rematch', label: t.t('over.rematch'), highlighted: true, onTap: () => this.endChoice(onEnd.rematch) }, { width: g.buttonWidth }).setVisible(false);
+    this.overMenu = addButton(scene, g.x + half, g.y + g.buttonsDy, { name: 'gameOver-menu', label: t.t('pool.menu'), onTap: () => this.endChoice(onEnd.menu) }, { width: g.buttonWidth }).setVisible(false);
+    // Any touch while the count runs stops it: the player is still here.
+    scene.input.on('pointerdown', () => this.stopAutoMenu());
 
     const q = HUD.quip;
     this.quipBox = scene.add.graphics().setName('quipBubble').setVisible(false);
@@ -132,7 +143,7 @@ export class MatchHud {
     this.resetNewGameLabel();
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.quipBox, this.quipLabel, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, this.overPanel, this.overTitle, this.overDetail, this.overRematch, this.overMenu, this.quipBox, this.quipLabel, this.newGame];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
   }
@@ -257,17 +268,59 @@ export class MatchHud {
     this.status.setText(message);
   }
 
+  /** Seconds left before the end panel goes to the menu on its own, or null when it will not (tests). */
+  get autoMenuSeconds(): number | null {
+    return this.autoMenuAt === null ? null : Math.max(0, Math.ceil((this.autoMenuAt - this.scene.time.now) / 1000));
+  }
+
   showGameOver(title: string, detail: string): void {
     this.matchActive = false;
     this.resetNewGameLabel();
-    for (const o of [this.overPanel, this.overTitle, this.overDetail]) o.setVisible(true);
+    for (const o of this.overObjects) o.setVisible(true);
     this.overTitle.setText(title);
     this.overDetail.setText(detail);
+    this.startAutoMenu();
   }
 
   hideGameOver(): void {
     this.matchActive = true;
-    for (const o of [this.overPanel, this.overTitle, this.overDetail]) o.setVisible(false);
+    this.stopAutoMenu();
+    for (const o of this.overObjects) o.setVisible(false);
+  }
+
+  private get overObjects(): (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] {
+    return [this.overPanel, this.overTitle, this.overDetail, this.overRematch, this.overMenu];
+  }
+
+  private endChoice(choice: () => void): void {
+    this.stopAutoMenu();
+    choice();
+  }
+
+  private startAutoMenu(): void {
+    const g = HUD.gameOver;
+    this.stopAutoMenu();
+    this.autoMenuAt = this.scene.time.now + g.autoMenuMs;
+    this.showCount();
+    this.autoMenuTimer = this.scene.time.addEvent({
+      delay: g.tickMs,
+      loop: true,
+      callback: () => {
+        if (this.autoMenuSeconds === 0) this.endChoice(this.onEnd.menu);
+        else this.showCount();
+      },
+    });
+  }
+
+  private stopAutoMenu(): void {
+    this.autoMenuTimer?.remove();
+    this.autoMenuTimer = null;
+    this.autoMenuAt = null;
+    this.overMenu.setText(this.t.t('pool.menu'));
+  }
+
+  private showCount(): void {
+    this.overMenu.setText(this.t.t('over.menuIn', { seconds: this.autoMenuSeconds ?? 0 }));
   }
 
   private resetNewGameLabel(): void {
