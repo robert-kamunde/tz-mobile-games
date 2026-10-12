@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.25.0 (unreleased) - Safari ya Bingwa in three chapters
+- Robert chose "3 chapters now" (2026-10-12). The journey is now 27 stops in three chapters of nine: **Sura 1: Dar es Salaam** (Mtaani to Mzee Kobe's club), **Sura 2: Kaskazini** (Morogoro to Arusha) and **Sura 3: Hadi Visiwani** (Mwanza to Zanzibar and the final against Bingwa). The map shows one chapter at a time, with arrows to the others; it opens on the chapter you are playing.
+- **Ten new rivals** met only in story mode, named by Claude, with faces Robert made with ChatGPT (cut from his 5 x 2 sheet) and their own catchphrases: Kaka Tunda, Bwana Shamba, Mama Pweza, Kahawa, Mzee Simba, Sato, Dada Ndizi, Kapteni, Baridi, Mzee Karafuu.
+- **Twists** on some stops, shown on the stop card: the rival breaks; win within a number of your shots (the shots left show in the status line); one foul and you lose; no spin. Twists start at the third stop.
+- **New tables and backgrounds**, drawn in code: the Kilimanjaro table (coffee wood carved with snowy peaks, dusk felt) and Mlima background (Kilimanjaro at dusk) for finishing chapter 2; the Ziwa table (papyrus-green rails with fishing net and float beads, lake-blue felt) and Ziwa background (Lake Victoria at sunset with its rocks and boats) for finishing chapter 3.
+- **Rewards and titles re-spread** over 81 stars: the Bingwa cue for finishing chapter 1; the Kilimanjaro and Ziwa sets for chapters 2 and 3; the Dhahabu table for beating Bingwa; the Vikombe background at 70 stars. Titles at 15, 35 and 55 stars, and Bingwa wa Bongo for beating Bingwa.
+- A replayed stop always starts the way the stop is set (you break, unless the rival does).
+- Stars already earned are kept: the eight stops of 0.24.0 are all still on the journey.
+- Fix: the stop card's Cheza button was covered by Back when the card had a twist and a best score.
+
 ## 0.24.0 (unreleased) - Story mode: Safari ya Bingwa
 - Robert (2026-10-12): "lets continue with the story mode, launch can wait". Built to `STORY_MODE.md` with Claude's picks for the open questions: the name **Safari ya Bingwa**, eight stops, three stars per stop.
 - The menu's Play is now two buttons: **Mchezo wa haraka** (Quick game, the game as before) and **Safari ya Bingwa**.

@@ -1,8 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
 import { BACKGROUND_IDS } from '../src/config/backgrounds';
+import { STORY } from '../src/config/story';
 import { TABLE_IDS } from '../src/config/tables';
 import { MENU_SCENE, SCENE, menuState, playFromMenu, pullPower, reopen, state, tap, waitForScene, waitUntilSettled } from './poolPage';
+
+/** Story-only rewards stay locked here (story.spec.ts checks them). */
+const isReward = (kind: string, id: string) => STORY.rewards.some((r) => r.kind === kind && r.id === id);
+const FREE_TABLES = TABLE_IDS.filter((id) => !isReward('table', id));
+const FREE_BACKGROUNDS = BACKGROUND_IDS.filter((id) => !isReward('background', id));
 
 /** The table drawn in the table scene (its theme id). */
 const tableOnScreen = (page: Page) => page.evaluate(() => window.__tzg!.dataOf('Table', 'table', 'theme'));
@@ -75,7 +81,7 @@ test('every table draws and plays a break without errors', async ({ page }) => {
   test.slow();
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  for (const id of TABLE_IDS) {
+  for (const id of FREE_TABLES) {
     await chooseTable(page, id);
     await playFromMenu(page, 'two');
     expect(await tableOnScreen(page)).toBe(id);
@@ -131,7 +137,7 @@ test('Mandhari: each background can be chosen and is drawn behind the table; the
   for (let i = 1; i < row.length; i++) expect(row[i]!.left).toBeGreaterThan(row[i - 1]!.right);
   for (const b of row) expect(b!.top).toBe(row[0]!.top);
 
-  for (const id of BACKGROUND_IDS) {
+  for (const id of FREE_BACKGROUNDS) {
     await tap(page, 'menu-backgrounds', MENU_SCENE);
     await expect.poll(async () => (await menuState(page)).panel).toBe('backgrounds');
     await tap(page, `background-${id}`, MENU_SCENE);

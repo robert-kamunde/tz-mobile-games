@@ -27,13 +27,14 @@ import { DEFAULT_CUE } from '../config/cues';
 import { DEFAULT_TABLE } from '../config/tables';
 import { firstOtherThan } from '../progress/characters';
 import {
+  chapterOf,
   characterById,
   isBackgroundLocked,
   isCueLocked,
   isTableLocked,
   nextStop,
   recordStop,
-  rewardsFor,
+  earnedRewards,
   starsFor,
   stopRival,
   storyStop,
@@ -41,6 +42,8 @@ import {
   type StoryGame,
 } from '../progress/story';
 import type { CharacterPicks } from '../progress/characters';
+import type { StoryTwist } from '../config/story';
+import { STORY } from '../config/story';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { recordGame } from '../progress/progress';
 import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
@@ -55,6 +58,7 @@ import {
   type MatchState,
   type PlayerId,
   type ShotResult,
+  type ShotVerdict,
 } from '../rules/blackball';
 import { summarizeShot } from '../rules/shotSummary';
 import { AimView } from './AimView';
@@ -292,8 +296,9 @@ export class TableScene extends Phaser.Scene {
   /** Rudia: the same game again, with the other player breaking. */
   private rematch(): void {
     if (this.story) {
-      this.story = { stop: this.story.stop, fouls: 0 };
-      this.startNewMatch(opponentOf(this.match.breaker));
+      // A stop is always replayed as it is set: the person breaks unless the twist says otherwise.
+      this.story = { stop: this.story.stop, fouls: 0, shots: 0 };
+      this.startNewMatch(this.storyBreaker());
       return;
     }
     this.onMatchChosen({ opponent: this.opponent, picks: this.picks });
@@ -304,9 +309,26 @@ export class TableScene extends Phaser.Scene {
     const stop = storyStop(stopId)!;
     const person = this.slots.story.load().data.character ?? DEFAULT_PICKS[0];
     this.opponentChosen = true;
-    this.story = { stop: stop.id, fouls: 0 };
+    this.story = { stop: stop.id, fouls: 0, shots: 0 };
     this.setCast({ kind: 'computer', level: stop.level }, [person, firstOtherThan(person)]);
-    this.startNewMatch(0);
+    this.startNewMatch(this.storyBreaker());
+  }
+
+  /** The current story stop's twist, if it has one. */
+  private get twist(): StoryTwist | undefined {
+    return this.story ? storyStop(this.story.stop)?.twist : undefined;
+  }
+
+  private storyBreaker(): PlayerId {
+    return this.twist?.kind === 'rivalBreaks' ? COMPUTER_PLAYER : PERSON;
+  }
+
+  /** A story twist the person's last shot broke, as an `over.<reason>` key, or null. */
+  private twistLoss(verdict: ShotVerdict): string | null {
+    const twist = this.twist;
+    if (twist?.kind === 'oneFoul' && verdict.kind === 'foul') return 'one-foul';
+    if (twist?.kind === 'shotLimit' && this.story!.shots >= twist.shots) return 'out-of-shots';
+    return null;
   }
 
   /** Endelea: the next stop, on its own table, so the scene starts again. */
@@ -320,7 +342,8 @@ export class TableScene extends Phaser.Scene {
     if (this.sim.isMoving) return;
     this.computer.cancel();
     this.saveMatch();
-    this.scene.start(SCENE_KEYS.story, {} satisfies StoryStart);
+    const chapter = this.story ? chapterOf(this.story.stop)?.id : undefined;
+    this.scene.start(SCENE_KEYS.story, (chapter ? { chapter } : {}) satisfies StoryStart);
   }
 
   private onMatchChosen({ opponent, picks }: MatchChoice): void {
@@ -486,6 +509,7 @@ export class TableScene extends Phaser.Scene {
     // Spin is chosen for one shot at a time, so a forgotten setting never spoils the next one.
     this.spin.reset();
     this.shots += 1;
+    if (this.story && this.match.current === PERSON) this.story = { ...this.story, shots: this.story.shots + 1 };
     this.stepper.reset();
     this.aimView.hide();
     this.powerBar.setEnabled(false);
@@ -539,14 +563,18 @@ export class TableScene extends Phaser.Scene {
     this.view.syncBalls(this.sim.balls);
 
     if (this.story && verdict.kind === 'foul' && shooter === PERSON) this.story = { ...this.story, fouls: this.story.fouls + 1 };
-    if (verdict.kind === 'game-over') {
-      const winner = this.hud.playerName(verdict.winner);
-      const loser = this.hud.playerName(opponentOf(verdict.winner));
+    // A story twist can end the game on a shot the rules would let go on.
+    const twistLoss = verdict.kind !== 'game-over' && shooter === PERSON ? this.twistLoss(verdict) : null;
+    if (twistLoss) this.match = { ...this.match, phase: 'over', winner: COMPUTER_PLAYER };
+    const ending = verdict.kind === 'game-over' ? { winner: verdict.winner, reason: verdict.reason } : twistLoss ? { winner: COMPUTER_PLAYER, reason: twistLoss } : null;
+    if (ending) {
+      const winner = this.hud.playerName(ending.winner);
+      const loser = this.hud.playerName(opponentOf(ending.winner));
       const title = this.t.t('over.title', { player: winner });
-      const detail = this.t.t(`over.${verdict.reason}`, { loser });
-      this.hud.showGameOver(this.story ? this.finishStop(verdict.winner === PERSON, title, detail) : { title, detail });
+      const detail = this.t.t(`over.${ending.reason}`, { loser });
+      this.hud.showGameOver(this.story ? this.finishStop(ending.winner === PERSON, title, detail) : { title, detail });
       this.hud.setStatus('');
-      this.recordResult(verdict.winner);
+      this.recordResult(ending.winner);
     } else {
       messages.push(this.turnMessage());
       this.hud.setStatus(messages.join('\n'));
@@ -573,9 +601,10 @@ export class TableScene extends Phaser.Scene {
     const notes: string[] = [];
     const titleNow = titleFor(after);
     if (titleNow && titleNow !== titleFor(before)) notes.push(this.t.t('story.newTitle', { title: this.t.t(`story.title.${titleNow}`) }));
-    const was = rewardsFor(before);
-    const now = rewardsFor(after);
-    for (const kind of ['table', 'cue', 'background'] as const) if (now[kind] && !was[kind]) notes.push(this.t.t(`story.reward.${kind}`));
+    const was = earnedRewards(before);
+    for (const r of STORY.rewards) {
+      if (earnedRewards(after).includes(`${r.kind}:${r.id}`) && !was.includes(`${r.kind}:${r.id}`)) notes.push(this.t.t(`story.rewardNote.${r.kind}`, { name: this.t.t(`${r.kind}.${r.id}`) }));
+    }
     if (stars > 0 && stars <= (before.stars[stopId] ?? 0)) notes.push(this.t.t('story.bestKept', { stars: before.stars[stopId]! }));
     return { title, detail, stars, story: true, next: won && nextStop(stopId) !== undefined, ...(notes.length ? { note: notes.join('\n') } : {}) };
   }
@@ -587,6 +616,13 @@ export class TableScene extends Phaser.Scene {
   }
 
   private turnMessage(): string {
+    const message = this.plainTurnMessage();
+    const twist = this.twist;
+    if (twist?.kind !== 'shotLimit' || this.isComputerTurn()) return message;
+    return this.t.t('status.withShotsLeft', { message, shots: Math.max(0, twist.shots - this.story!.shots) });
+  }
+
+  private plainTurnMessage(): string {
     const player = this.hud.playerName(this.match.current);
     if (this.isComputerTurn()) return this.t.t('status.computer', { player });
     if (this.match.phase === 'break') return this.t.t('status.break', { player });
@@ -606,7 +642,7 @@ export class TableScene extends Phaser.Scene {
       this.refresh();
       return;
     }
-    if (this.spinPointerId === null && this.spin.hitTest(pointer.x, pointer.y)) {
+    if (this.spinPointerId === null && this.twist?.kind !== 'noSpin' && this.spin.hitTest(pointer.x, pointer.y)) {
       this.spinPointerId = pointer.id;
       this.spin.setFromPoint(pointer.x, pointer.y);
       this.refresh();
@@ -741,7 +777,7 @@ export class TableScene extends Phaser.Scene {
     const playerIdle = this.isComputerTurn() || this.overlayOpen;
     this.hud.setHint(playerIdle || over ? 'none' : this.match.ballInHand ? 'ballInHand' : 'aim');
     this.powerBar.setEnabled(!over && !playerIdle);
-    this.spin.setEnabled(!over && !playerIdle);
+    this.spin.setEnabled(!over && !playerIdle && this.twist?.kind !== 'noSpin');
     this.fineAim.setEnabled(!over && !playerIdle);
     if (over || this.overlayOpen) {
       this.aimView.hide();

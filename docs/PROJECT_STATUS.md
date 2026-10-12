@@ -17,6 +17,7 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Your character first (done, 0.22.0, 2026-10-12; Robert's request):** New game asks for your character, then the opponent, then player 2's character.
 - **Rematch and auto-menu (done, 0.23.0, 2026-10-12; Robert's request):** Rudia and Menyu on the end panel; back to the menu after 10 seconds unless the screen is touched.
 - **Story mode, Safari ya Bingwa (done, 0.24.0, 2026-10-12; Robert's idea, "launch can wait"):** a map of eight stops, three stars per stop, titles and three story-only rewards (gold table, champion cue, trophy wall). Plan in `STORY_MODE.md`.
+- **Story mode in three chapters (done, 0.25.0, 2026-10-12; Robert chose "3 chapters now"):** 27 stops, four twists, ten new rivals with Robert's ChatGPT faces, Kilimanjaro and lake tables and backgrounds as chapter rewards.
 - Waiting on Robert: confirming ChatGPT's terms allow the faces in a commercial app, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)

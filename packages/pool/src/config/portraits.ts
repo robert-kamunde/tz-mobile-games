@@ -57,5 +57,26 @@ export const PORTRAITS: Readonly<Record<string, PortraitLook>> = {
   // The old master: a white kofia, grey beard and glasses.
   'mzee-kobe': { background: '#5f6b73', skin: '#5e3b24', hair: 'greySides', hairColor: '#c8c8c8', shirt: '#8b6b4a', mouth: 'calm', beard: 'full', glasses: 'clear', headwear: { kind: 'kofia', color: '#f4f1ea', accent: '#c9a227' } },
   // The champion: cornrows, dark glasses and a gold chain.
+  // Story rivals (chapters 2 and 3): drawn faces until Robert's pictures arrive.
+  // The fruit seller: a big smile and a striped shirt.
+  'kaka-tunda': { background: '#5a7d1e', skin: '#7a4a2a', hair: 'short', hairColor: '#141414', shirt: '#2e8b3e', collar: '#ffffff', mouth: 'grin', young: true },
+  // The farm officer: a khaki hat and a short beard.
+  'bwana-shamba': { background: '#9a7b4f', skin: '#6b4126', hair: 'short', hairColor: '#1a1a1a', shirt: '#a08a5a', mouth: 'calm', beard: 'full', headwear: { kind: 'cap', color: '#c2a76a', accent: '#6b5a3a' } },
+  // The seafood cook: a turquoise headwrap.
+  'mama-pweza': { background: '#1d6a8a', skin: '#7a4b2c', hair: 'short', hairColor: '#1a1a1a', shirt: '#f4f1ea', mouth: 'grin', round: true, earrings: '#f2c94c', headwear: { kind: 'wrap', color: '#1fb5b0', accent: '#ffffff' } },
+  // The coffee farmer: a brown jumper.
+  kahawa: { background: '#5b3a29', skin: '#5e3a22', hair: 'short', hairColor: '#141414', shirt: '#7a4a2a', collar: '#e8e0d0', mouth: 'smile' },
+  // The north's champion: grey beard and a red shuka.
+  'mzee-simba': { background: '#6e1f1f', skin: '#5a3620', hair: 'greySides', hairColor: '#9a9a9a', shirt: '#b3262e', collar: '#111111', mouth: 'calm', beard: 'full' },
+  // The fisherman: a faded blue shirt and a grin.
+  sato: { background: '#2b5c7a', skin: '#5a3620', hair: 'short', hairColor: '#141414', shirt: '#5b8db0', mouth: 'grin', beard: 'stubble' },
+  // The banana trader: yellow and green, wooden earrings.
+  'dada-ndizi': { background: '#3f6b2a', skin: '#7d4e2e', hair: 'afro', hairColor: '#141414', shirt: '#f2b705', collar: '#2e8b3e', mouth: 'smile', earrings: '#a0703a', young: true },
+  // The boat captain: a white captain's cap and a white beard.
+  kapteni: { background: '#24324f', skin: '#5e3b24', hair: 'greySides', hairColor: '#d8d8d8', shirt: '#1c2a4a', collar: '#ffffff', mouth: 'grin', beard: 'full', headwear: { kind: 'cap', color: '#f4f1ea', accent: '#111111' } },
+  // The cool one: a woolly hat.
+  baridi: { background: '#4d5d6b', skin: '#6b4126', hair: 'short', hairColor: '#141414', shirt: '#2e5a3a', mouth: 'smirk', young: true, headwear: { kind: 'wrap', color: '#8a8f95', accent: '#6b7076' } },
+  // The clove grower: a white kofia and a white beard.
+  'mzee-karafuu': { background: '#6b3f2a', skin: '#5a3620', hair: 'greySides', hairColor: '#e0e0e0', shirt: '#f4f1ea', mouth: 'smile', beard: 'full', headwear: { kind: 'kofia', color: '#f4f1ea', accent: '#8a6a3a' } },
   bingwa: { background: '#7a5c12', skin: '#583620', hair: 'cornrows', hairColor: '#101010', shirt: '#111111', collar: '#d4af37', mouth: 'smirk', glasses: 'dark', chain: '#f2c94c', beard: 'goatee' },
 };

@@ -1,5 +1,5 @@
-import { COMPUTER_CHARACTERS, type Character } from '../config/characters';
-import { STORY, STORY_STOPS, type StoryStop } from '../config/story';
+import { ALL_CHARACTERS, type Character } from '../config/characters';
+import { STORY, STORY_CHAPTERS, STORY_STOPS, type StoryChapter, type StoryNeed, type StoryReward, type StoryStop } from '../config/story';
 import type { BackgroundId } from '../config/backgrounds';
 import type { CueId } from '../config/cues';
 import type { TableId } from '../config/tables';
@@ -19,10 +19,11 @@ export function defaultStory(): StoryProgress {
   return { character: null, stars: {} };
 }
 
-/** A story game while it is played: the stop, and the person's fouls so far (for the stars). */
+/** A story game while it is played: the stop, the person's fouls (for the stars) and shots (for a shot limit). */
 export interface StoryGame {
   readonly stop: string;
   readonly fouls: number;
+  readonly shots: number;
 }
 
 export function storyStop(id: string): StoryStop | undefined {
@@ -31,7 +32,7 @@ export function storyStop(id: string): StoryStop | undefined {
 
 /** Any character by id, player or computer. */
 export function characterById(id: string): Character | undefined {
-  return playerCharacter(id) ?? Object.values(COMPUTER_CHARACTERS).find((c) => c.id === id);
+  return ALL_CHARACTERS.find((c) => c.id === id);
 }
 
 /** Who the computer plays as at a stop: its rival, or the stand-in if the person took the rival. */
@@ -73,39 +74,48 @@ export function nextStop(stop: string): StoryStop | undefined {
   return index >= 0 ? STORY_STOPS[index + 1] : undefined;
 }
 
-const finalWon = (story: StoryProgress) => (story.stars[STORY_STOPS[STORY_STOPS.length - 1]!.id] ?? 0) > 0;
+/** The chapter a stop belongs to. */
+export function chapterOf(stop: string): StoryChapter | undefined {
+  return STORY_CHAPTERS.find((c) => c.stops.some((s) => s.id === stop));
+}
 
-const earned = (story: StoryProgress, need: { readonly needsFinal: boolean; readonly stars: number }) =>
-  (!need.needsFinal || finalWon(story)) && totalStars(story) >= need.stars;
+/** A chapter is done when its last stop is won. */
+export function isChapterDone(story: StoryProgress, chapter: string): boolean {
+  const stops = STORY_CHAPTERS.find((c) => c.id === chapter)?.stops ?? [];
+  const last = stops[stops.length - 1];
+  return last !== undefined && (story.stars[last.id] ?? 0) > 0;
+}
+
+export function isNeedMet(story: StoryProgress, need: StoryNeed): boolean {
+  return (need.chapter === undefined || isChapterDone(story, need.chapter)) && totalStars(story) >= (need.stars ?? 0);
+}
 
 /** The title earned so far (an id under `story.title.*`), or null before the first one. */
 export function titleFor(story: StoryProgress): string | null {
-  return STORY.titles.find((t) => earned(story, t))?.id ?? null;
+  return STORY.titles.find((t) => isNeedMet(story, t.need))?.id ?? null;
 }
 
-/** Story-only looks, and whether each is earned. */
-export interface StoryRewards {
-  readonly table: boolean;
-  readonly cue: boolean;
-  readonly background: boolean;
+/** The story-only looks earned so far, as `<kind>:<id>`. */
+export function earnedRewards(story: StoryProgress): string[] {
+  return STORY.rewards.filter((r) => isNeedMet(story, r.need)).map((r) => `${r.kind}:${r.id}`);
 }
 
-export function rewardsFor(story: StoryProgress): StoryRewards {
-  const r = STORY.rewards;
-  return { table: earned(story, r.table), cue: earned(story, r.cue), background: earned(story, r.background) };
+/** The reward that keeps a look locked, or undefined when the look is free or already earned. */
+export function lockedBy(kind: StoryReward['kind'], id: string, story: StoryProgress): StoryReward | undefined {
+  return STORY.rewards.find((r) => r.kind === kind && r.id === id && !isNeedMet(story, r.need));
 }
 
 /** Looks that stay locked until story mode earns them. Everything else is free. */
 export function isTableLocked(id: TableId, story: StoryProgress): boolean {
-  return id === STORY.rewards.table.id && !rewardsFor(story).table;
+  return lockedBy('table', id, story) !== undefined;
 }
 
 export function isCueLocked(id: CueId, story: StoryProgress): boolean {
-  return id === STORY.rewards.cue.id && !rewardsFor(story).cue;
+  return lockedBy('cue', id, story) !== undefined;
 }
 
 export function isBackgroundLocked(id: BackgroundId, story: StoryProgress): boolean {
-  return id === STORY.rewards.background.id && !rewardsFor(story).background;
+  return lockedBy('background', id, story) !== undefined;
 }
 
 export function validateStory(raw: unknown): StoryProgress | null {
@@ -130,5 +140,8 @@ export function validateStoryGame(raw: unknown): StoryGame | null {
   const r = raw as Record<string, unknown>;
   if (typeof r.stop !== 'string' || !storyStop(r.stop)) return null;
   if (!Number.isInteger(r.fouls) || (r.fouls as number) < 0) return null;
-  return { stop: r.stop, fouls: r.fouls as number };
+  // `shots` is new with shot limits (0.25.0): a game saved before has counted none.
+  const shots = r.shots === undefined ? 0 : r.shots;
+  if (!Number.isInteger(shots) || (shots as number) < 0) return null;
+  return { stop: r.stop, fouls: r.fouls as number, shots: shots as number };
 }

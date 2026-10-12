@@ -93,6 +93,12 @@ function drawBackground(ctx: CanvasRenderingContext2D, style: BackgroundStyle): 
     case 'trophies':
       drawTrophies(ctx, p, random);
       break;
+    case 'mountain':
+      drawMountain(ctx, p, random);
+      break;
+    case 'lake':
+      drawLake(ctx, p);
+      break;
   }
   // Vignette, then the washes behind the text.
   const v = ctx.createRadialGradient(w / 2, h / 2, h * 0.3, w / 2, h / 2, w * 0.7);
@@ -324,6 +330,131 @@ function drawTrophies(ctx: CanvasRenderingContext2D, p: BackgroundPalette, rando
     ctx.fill();
   }
   ctx.globalAlpha = 1;
+}
+
+/** Kilimanjaro at dusk: a few stars, the mountain with its snow cap, acacia trees at the foot. */
+function drawMountain(ctx: CanvasRenderingContext2D, p: BackgroundPalette, random: Random): void {
+  const c = BACKGROUND_ART.mountain;
+  const w = DESIGN.width;
+  const h = DESIGN.height;
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, p.dark);
+  sky.addColorStop(0.55, p.light);
+  sky.addColorStop(1, p.base);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = p.accent;
+  for (let i = 0; i < c.stars; i++) {
+    ctx.globalAlpha = 0.3 + random.next() * 0.5;
+    ctx.beginPath();
+    ctx.arc(random.next() * w, random.next() * c.base * 0.5, 0.5 + random.next(), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // The mountain: long slopes to a broad flat top.
+  const body = ctx.createLinearGradient(0, c.top, 0, h);
+  body.addColorStop(0, p.dark);
+  body.addColorStop(1, p.accent2);
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-40, c.base);
+  ctx.lineTo(c.topLeft, c.top);
+  ctx.lineTo(c.topRight, c.top + 6);
+  // The same slope down the right side, mostly off the screen.
+  const rightFoot = c.topRight + c.topLeft + 40;
+  ctx.lineTo(rightFoot, c.base);
+  ctx.lineTo(rightFoot, h);
+  ctx.lineTo(-40, h);
+  ctx.closePath();
+  ctx.fill();
+  // Snow on the top, with a ragged lower edge.
+  const slope = (c.base - c.top) / c.topLeft;
+  ctx.fillStyle = p.accent;
+  ctx.beginPath();
+  ctx.moveTo(c.topLeft - (c.snowLine - c.top) / slope, c.snowLine);
+  ctx.lineTo(c.topLeft, c.top);
+  ctx.lineTo(c.topRight, c.top + 6);
+  ctx.lineTo(c.topRight + (c.snowLine - c.top) / slope, c.snowLine);
+  for (let x = c.topRight + (c.snowLine - c.top) / slope, i = 0; x > c.topLeft - (c.snowLine - c.top) / slope; x -= 18, i++) {
+    ctx.lineTo(x, c.snowLine - (i % 2 === 0 ? 14 : 0) - random.next() * 8);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = p.accent2;
+  ctx.fillRect(0, h - 10, w, 10);
+  const t = c.treeHeight;
+  for (const x of c.trees) {
+    ctx.fillRect(x - 2, h - t, 4, t);
+    ctx.beginPath();
+    ctx.ellipse(x, h - t, t * 0.6, t * 0.13, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/** Lake Victoria at sunset: the sun on the horizon, shimmering water, stacked rocks and fishing boats. */
+function drawLake(ctx: CanvasRenderingContext2D, p: BackgroundPalette): void {
+  const c = BACKGROUND_ART.lake;
+  const w = DESIGN.width;
+  const h = DESIGN.height;
+  const sky = ctx.createLinearGradient(0, 0, 0, c.horizonY);
+  sky.addColorStop(0, p.dark);
+  sky.addColorStop(1, p.light);
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, c.horizonY);
+  const water = ctx.createLinearGradient(0, c.horizonY, 0, h);
+  water.addColorStop(0, p.light);
+  water.addColorStop(0.25, p.base);
+  water.addColorStop(1, p.dark);
+  ctx.fillStyle = water;
+  ctx.fillRect(0, c.horizonY, w, h - c.horizonY);
+  // The setting sun, half under the horizon, and its path on the water.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, c.horizonY);
+  ctx.clip();
+  ctx.fillStyle = p.accent;
+  ctx.beginPath();
+  ctx.arc(c.sun.x, c.horizonY, c.sun.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = p.accent;
+  ctx.lineWidth = 2;
+  for (let y = c.horizonY + c.shimmer, i = 0; y < h; y += c.shimmer, i++) {
+    const half = c.sun.radius * (1.2 - (i % 3) * 0.3);
+    ctx.globalAlpha = Math.max(0.1, 0.6 - (y - c.horizonY) / h);
+    ctx.beginPath();
+    ctx.moveTo(c.sun.x - half, y);
+    ctx.lineTo(c.sun.x + half, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // Stacked rocks in the side columns.
+  ctx.fillStyle = p.accent2;
+  for (const [x, y] of c.rocks as readonly (readonly [number, number])[]) {
+    ctx.beginPath();
+    ctx.ellipse(x, y + 60, 70, 34, 0, 0, Math.PI * 2);
+    ctx.ellipse(x + 10, y + 10, 44, 28, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(x - 4, y - 30, 26, 18, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Fishing boats with a lantern each, in the band below the table.
+  const s = c.boatSize;
+  for (const x of c.boats) {
+    const y = h - s * 0.6;
+    ctx.fillStyle = p.accent2;
+    ctx.beginPath();
+    ctx.moveTo(x - s, y);
+    ctx.lineTo(x + s, y);
+    ctx.lineTo(x + s * 0.7, y + s * 0.35);
+    ctx.lineTo(x - s * 0.7, y + s * 0.35);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillRect(x - 1, y - s * 0.9, 2, s * 0.9);
+    ctx.fillStyle = p.accent;
+    ctx.beginPath();
+    ctx.arc(x, y - s * 0.9, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 /** A cup standing on `baseY`: base, stem, bowl and two handles, shaded from `light` to `dark`. */

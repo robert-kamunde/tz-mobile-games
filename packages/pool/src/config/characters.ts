@@ -38,6 +38,26 @@ export const COMPUTER_CHARACTERS: Readonly<Record<AiLevel, Character>> = {
   impossible: { id: 'bingwa', name: 'Bingwa', gender: 'male' },
 };
 
+/**
+ * Rivals met only in Safari ya Bingwa's chapters 2 and 3 (Robert chose three chapters, 2026-10-12):
+ * people from other parts of Tanzania, named by Claude. The computer plays as them at the stop's level.
+ */
+export const STORY_CHARACTERS: readonly Character[] = [
+  { id: 'kaka-tunda', name: 'Kaka Tunda', gender: 'male' },
+  { id: 'bwana-shamba', name: 'Bwana Shamba', gender: 'male' },
+  { id: 'mama-pweza', name: 'Mama Pweza', gender: 'female' },
+  { id: 'kahawa', name: 'Kahawa', gender: 'male' },
+  { id: 'mzee-simba', name: 'Mzee Simba', gender: 'male' },
+  { id: 'sato', name: 'Sato', gender: 'male' },
+  { id: 'dada-ndizi', name: 'Dada Ndizi', gender: 'female' },
+  { id: 'kapteni', name: 'Kapteni', gender: 'male' },
+  { id: 'baridi', name: 'Baridi', gender: 'male' },
+  { id: 'mzee-karafuu', name: 'Mzee Karafuu', gender: 'male' },
+];
+
+/** Every character, for faces and catchphrases. */
+export const ALL_CHARACTERS: readonly Character[] = [...PLAYER_CHARACTERS, ...Object.values(COMPUTER_CHARACTERS), ...STORY_CHARACTERS];
+
 /** Player 1 and player 2 before anyone has chosen. */
 export const DEFAULT_PICKS: readonly [string, string] = ['fundi', 'mwamba'];
 

@@ -84,6 +84,56 @@ export const QUIP_LINES: Readonly<Record<string, CharacterLines>> = {
     foul: [['Asante kwa zawadi!', 'Thanks for the gift!']],
     win: [['Bingwa ni bingwa!', 'A champion is a champion!']],
   },
+  'kaka-tunda': {
+    pot: [['Tamu kama embe!', 'Sweet as a mango!'], ['Matunda ya kazi!', 'The fruit of hard work!']],
+    foul: [['Umeiva mapema, eeh?', 'Ripe too soon, eh?']],
+    win: [['Soko limefungwa!', 'Market closed!']],
+  },
+  'bwana-shamba': {
+    pot: [['Mavuno mazuri!', 'A good harvest!'], ['Panda, vuna!', 'Plant it, reap it!']],
+    foul: [['Shamba lako lina magugu.', 'Your field has weeds.']],
+    win: [['Msimu ni wangu!', 'The season is mine!']],
+  },
+  'mama-pweza': {
+    pot: [['Pweza amekamatwa!', 'Octopus caught!'], ['Moto kama mkaa!', 'Hot as charcoal!']],
+    foul: [['Umeteleza kama pweza!', 'Slippery as an octopus!']],
+    win: [['Chakula kiko tayari!', 'Dinner is served!']],
+  },
+  kahawa: {
+    pot: [['Kali kama kahawa!', 'Strong as coffee!'], ['Taratibu, mlimani.', 'Steady, on the mountain.']],
+    foul: [['Umepoa kama kahawa ya jana.', "Cold as yesterday's coffee."]],
+    win: [['Kikombe ni changu!', 'The cup is mine!']],
+  },
+  'mzee-simba': {
+    pot: [['Simba ananguruma!', 'The lion roars!'], ['Mfalme wa kaskazini.', 'King of the north.']],
+    foul: [['Umemwamsha simba.', 'You woke the lion.']],
+    win: [['Simba hashindwi nyumbani!', 'A lion never loses at home!']],
+  },
+  sato: {
+    pot: [['Samaki ndani ya nyavu!', 'Fish in the net!'], ['Ziwa ni langu.', 'The lake is mine.']],
+    foul: [['Ndoano tupu!', 'Empty hook!']],
+    win: [['Mtego umefanikiwa!', 'A full catch!']],
+  },
+  'dada-ndizi': {
+    pot: [['Ndizi moja, mbili!', 'One banana, two!'], ['Tamu sana!', 'So sweet!']],
+    foul: [['Umeteleza kwenye ganda!', 'Slipped on a peel!']],
+    win: [['Mkungu mzima!', 'The whole bunch!']],
+  },
+  kapteni: {
+    pot: [['Bandari salama!', 'Safe harbour!'], ['Mbele kwa kasi!', 'Full speed ahead!']],
+    foul: [['Meli yako inazama!', 'Your ship is sinking!']],
+    win: [['Nahodha anashinda!', 'The captain wins!']],
+  },
+  baridi: {
+    pot: [['Poa tu.', 'Just cool.'], ['Baridi kama barafu.', 'Cold as ice.']],
+    foul: [['Umeganda, kaka?', 'Frozen up, bro?']],
+    win: [['Mbeya baridi, mimi moto!', 'Cold Mbeya, hot me!']],
+  },
+  'mzee-karafuu': {
+    pot: [['Harufu ya ushindi!', 'The smell of victory!'], ['Polepole, mwanangu.', 'Gently, my child.']],
+    foul: [['Subira huvuta heri.', 'Patience brings good things.']],
+    win: [['Karafuu ya Pemba!', 'Pemba cloves!']],
+  },
   'mzee-kobe': {
     pot: [['Polepole ndio mwendo.', 'Slowly does it.'], ['Uzoefu, kijana.', 'Experience, young one.']],
     foul: [['Haraka haraka haina baraka.', 'Haste brings no blessing.']],

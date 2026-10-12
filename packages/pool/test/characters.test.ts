@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { AI_LEVEL_IDS } from '../src/config/ai';
-import { COMPUTER_CHARACTERS, DEFAULT_PICKS, MAX_NAME_LENGTH, PLAYER_CHARACTERS } from '../src/config/characters';
+import { ALL_CHARACTERS, DEFAULT_PICKS, MAX_NAME_LENGTH, PLAYER_CHARACTERS, STORY_CHARACTERS } from '../src/config/characters';
 import { seatCharacter, validatePicks, withDistinctPicks } from '../src/progress/characters';
 import { PORTRAITS } from '../src/config/portraits';
 
-const all = [...PLAYER_CHARACTERS, ...AI_LEVEL_IDS.map((level) => COMPUTER_CHARACTERS[level])];
+const all = ALL_CHARACTERS;
 
 describe('characters', () => {
   it('has 8 player characters, 6 men and 2 women (Robert: 75% / 25%)', () => {
     expect(PLAYER_CHARACTERS).toHaveLength(8);
     expect(PLAYER_CHARACTERS.filter((c) => c.gender === 'male')).toHaveLength(6);
     expect(PLAYER_CHARACTERS.filter((c) => c.gender === 'female')).toHaveLength(2);
+  });
+
+  it('has 10 story rivals, about three men to each woman', () => {
+    expect(STORY_CHARACTERS).toHaveLength(10);
+    expect(STORY_CHARACTERS.filter((c) => c.gender === 'female')).toHaveLength(2);
   });
 
   it('gives every character a unique id and name that fits the player panel', () => {

@@ -5,7 +5,7 @@
  * Shared sizes (rail width, cushion width, pockets) stay in `config/art.ts` and `config/layout.ts`.
  */
 
-export const TABLE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde', 'gold'] as const;
+export const TABLE_IDS = ['classic', 'zanzibar', 'kitenge', 'maasai', 'tingatinga', 'makonde', 'gold', 'kilimanjaro', 'ziwa'] as const;
 export type TableId = (typeof TABLE_IDS)[number];
 
 export const DEFAULT_TABLE: TableId = 'classic';
@@ -185,6 +185,39 @@ export const TABLE_THEMES: Readonly<Record<TableId, TableTheme>> = {
     cloth: { centre: '#3d4fa8', edge: '#2b3a80' },
     cushion: '#24316b',
     marker: { kind: 'stud', light: '#fff2b0', dark: '#b8860b', radius: 4.5 },
+  },
+  // Kilimanjaro, story chapter 2's reward: coffee-wood rails carved with snowy peaks, dusk felt.
+  kilimanjaro: {
+    id: 'kilimanjaro',
+    rail: {
+      kind: 'makonde',
+      light: '#6b4a30',
+      mid: '#4a3020',
+      dark: '#2a1a10',
+      grainColor: '#140c06',
+      grainAlpha: 0.16,
+      groove: { light: 'rgba(240, 240, 248, 0.7)', dark: 'rgba(0, 0, 0, 0.55)', width: 1.5, step: 12 },
+    },
+    cloth: { centre: '#4e4a8c', edge: '#383569' },
+    cushion: '#2f2c5a',
+    marker: { kind: 'inlay', color: '#f4f4fa', rim: '#3a2618', radius: 3.5 },
+  },
+  // Ziwa (the lake), story chapter 3's reward: papyrus-green rails crossed by fishing net, with float beads; lake-blue felt.
+  ziwa: {
+    id: 'ziwa',
+    rail: {
+      kind: 'shuka',
+      base: '#3a5426',
+      stripes: [
+        { color: '#e8f0f4', offset: 0, width: 1.5, alpha: 0.55 },
+        { color: '#22331a', offset: 8, width: 3, alpha: 0.7 },
+      ],
+      repeat: 16,
+      beads: { colors: ['#f2b705', '#ffffff', '#e8571e'], radius: 1.7, spacing: 6 },
+    },
+    cloth: { centre: '#2f6f8f', edge: '#21526b' },
+    cushion: '#1d4a5e',
+    marker: { kind: 'bead', colors: ['#f2b705', '#ffffff', '#e8571e'], radius: 4.5 },
   },
 };
 

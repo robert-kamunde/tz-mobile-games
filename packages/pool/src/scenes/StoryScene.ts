@@ -3,10 +3,11 @@ import type { Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { DEFAULT_PICKS } from '../config/characters';
 import { COLORS, PANEL, STORY_MAP, TEXT_STYLE } from '../config/layout';
-import { STORY, STORY_STOPS, type StoryStop } from '../config/story';
+import { STORY, STORY_CHAPTERS, STORY_STOPS, type StoryStop } from '../config/story';
 import { playerCharacter } from '../progress/characters';
 import type { PoolSlots } from '../progress/slots';
-import { MAX_STARS, characterById, isStopOpen, rewardsFor, stopRival, titleFor, totalStars, type StoryProgress } from '../progress/story';
+import { MAX_STARS, chapterOf, characterById, earnedRewards, isNeedMet, isStopOpen, stopRival, titleFor, totalStars, type StoryProgress } from '../progress/story';
+import { needText, twistText } from './storyText';
 import { drawCup } from './art/backgroundArt';
 import { canvasTexture } from './art/canvasArt';
 import { menuBackgroundTexture } from './art/menuArt';
@@ -19,8 +20,10 @@ import { SCENE_KEYS } from './sceneKeys';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 
-/** The map opens the same way every time. */
-export type StoryStart = Record<string, never>;
+/** The map opens on a chapter: the one asked for, else the one with the furthest open stop. */
+export interface StoryStart {
+  readonly chapter?: string;
+}
 
 const M = STORY_MAP;
 const CUP_KEY = 'story-cup';
@@ -40,6 +43,8 @@ export class StoryScene extends Phaser.Scene {
   private card: { stop: string; panel: Panel } | null = null;
   private picker!: CharacterPicker;
   private choosing = false;
+  /** Index of the chapter shown. */
+  private chapter = 0;
 
   constructor() {
     super(StoryScene.KEY);
@@ -49,11 +54,14 @@ export class StoryScene extends Phaser.Scene {
     loadPortraitFiles(this);
   }
 
-  create(): void {
+  create(data: StoryStart = {}): void {
     this.t = getServices(this).translator;
     this.slots = getPoolSlots(this);
     this.card = null;
     this.choosing = false;
+    const asked = STORY_CHAPTERS.findIndex((c) => c.id === data.chapter);
+    const furthest = [...STORY_STOPS].reverse().find((s) => isStopOpen(this.journey, s.id));
+    this.chapter = asked >= 0 ? asked : Math.max(0, STORY_CHAPTERS.findIndex((c) => c.id === chapterOf(furthest?.id ?? '')?.id));
     this.picker = new CharacterPicker(this, PANEL.overMenu);
     this.drawMap();
 
@@ -73,8 +81,9 @@ export class StoryScene extends Phaser.Scene {
         stars: story.stars,
         total: totalStars(story),
         title: titleFor(story),
-        rewards: rewardsFor(story),
+        rewards: earnedRewards(story),
         open: STORY_STOPS.filter((s) => isStopOpen(story, s.id)).map((s) => s.id),
+        chapter: STORY_CHAPTERS[this.chapter]!.id,
         card: this.card?.stop ?? null,
         choosing: this.choosing,
         selectedCharacter: this.picker.selected,
@@ -107,16 +116,31 @@ export class StoryScene extends Phaser.Scene {
       .setName('story-personText');
     addButton(this, M.change.right, M.change.y, { name: 'story-change', label: t.t('story.change'), onTap: () => this.chooseCharacter(false) }, {}).setOrigin(1, 0.5);
 
-    this.drawPath();
+    this.drawChapterNav();
+    const stops = STORY_CHAPTERS[this.chapter]!.stops;
+    this.drawPath(stops.length);
     const cup = canvasTexture(this, CUP_KEY, M.cup.size, M.cup.size, (ctx, w, h) => drawCup(ctx, w / 2, h, h * 0.95, '#ffe58a', '#9a6f1c'));
-    STORY_STOPS.forEach((stop, i) => this.drawStop(stop, M.stops[i]!, story, cup));
+    stops.forEach((stop, i) => this.drawStop(stop, M.stops[i]!, story, cup));
     this.drawRewards(story);
     addButton(this, M.back.left, M.back.y, { name: 'story-back', label: t.t('ui.back'), onTap: () => this.openMenu() }).setOrigin(0, 0.5);
   }
 
-  private drawPath(): void {
+  /** The chapter's name between arrows to the chapters before and after it. */
+  private drawChapterNav(): void {
+    const n = M.chapterNav;
+    this.add.text(n.x, n.y, this.t.t(`story.chapter.${STORY_CHAPTERS[this.chapter]!.id}`), textStyle(TEXT_STYLE.bodySize)).setOrigin(0.5).setName('story-chapter');
+    if (this.chapter > 0) addButton(this, n.x - n.arrowDx, n.y, { name: 'story-prevChapter', label: '‹', onTap: () => this.showChapter(this.chapter - 1) }, { width: n.arrowWidth });
+    if (this.chapter < STORY_CHAPTERS.length - 1) addButton(this, n.x + n.arrowDx, n.y, { name: 'story-nextChapter', label: '›', onTap: () => this.showChapter(this.chapter + 1) }, { width: n.arrowWidth });
+  }
+
+  private showChapter(index: number): void {
+    if (this.card || this.choosing) return;
+    this.scene.restart({ chapter: STORY_CHAPTERS[index]!.id } satisfies StoryStart);
+  }
+
+  private drawPath(count: number): void {
     const g = this.add.graphics().lineStyle(M.path.width, M.path.color, M.path.alpha);
-    for (let i = 1; i < M.stops.length; i++) {
+    for (let i = 1; i < count; i++) {
       const a = M.stops[i - 1]!;
       const b = M.stops[i]!;
       const length = Math.hypot(b.x - a.x, b.y - a.y);
@@ -164,18 +188,18 @@ export class StoryScene extends Phaser.Scene {
     g.fillStyle(COLORS.overlay, 1).fillCircle(x, y, 3);
   }
 
-  /** The three story rewards along the bottom, earned or with what earns them. */
+  /** This chapter's rewards and the star rewards along the bottom, earned or with what earns them. */
   private drawRewards(story: StoryProgress): void {
     const t = this.t;
-    const earned = rewardsFor(story);
-    (['table', 'cue', 'background'] as const).forEach((kind, i) => {
-      const x = M.title.x + (i - 1) * M.rewards.spacing;
-      const r = STORY.rewards[kind];
-      const how = r.needsFinal ? t.t('story.needsFinal') : t.t('story.needsStars', { stars: r.stars });
+    const chapter = STORY_CHAPTERS[this.chapter]!.id;
+    const shown = STORY.rewards.filter((r) => r.need.chapter === chapter || r.need.chapter === undefined);
+    shown.forEach((r, i) => {
+      const x = M.title.x + (i - (shown.length - 1) / 2) * M.rewards.spacing;
+      const earned = isNeedMet(story, r.need);
       this.add
-        .text(x, M.rewards.y, `${t.t(`story.rewardName.${kind}`)}\n${earned[kind] ? t.t('story.earned') : how}`, { ...textStyle(TEXT_STYLE.bodySize, earned[kind] ? COLORS.accent : COLORS.textDim), align: 'center' })
+        .text(x, M.rewards.y, `${t.t(`menu.${r.kind}s`)}: ${t.t(`${r.kind}.${r.id}`)}\n${earned ? t.t('story.earned') : needText(t, r.need)}`, { ...textStyle(TEXT_STYLE.bodySize, earned ? COLORS.accent : COLORS.textDim), align: 'center' })
         .setOrigin(0.5)
-        .setName(`story-reward-${kind}`);
+        .setName(`story-reward-${r.kind}-${r.id}`);
     });
   }
 
@@ -186,11 +210,12 @@ export class StoryScene extends Phaser.Scene {
     const best = story.stars[stop.id] ?? 0;
     const body = [
       t.t('story.rival', { name: rival.name, level: t.t(`level.${stop.level}`) }),
+      ...(stop.twist ? [twistText(t, stop.twist)] : []),
       '',
       t.t('story.star1'),
       t.t('story.star2'),
       t.t('story.star3', { balls: STORY.cleanWinBallsLeft }),
-      ...(best > 0 ? ['', t.t('story.best', { stars: best })] : []),
+      ...(best > 0 ? [t.t('story.best', { stars: best })] : []),
     ].join('\n');
     const panel = new Panel(this, {
       name: 'stopCard',

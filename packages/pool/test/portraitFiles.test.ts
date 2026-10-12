@@ -1,13 +1,12 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { AI_LEVEL_IDS } from '../src/config/ai';
 import { PORTRAIT_FILES } from '../src/config/art';
-import { COMPUTER_CHARACTERS, PLAYER_CHARACTERS } from '../src/config/characters';
+import { ALL_CHARACTERS } from '../src/config/characters';
 import { PORTRAIT_FILE_URLS } from '../src/scenes/art/portraitFiles';
 
 const dir = path.join(__dirname, '../portraits');
-const ids = [...PLAYER_CHARACTERS, ...AI_LEVEL_IDS.map((level) => COMPUTER_CHARACTERS[level])].map((c) => c.id).sort();
+const ids = ALL_CHARACTERS.map((c) => c.id).sort();
 const pictures = readdirSync(dir).filter((name) => /\.(png|jpe?g)$/i.test(name));
 
 /** Width and height from a PNG or JPEG header. */

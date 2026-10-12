@@ -43,6 +43,10 @@ export const BACKGROUND_ART = {
   weave: { strip: 22 },
   /** Shelves at these heights (in the bands above and below the table and between), cups along them. */
   trophies: { rows: [62, 360, 700], shelf: 5, spacing: 56, cupHeight: 34, sparkles: 120 },
+  /** Kibo's flat top stands in the right-hand column, clear of the status line; its long slope runs down the left. */
+  mountain: { stars: 90, base: 470, top: 22, topLeft: 1060, topRight: 1250, snowLine: 62, trees: [70, 1210], treeHeight: 56 },
+  /** The horizon sits just under the top band; the sun sets in the right-hand column. */
+  lake: { horizonY: 64, sun: { x: 1200, radius: 30 }, shimmer: 9, rocks: [[110, 600], [1180, 560]], boats: [200, 520, 900, 1150], boatSize: 26 },
   seed: 23,
   /** Small pictures on the background picker, with a simple table on them so the choice is clear. */
   previewScale: 0.18,

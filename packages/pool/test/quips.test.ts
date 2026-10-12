@@ -1,12 +1,12 @@
 import { createRandom, findMissingKeys, type Random } from '@tzg/core';
 import { describe, expect, it } from 'vitest';
-import { COMPUTER_CHARACTERS, PLAYER_CHARACTERS } from '../src/config/characters';
+import { ALL_CHARACTERS } from '../src/config/characters';
 import { QUIPS, QUIP_LINES, QUIP_MOMENTS, quipKey } from '../src/config/quips';
 import { QuipChooser, quipMoment } from '../src/rules/quips';
 import type { ShotVerdict } from '../src/rules/blackball';
 import { poolStrings } from '../src/strings';
 
-const ALL_CHARACTERS = [...PLAYER_CHARACTERS, ...Object.values(COMPUTER_CHARACTERS)];
+
 const POT: ShotVerdict = { kind: 'continue' };
 const FOUL: ShotVerdict = { kind: 'foul', reason: 'no-contact' };
 const characterOf = (seat: number) => (seat === 0 ? 'fundi' : 'mzee-kobe');

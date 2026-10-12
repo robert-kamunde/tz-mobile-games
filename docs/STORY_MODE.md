@@ -1,5 +1,24 @@
 # Story mode: Safari ya Bingwa
 
+## Three chapters (0.25.0)
+
+Robert asked whether the journey could be 100 towns; Claude suggested chapters, and Robert chose
+three chapters now (2026-10-12). This section replaces the eight-stop table below where they differ.
+
+| Chapter | Stops (rival, level, twist) |
+|---|---|
+| Sura 1: Dar es Salaam | Mtaani (Dogo Mbishi, easy), Kariakoo (Mama Ntilie, medium), Manzese (Bishoo, medium, rival breaks), Sinza (Mjanja, medium), Kigamboni (Mwamba, medium, no spin), Mwenge (Bonge, hard), Ubungo (Kichwa, hard, 14 shots), Bagamoyo (Shangazi, hard), Klabu ya Mzee Kobe (Mzee Kobe, hard, one foul loses) |
+| Sura 2: Kaskazini | Morogoro (Kaka Tunda, medium), Dodoma (Bwana Shamba, hard), Singida (Fundi, hard, rival breaks), Tanga (Mama Pweza, hard, no spin), Lushoto (Malkia, hard, 12 shots), Moshi (Kahawa, hard, one foul loses), Babati (Bishoo, impossible), Karatu (Mjanja, impossible, rival breaks), Arusha (Mzee Simba, impossible) |
+| Sura 3: Hadi Visiwani | Mwanza (Sato, hard), Bukoba (Dada Ndizi, hard, no spin), Kigoma (Kapteni, impossible), Mbeya (Baridi, impossible, 12 shots), Iringa (Bonge, impossible, one foul loses), Mtwara (Mama Ntilie, impossible, rival breaks), Pemba (Mzee Karafuu, impossible, no spin), Zanzibar (Malkia, impossible), Fainali (Bingwa, impossible) |
+
+- Ten new story-only rivals (faces by Robert with ChatGPT, prompts in `PORTRAIT_PROMPTS.md`).
+- Rewards: Bingwa cue (finish chapter 1); Kilimanjaro table and Mlima background (chapter 2); Ziwa
+  table and background (chapter 3); Dhahabu table (beat Bingwa); Vikombe background (70 of 81 stars).
+- Titles: Mchezaji wa Mtaa 15, Fundi wa Meza 35, Mkali wa Bongo 55 stars, Bingwa wa Bongo for beating Bingwa.
+- Places, rivals and twists are all in `config/story.ts`; Robert can rename or reorder them there.
+
+## First version (0.24.0)
+
 Status: built in 0.24.0 (2026-10-12). Robert agreed to the idea and the rewards (trophies, titles and
 story-only items; everything that existed stays free, no coins), then to Claude's picks for the four
 questions at the end: this name, eight stops, these star rules, build it now ("launch can wait").

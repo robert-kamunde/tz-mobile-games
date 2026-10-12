@@ -46,12 +46,12 @@ function worstDifference(ball: Rgb, felt: Rgb): number {
 const MIN_DIFFERENCE = 25;
 
 describe('tables', () => {
-  it('has six free tables, each with its own look, the story gold table, and Classic is the default', () => {
-    expect(TABLE_IDS).toHaveLength(7);
+  it('has six free tables, each with its own look, three story tables, and Classic is the default', () => {
+    expect(TABLE_IDS).toHaveLength(9);
     expect(DEFAULT_TABLE).toBe('classic');
     for (const id of TABLE_IDS) expect(TABLE_THEMES[id].id).toBe(id);
-    expect(new Set(TABLE_IDS.map((id) => TABLE_THEMES[id].cloth.centre)).size).toBe(7);
-    const free = TABLE_IDS.filter((id) => id !== 'gold');
+    expect(new Set(TABLE_IDS.map((id) => TABLE_THEMES[id].cloth.centre)).size).toBe(9);
+    const free = TABLE_IDS.filter((id) => !['gold', 'kilimanjaro', 'ziwa'].includes(id));
     expect(new Set(free.map((id) => TABLE_THEMES[id].rail.kind)).size).toBe(6);
   });
 

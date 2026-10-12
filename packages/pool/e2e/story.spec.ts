@@ -1,10 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
+import { STORY, STORY_STOPS } from '../src/config/story';
 import {
   MENU_SCENE,
   SCENE,
   dismissHowToPlay,
   dragOnTable,
+  dragSpin,
   layout,
   menuState,
   potTheBlack,
@@ -26,8 +28,9 @@ interface StoryState {
   stars: Record<string, number>;
   total: number;
   title: string | null;
-  rewards: { table: boolean; cue: boolean; background: boolean };
+  rewards: string[];
   open: string[];
+  chapter: string;
   card: string | null;
   choosing: boolean;
   selectedCharacter: string | null;
@@ -48,6 +51,9 @@ async function seedJourney(page: Page, character: string, stars: Record<string, 
   await page.evaluate((data) => window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data })), { character, stars });
   await reopen(page);
 }
+
+/** One star at every stop before `stop`, so it is open. */
+const upTo = (stop: string) => Object.fromEntries(STORY_STOPS.slice(0, STORY_STOPS.findIndex((s) => s.id === stop)).map((s) => [s.id, 1]));
 
 /** From the menu to the map; on a first visit, choose the journey's character. */
 async function openMap(page: Page, character?: string): Promise<void> {
@@ -91,7 +97,19 @@ test('the first visit asks for the journey character, and only the first stop is
 
   await openMap(page, 'bonge');
   const s = await storyState(page);
-  expect(s).toMatchObject({ character: 'bonge', total: 0, title: null, open: ['mtaani'], card: null });
+  expect(s).toMatchObject({ character: 'bonge', total: 0, title: null, open: ['mtaani'], card: null, chapter: 'dar' });
+  expect(await textOf(page, STORY_SCENE, 'story-chapter')).toBe('Sura 1: Dar es Salaam');
+  // The next chapters can be looked at, all closed; there is nothing before the first.
+  expect(await page.evaluate(() => window.__tzg!.elementCenter('Story', 'story-prevChapter'))).toBeNull();
+  await tap(page, 'story-nextChapter', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).chapter).toBe('kaskazini');
+  expect(await dataOf(page, STORY_SCENE, 'stop-morogoro', 'open')).toBe(false);
+  await tap(page, 'story-nextChapter', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).chapter).toBe('visiwani');
+  expect(await page.evaluate(() => window.__tzg!.elementCenter('Story', 'story-nextChapter'))).toBeNull();
+  await tap(page, 'story-prevChapter', STORY_SCENE);
+  await tap(page, 'story-prevChapter', STORY_SCENE);
+  await expect.poll(async () => (await storyState(page)).chapter).toBe('dar');
   expect(await dataOf(page, STORY_SCENE, 'stop-kariakoo', 'open')).toBe(false);
   // A closed stop does not open its card.
   await tap(page, 'stop-kariakoo', STORY_SCENE);
@@ -177,7 +195,7 @@ test('a loss gives no stars and keeps the next stop closed; Rudia plays the stop
 
   await tap(page, 'gameOver-rematch');
   await expect.poll(async () => (await state(page)).gameOverShown).toBe(false);
-  expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 0 });
+  expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
 
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
@@ -197,7 +215,7 @@ test('a foul costs stars, and a lower result keeps the best stars', async ({ pag
   await pullPower(page, 0.25);
   await expect.poll(async () => (await state(page)).shots).toBe(1);
   await waitUntilSettled(page);
-  expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 1 });
+  expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 1, shots: 1 });
 
   await winCleanly(page);
   expect(await litStars(page)).toBe(1);
@@ -233,7 +251,7 @@ test('a story game left half-way continues as the same stop, and its win counts'
   await tap(page, 'menu-continue', MENU_SCENE);
   await waitForScene(page, SCENE);
   const s = await state(page);
-  expect(s.story).toEqual({ stop: 'mtaani', fouls: 0 });
+  expect(s.story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
   expect(s.looks).toMatchObject({ table: 'classic', background: 'wood' });
   expect(s.players[1]).toBe('Dogo Mbishi');
   await winCleanly(page);
@@ -248,7 +266,7 @@ test('a story game left half-way continues as the same stop, and its win counts'
 test('if the person plays as a stop rival, a stand-in takes the stop', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await seedJourney(page, 'mjanja', { mtaani: 3, kariakoo: 3 });
+  await seedJourney(page, 'mjanja', upTo('sinza'));
   await openMap(page);
   await playStop(page, 'sinza');
   const s = await state(page);
@@ -268,7 +286,7 @@ test('story rewards are locked in the pickers until earned, and can be chosen af
   expect((await menuState(page)).selectedTable).not.toBe('gold');
   await tap(page, 'table-back', MENU_SCENE);
 
-  const all = { mtaani: 3, kariakoo: 3, sinza: 3, mwenge: 3, bagamoyo: 3, klabu: 3, zanzibar: 3, fainali: 3 };
+  const all = Object.fromEntries(STORY_STOPS.map((s) => [s.id, 3]));
   await seedJourney(page, 'fundi', all);
   for (const [kind, button, id, panel] of [
     ['table', 'menu-tables', 'gold', 'tables'],
@@ -282,7 +300,8 @@ test('story rewards are locked in the pickers until earned, and can be chosen af
     await expect.poll(async () => (await menuState(page))[kind]).toBe(id);
   }
   await openMap(page);
-  expect(await storyState(page)).toMatchObject({ total: 24, title: 'bingwa', rewards: { table: true, cue: true, background: true } });
+  expect(await storyState(page)).toMatchObject({ total: 81, title: 'bingwa', chapter: 'visiwani' });
+  expect((await storyState(page)).rewards).toHaveLength(STORY.rewards.length);
   expect(errors).toEqual([]);
 });
 
@@ -300,5 +319,74 @@ test('in English, the journey and its end panel speak English', async ({ page })
   await winCleanly(page);
   expect(await textOf(page, SCENE, 'gameOver-next')).toBe('Next stop');
   expect(await textOf(page, SCENE, 'gameOver-menu')).toMatch(/^Map \(\d+\)$/);
+  expect(errors).toEqual([]);
+});
+
+test('twist: the rival breaks at Manzese', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedJourney(page, 'fundi', upTo('manzese'));
+  await openMap(page);
+  await tap(page, 'stop-manzese', STORY_SCENE);
+  expect(await textOf(page, STORY_SCENE, 'stopCard-body')).toContain('Sharti: mpinzani anapasua');
+  await tap(page, 'stopCard-play', STORY_SCENE);
+  await waitForScene(page, SCENE);
+  await dismissHowToPlay(page);
+  expect((await state(page)).match).toMatchObject({ breaker: 1 });
+  expect(errors).toEqual([]);
+});
+
+test('twist: one foul loses at Mzee Kobe\'s club', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedJourney(page, 'fundi', upTo('klabu'));
+  await openMap(page);
+  await playStop(page, 'klabu');
+  await dragOnTable(page, { x: 0.15, y: 0.2 }, { x: 0, y: 0 });
+  await pullPower(page, 0.25);
+  await expect.poll(async () => (await state(page)).shots).toBe(1);
+  const s = await waitUntilSettled(page);
+  expect(s.gameOverShown).toBe(true);
+  expect(s.match).toMatchObject({ phase: 'over', winner: 1 });
+  expect(await textOf(page, SCENE, 'gameOverDetail')).toBe('Fundi alicheza faulo');
+  expect(await litStars(page)).toBe(0);
+  expect(errors).toEqual([]);
+});
+
+test('twist: no spin at Kigamboni', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedJourney(page, 'fundi', upTo('kigamboni'));
+  await openMap(page);
+  await playStop(page, 'kigamboni');
+  await dragSpin(page, 0.6, -0.6);
+  expect((await state(page)).spin).toEqual({ side: 0, height: 0 });
+  expect(errors).toEqual([]);
+});
+
+test('twist: a shot limit counts down and running out loses, also after Continue', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await seedJourney(page, 'fundi', upTo('ubungo'));
+  await openMap(page);
+  await playStop(page, 'ubungo');
+  expect((await state(page)).status).toContain('mapigo 14 yamebaki');
+  // The game is saved when it is closed; then, as if 13 shots had been played before that.
+  await reopen(page);
+  await page.evaluate(() => {
+    const raw = JSON.parse(window.localStorage.getItem('pool.match')!) as { data: { story: { shots: number } } };
+    raw.data.story.shots = 13;
+    window.localStorage.setItem('pool.match', JSON.stringify(raw));
+  });
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).status).toContain('mapigo 1 yamebaki');
+  // The break: a legal shot that does not win, the last one allowed.
+  await pullPower(page, 0.3);
+  await expect.poll(async () => (await state(page)).shots).toBe(1);
+  const s = await waitUntilSettled(page);
+  expect(s.gameOverShown).toBe(true);
+  expect(s.story).toMatchObject({ stop: 'ubungo', shots: 14 });
+  expect(await textOf(page, SCENE, 'gameOverDetail')).toBe('Fundi amemaliza mapigo yake');
   expect(errors).toEqual([]);
 });

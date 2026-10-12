@@ -20,8 +20,8 @@ import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { StoryStart } from './StoryScene';
-import { STORY } from '../config/story';
-import { isBackgroundLocked, isCueLocked, isTableLocked } from '../progress/story';
+import { lockedBy } from '../progress/story';
+import { needText } from './storyText';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 import { loadPortraitFiles } from './art/portraitFiles';
@@ -143,10 +143,9 @@ export class MenuScene extends Phaser.Scene {
     const story = this.slots.story.load().data;
     const geometry = buildTableGeometry(UK_7FT_TABLE);
     // Story mode's rewards show locked, with what earns them, until earned.
-    const lockedBy = (locked: boolean, kind: 'table' | 'cue' | 'background') => {
-      if (!locked) return {};
-      const r = STORY.rewards[kind];
-      return { locked: r.needsFinal ? t.t('story.needsFinal') : t.t('story.needsStars', { stars: r.stars }) };
+    const locked = (kind: 'table' | 'cue' | 'background', id: string) => {
+      const reward = lockedBy(kind, id, story);
+      return reward ? { locked: needText(t, reward.need) } : {};
     };
     const items =
       kind === 'table'
@@ -154,15 +153,15 @@ export class MenuScene extends Phaser.Scene {
             id,
             label: t.t(`table.${id}`),
             texture: tableTexture(this, geometry, UK_7FT_TABLE, TABLE_THEMES[id], TABLE_ART.previewScale).key,
-            ...lockedBy(isTableLocked(id, story), 'table'),
+            ...locked('table', id),
           }))
         : kind === 'cue'
-          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale), ...lockedBy(isCueLocked(id, story), 'cue') }))
+          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale), ...locked('cue', id) }))
           : BACKGROUND_IDS.map((id) => ({
               id,
               label: t.t(`background.${id}`),
               texture: backgroundTexture(this, BACKGROUNDS[id], previewTable(geometry.length)),
-              ...lockedBy(isBackgroundLocked(id, story), 'background'),
+              ...locked('background', id),
             }));
     this.looks.show({
       prefix: kind,

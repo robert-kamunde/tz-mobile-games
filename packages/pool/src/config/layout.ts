@@ -329,10 +329,12 @@ export const STORY_MAP = {
   /** The person: face, name, title and stars, top left. */
   person: { x: 70, y: 112, faceRadius: 34, textX: 116 },
   change: { right: DESIGN.width - 24, y: 112 },
-  /** Stop centres, left to right, in two rows the path zigzags between. */
+  /** The chapter's name with arrows to the other chapters, under the title. */
+  chapterNav: { x: DESIGN.width / 2, y: 104, arrowDx: 250, arrowWidth: 64 },
+  /** Stop centres for a chapter's nine stops: five left to right, then four back. */
   stops: [
-    { x: 150, y: 270 }, { x: 410, y: 330 }, { x: 670, y: 270 }, { x: 930, y: 330 },
-    { x: 1130, y: 440 }, { x: 870, y: 500 }, { x: 610, y: 440 }, { x: 350, y: 500 },
+    { x: 150, y: 250 }, { x: 395, y: 290 }, { x: 640, y: 250 }, { x: 885, y: 290 }, { x: 1130, y: 250 },
+    { x: 1010, y: 470 }, { x: 765, y: 500 }, { x: 520, y: 470 }, { x: 275, y: 500 },
   ],
   stopRadius: 40,
   ring: { width: 5, won: 0xf2c94c, open: 0xffffff },
@@ -344,7 +346,7 @@ export const STORY_MAP = {
   star: { radius: 9, inner: 4, spacing: 22, lit: 0xf2c94c, unlit: 0x3a4248 },
   cup: { size: 30, dx: 36, dy: -34 },
   padlock: { width: 22, height: 18, shackle: 8, color: 0xd0d6d3 },
-  rewards: { y: 628, spacing: 330, iconRadius: 22 },
+  rewards: { y: 636, spacing: 300, iconRadius: 22 },
   back: { left: 24, y: DESIGN.height - 30 },
   /** The stop card over the map. */
   card: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 700, height: 520, alpha: 1 },

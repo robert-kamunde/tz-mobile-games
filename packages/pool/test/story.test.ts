@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AI_LEVEL_IDS } from '../src/config/ai';
 import { BACKGROUND_IDS } from '../src/config/backgrounds';
-import { COMPUTER_CHARACTERS, PLAYER_CHARACTERS } from '../src/config/characters';
+import { COMPUTER_CHARACTERS, PLAYER_CHARACTERS, STORY_CHARACTERS } from '../src/config/characters';
 import { CUE_IDS } from '../src/config/cues';
 import { QUIP_LINES } from '../src/config/quips';
-import { STORY, STORY_STOPS } from '../src/config/story';
+import { STORY, STORY_CHAPTERS, STORY_STOPS } from '../src/config/story';
 import { TABLE_IDS } from '../src/config/tables';
 import { createPoolSlots } from '../src/progress/slots';
 import {
@@ -17,7 +17,8 @@ import {
   isTableLocked,
   nextStop,
   recordStop,
-  rewardsFor,
+  earnedRewards,
+  isChapterDone,
   starsFor,
   stopRival,
   titleFor,
@@ -36,26 +37,29 @@ const withStars = (stars: Record<string, number>): StoryProgress => ({ character
 const allStops = (n: number) => Object.fromEntries(STORY_STOPS.map((s) => [s.id, n]));
 
 describe('story mode', () => {
-  it('has eight stops with known rivals, stand-ins, levels and looks, rising to Bingwa', () => {
-    expect(STORY_STOPS).toHaveLength(8);
-    expect(new Set(STORY_STOPS.map((s) => s.id)).size).toBe(8);
+  it('has three chapters of nine stops with known rivals, stand-ins, levels and looks, rising to Bingwa', () => {
+    expect(STORY_CHAPTERS.map((c) => c.stops.length)).toEqual([9, 9, 9]);
+    expect(new Set(STORY_STOPS.map((s) => s.id)).size).toBe(27);
     for (const s of STORY_STOPS) {
       expect(characterById(s.rival), s.id).toBeDefined();
       expect(characterById(s.standIn), s.id).toBeDefined();
       expect(s.standIn === s.rival || PLAYER_CHARACTERS.some((c) => c.id === s.rival)).toBe(true);
       expect(AI_LEVEL_IDS).toContain(s.level);
-      // Stops are played on free looks, never on a reward.
       expect(TABLE_IDS).toContain(s.table);
       expect(BACKGROUND_IDS).toContain(s.background);
-      expect(s.table).not.toBe(STORY.rewards.table.id);
-      expect(s.background).not.toBe(STORY.rewards.background.id);
       // Every character met on the journey has catchphrases.
       expect(QUIP_LINES[s.rival], s.rival).toBeDefined();
       expect(QUIP_LINES[s.standIn], s.standIn).toBeDefined();
+      if (s.twist?.kind === 'shotLimit') expect(s.twist.shots).toBeGreaterThanOrEqual(8);
     }
+    // Never easier than the stop before.
     const levels = STORY_STOPS.map((s) => AI_LEVEL_IDS.indexOf(s.level));
-    expect([...levels].sort((a, b) => a - b)).toEqual(levels);
+    levels.forEach((level, i) => i > 0 && expect(level, STORY_STOPS[i]!.id).toBeGreaterThanOrEqual(i % 9 === 0 ? levels[i - 1]! - 2 : levels[i - 1]!));
     expect(STORY_STOPS.at(-1)!.rival).toBe(COMPUTER_CHARACTERS.impossible.id);
+    // Every story rival is met.
+    for (const c of STORY_CHARACTERS) expect(STORY_STOPS.some((s) => s.rival === c.id), c.id).toBe(true);
+    // Twists come in after the first two stops.
+    expect(STORY_STOPS.slice(0, 2).every((s) => !s.twist)).toBe(true);
   });
 
   it('gives a stand-in when the person plays as the rival', () => {
@@ -92,25 +96,33 @@ describe('story mode', () => {
   });
 
   it('gives titles by stars, the top one only for beating Bingwa', () => {
-    expect(MAX_STARS).toBe(24);
+    expect(MAX_STARS).toBe(81);
     expect(titleFor(defaultStory())).toBeNull();
-    expect(titleFor(withStars({ mtaani: 3, kariakoo: 3 }))).toBe('mtaa');
-    expect(titleFor(withStars({ mtaani: 3, kariakoo: 3, sinza: 3, mwenge: 3 }))).toBe('fundi');
-    const eighteen = withStars({ mtaani: 3, kariakoo: 3, sinza: 3, mwenge: 3, bagamoyo: 3, klabu: 3 });
-    expect(totalStars(eighteen)).toBe(18);
-    expect(titleFor(eighteen)).toBe('mkali');
+    const first = (n: number, stars: number) => withStars(Object.fromEntries(STORY_STOPS.slice(0, n).map((s) => [s.id, stars])));
+    expect(titleFor(first(5, 3))).toBe('mtaa');
+    expect(titleFor(first(12, 3))).toBe('fundi');
+    expect(titleFor(first(19, 3))).toBe('mkali');
     expect(titleFor(withStars(allStops(1)))).toBe('bingwa');
   });
 
-  it('locks only the three story rewards, until earned', () => {
+  it('marks a chapter done when its last stop is won', () => {
+    expect(isChapterDone(withStars({ klabu: 1 }), 'dar')).toBe(true);
+    expect(isChapterDone(withStars({ mtaani: 3 }), 'dar')).toBe(false);
+    expect(isChapterDone(withStars({}), 'nowhere')).toBe(false);
+  });
+
+  it('locks only the story rewards, each until its chapter is done or its stars are earned', () => {
     const none = defaultStory();
-    for (const id of TABLE_IDS) expect(isTableLocked(id, none)).toBe(id === 'gold');
-    for (const id of CUE_IDS) expect(isCueLocked(id, none)).toBe(id === 'champion');
-    for (const id of BACKGROUND_IDS) expect(isBackgroundLocked(id, none)).toBe(id === 'trophies');
-    expect(rewardsFor(withStars(allStops(1)))).toEqual({ table: true, cue: false, background: false });
-    expect(rewardsFor(withStars({ ...allStops(2), fainali: 2 }))).toEqual({ table: true, cue: false, background: false });
-    expect(rewardsFor(withStars({ ...allStops(3), fainali: 0 }))).toMatchObject({ table: false, cue: true });
-    expect(rewardsFor(withStars(allStops(3)))).toEqual({ table: true, cue: true, background: true });
+    const rewardIds = (kind: string) => STORY.rewards.filter((r) => r.kind === kind).map((r) => r.id as string);
+    for (const id of TABLE_IDS) expect(isTableLocked(id, none), id).toBe(rewardIds('table').includes(id));
+    for (const id of CUE_IDS) expect(isCueLocked(id, none), id).toBe(id === 'champion');
+    for (const id of BACKGROUND_IDS) expect(isBackgroundLocked(id, none), id).toBe(rewardIds('background').includes(id));
+    expect(earnedRewards(withStars({ klabu: 1 }))).toEqual(['cue:champion']);
+    expect(earnedRewards(withStars({ klabu: 1, arusha: 1 }))).toEqual(['cue:champion', 'table:kilimanjaro', 'background:mountain']);
+    expect(earnedRewards(withStars(allStops(1)))).toEqual(['cue:champion', 'table:kilimanjaro', 'background:mountain', 'table:ziwa', 'background:lake', 'table:gold']);
+    expect(earnedRewards(withStars(allStops(3)))).toHaveLength(STORY.rewards.length);
+    expect(isTableLocked('gold', withStars(allStops(1)))).toBe(false);
+    expect(isBackgroundLocked('trophies', withStars(allStops(2)))).toBe(true);
   });
 
   it('reads saves: an empty journey by default, unknown stops dropped, damaged values rejected', () => {
@@ -125,7 +137,7 @@ describe('story mode', () => {
     expect(slots.story.load().data).toEqual(defaultStory());
   });
 
-  it('saves a story game with its stop and fouls; older saves and Quick games have none', () => {
+  it('saves a story game with its stop, fouls and shots; older saves and Quick games have none', () => {
     const base = {
       opponent: { kind: 'computer', level: 'easy' },
       picks: ['fundi', 'mwamba'],
@@ -134,7 +146,10 @@ describe('story mode', () => {
       shots: 0,
     };
     expect(validateSavedMatch(base, UK_7FT_TABLE)?.story).toBeUndefined();
-    expect(validateSavedMatch({ ...base, story: { stop: 'sinza', fouls: 2 } }, UK_7FT_TABLE)?.story).toEqual({ stop: 'sinza', fouls: 2 });
+    // Saved before shot limits: no shots counted yet.
+    expect(validateSavedMatch({ ...base, story: { stop: 'sinza', fouls: 2 } }, UK_7FT_TABLE)?.story).toEqual({ stop: 'sinza', fouls: 2, shots: 0 });
+    expect(validateSavedMatch({ ...base, story: { stop: 'ubungo', fouls: 0, shots: 5 } }, UK_7FT_TABLE)?.story).toEqual({ stop: 'ubungo', fouls: 0, shots: 5 });
+    expect(validateStoryGame({ stop: 'ubungo', fouls: 0, shots: -2 })).toBeNull();
     expect(validateSavedMatch({ ...base, story: { stop: 'nowhere', fouls: 0 } }, UK_7FT_TABLE)).toBeNull();
     expect(validateStoryGame({ stop: 'sinza', fouls: -1 })).toBeNull();
   });
