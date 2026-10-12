@@ -52,6 +52,7 @@ import { Panel, addButton, type PanelSpec } from './ui';
 import { PowerBar } from './PowerBar';
 import { SpinControl } from './SpinControl';
 import { TableView } from './TableView';
+import { loadPortraitFiles } from './art/portraitFiles';
 
 /** Straight at the rack: the default aim for a fresh rack. */
 const BREAK_AIM: Vec2 = { x: 1, y: 0 };
@@ -118,6 +119,10 @@ export class TableScene extends Phaser.Scene {
 
   constructor() {
     super(TableScene.KEY);
+  }
+
+  preload(): void {
+    loadPortraitFiles(this);
   }
 
   create(start: TableStart): void {

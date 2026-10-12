@@ -1,6 +1,6 @@
 {
   "name": "@tzg/pool",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "type": "module",
   "description": "Bongo Pool Table. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",
@@ -12,7 +12,8 @@
     "ai:ladder": "AI_LADDER=1 vitest run test/aiLadder.test.ts --silent=false",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "icons": "node scripts/makeAppIcons.mjs"
+    "icons": "node scripts/makeAppIcons.mjs",
+    "portraits": "node scripts/portraits.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.3",

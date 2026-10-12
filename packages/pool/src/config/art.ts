@@ -127,6 +127,20 @@ export const PORTRAIT_ART = {
   frame: { width: 2.5, color: 'rgba(0, 0, 0, 0.55)' },
 } as const;
 
+/**
+ * Character face pictures (0.20.0): one file per character in packages/pool/portraits, named
+ * `<character id>.png` (or .jpg). Swapping a file changes that face; a missing file falls back to
+ * the drawing above. `npm run portraits -w @tzg/pool` squares and shrinks new files to this size.
+ */
+export const PORTRAIT_FILES = {
+  /** Width and height of every file, in pixels. The game crops it to a circle. */
+  size: 512,
+  /** Largest file allowed in the app, so twelve faces stay light on a low-end phone. */
+  maxBytes: 300_000,
+  /** Quality when the script saves a photo-like face as JPEG. */
+  jpegQuality: 0.88,
+} as const;
+
 /** Buttons and panels (Milestone 9 Part B): rounded, softly lit, with a thin gold edge on panels. */
 export const UI_ART = {
   button: {

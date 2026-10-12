@@ -21,6 +21,7 @@ import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
+import { loadPortraitFiles } from './art/portraitFiles';
 
 /** Which menu panel is open, if any. Settings reopens itself after a language change. */
 /** Sound is on or off for now; a volume slider can come with real sounds. */
@@ -49,6 +50,10 @@ export class MenuScene extends Phaser.Scene {
 
   constructor() {
     super(MenuScene.KEY);
+  }
+
+  preload(): void {
+    loadPortraitFiles(this);
   }
 
   create(data: MenuStart = {}): void {

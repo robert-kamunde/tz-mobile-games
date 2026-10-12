@@ -1,14 +1,11 @@
 // Draws the app icon, splash screens and store graphics (Part C) at every size Android and Google
 // Play need, into the Android project and store/. The drawing is the game's own art
-// (src/scenes/art/storeArt.ts), bundled here and run in a headless browser.
+// (src/scenes/art/storeArt.ts) and the face pictures in portraits/, run in a headless browser.
 // Run with `npm run icons -w @tzg/pool`.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { chromium } from '@playwright/test';
-import { build } from 'vite';
+import { dataUrl, openStoreArt, portraitFiles, root } from './storeArtPage.mjs';
 
-const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const res = path.join(root, 'android/app/src/main/res');
 const store = path.join(root, 'store');
 
@@ -17,21 +14,11 @@ const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
 // Splash images per density (landscape; portrait is the same size turned).
 const SPLASH = { mdpi: [480, 320], hdpi: [800, 480], xhdpi: [1280, 720], xxhdpi: [1600, 960], xxxhdpi: [1920, 1280] };
 
-const bundle = await build({
-  configFile: false,
-  logLevel: 'warn',
-  build: {
-    write: false,
-    minify: false,
-    lib: { entry: path.join(root, 'src/scenes/art/storeArt.ts'), formats: ['iife'], name: 'StoreArt', fileName: 'storeArt' },
-  },
-});
-const code = (Array.isArray(bundle) ? bundle[0] : bundle).output[0].code;
-
-const browser = await chromium.launch();
-const tab = await browser.newPage();
-await tab.setContent('<html><body></body></html>');
-await tab.addScriptTag({ content: code });
+const { tab, close } = await openStoreArt();
+// The feature graphic shows the same face pictures as the game.
+for (const { id, file, type } of portraitFiles()) {
+  await tab.evaluate(([i, url]) => window.StoreArt.usePortraitPicture(i, url), [id, dataUrl(file, type)]);
+}
 
 async function render(kind, w, h, file) {
   const url = await tab.evaluate(([k, ww, hh]) => window.StoreArt.render(k, ww, hh), [kind, w, h]);
@@ -54,5 +41,5 @@ for (const [density, k] of Object.entries(DENSITIES)) {
 await render('splash', 480, 320, path.join(res, 'drawable', 'splash.png'));
 await render('icon', 512, 512, path.join(store, 'icon-512.png'));
 await render('feature', 1024, 500, path.join(store, 'feature-graphic-1024x500.png'));
-await browser.close();
+await close();
 console.log('icons, splash screens and store graphics written');

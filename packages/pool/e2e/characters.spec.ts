@@ -24,6 +24,10 @@ test('against the computer: choose a character, see it on the table, keep it aft
   await bootTo(page, MENU_SCENE);
   await openCharacters(page, 'hard');
   expect(await selected(page)).toBe('fundi');
+  // Every face comes from its picture file in portraits/, not the drawn backup.
+  for (const id of ['fundi', 'malkia', 'bishoo', 'kichwa']) {
+    expect(await page.evaluate((n) => window.__tzg!.dataOf('Menu', `character-${n}`, 'portrait'), id)).toMatch(new RegExp(`^portrait-${id}-\\d+-file$`));
+  }
   expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Anza');
   await tap(page, 'character-bonge', MENU_SCENE);
   expect(await selected(page)).toBe('bonge');

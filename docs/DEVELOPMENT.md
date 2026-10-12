@@ -17,7 +17,8 @@
 | `npm run dev:shell` | Dev server for the shell demo. |
 | `npm run android:sync -w @tzg/pool` | Release build of the pool game, copied into the Android project (RELEASE.md). |
 | `npm run android:open -w @tzg/pool` | Opens the Android project in Android Studio. |
-| `npm run icons -w @tzg/pool` | Redraws the placeholder app icon, splash screens and store graphics. |
+| `npm run icons -w @tzg/pool` | Redraws the app icon, splash screens and store graphics (the feature graphic uses the face pictures). |
+| `npm run portraits -w @tzg/pool` | Gets the face pictures in `packages/pool/portraits/` ready: squares, resizes to 512 px and shrinks new pictures; saves the drawn face for any character without one. Run after adding or swapping a face, then rebuild. |
 | `npm run build -w @tzg/shell` | Release build of the shell demo into `packages/shell/dist`. |
 
 ## Pinned versions

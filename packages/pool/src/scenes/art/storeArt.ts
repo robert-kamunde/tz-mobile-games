@@ -1,19 +1,48 @@
-import { LOGO_ART, STORE_ART } from '../../config/art';
+import { LOGO_ART, PORTRAIT_ART, STORE_ART } from '../../config/art';
 import { DESIGN } from '../../config/layout';
 import { PORTRAITS } from '../../config/portraits';
 import { drawBall } from './ballArt';
 import { drawLogo, drawMenuBar, eightBall } from './menuArt';
-import { drawPortrait } from './portraitArt';
+import { drawPortrait, drawPortraitPicture } from './portraitArt';
 
 /**
  * The app icon, splash screens and store pictures (Part C), drawn with the game's own art so they
  * match it. Not part of the game: `scripts/makeAppIcons.mjs` bundles this file, runs it in a
  * browser and saves the pictures. Every function draws onto a canvas of the size it is given.
+ * `scripts/portraits.mjs` uses it too, for the starting face picture files.
  */
 export type IconShape = 'square' | 'round' | 'foreground';
 
 const S = STORE_ART;
 const GAME_NAME = 'Bongo Pool Table';
+
+/** The picture file rules, for the script. */
+export { PORTRAIT_FILES } from '../../config/art';
+
+/** Every character with a face. */
+export const PORTRAIT_IDS = Object.keys(PORTRAITS);
+
+/** Face picture files the script handed over, by character id; the rest are drawn. */
+const pictures: Record<string, HTMLImageElement> = {};
+
+/** For the script: use this picture file (a data URL) for a character's face in the store pictures. */
+export async function usePortraitPicture(id: string, url: string): Promise<void> {
+  const image = new Image();
+  image.src = url;
+  await image.decode();
+  pictures[id] = image;
+}
+
+/** For the script: a character's drawn face as a square PNG data URL, the starting picture file. */
+export function renderDrawnPortrait(id: string, size: number): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(size / PORTRAIT_ART.unit, size / PORTRAIT_ART.unit);
+  drawPortrait(ctx, PORTRAITS[id], true);
+  return canvas.toDataURL('image/png');
+}
 
 function felt(ctx: CanvasRenderingContext2D, size: number): CanvasGradient {
   const g = ctx.createRadialGradient(size * 0.45, size * 0.35, 0, size / 2, size / 2, size * 0.75);
@@ -110,7 +139,9 @@ export function drawFeatureGraphic(ctx: CanvasRenderingContext2D, w: number, h: 
     ctx.save();
     ctx.translate(cx - r, cy - r);
     ctx.scale((2 * r) / 100, (2 * r) / 100);
-    drawPortrait(ctx, PORTRAITS[id]);
+    const picture = pictures[id];
+    if (picture) drawPortraitPicture(ctx, picture);
+    else drawPortrait(ctx, PORTRAITS[id]);
     ctx.restore();
   });
 }

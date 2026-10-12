@@ -17,18 +17,49 @@ interface Head {
 }
 
 /**
- * A character's round portrait, `radius` design pixels, drawn once (Milestone 9 Part B). Returns the
- * texture key; an unknown id gets a plain disc so a damaged save never breaks a screen.
+ * A character's round portrait, `radius` design pixels, made once. The face comes from the
+ * character's picture file when one was loaded (portraitFiles.ts), otherwise it is drawn (Milestone 9
+ * Part B). Returns the texture key; an unknown id gets a plain disc so a damaged save never breaks a
+ * screen.
  */
 export function portraitTexture(scene: Phaser.Scene, id: string, radius: number): string {
   const size = Math.ceil(2 * radius * P.resolution);
-  return canvasTexture(scene, `portrait-${id}-${size}`, size, size, (ctx, w) => {
-    const look = PORTRAITS[id];
+  const fileKey = portraitFileKey(id);
+  const picture = scene.textures.exists(fileKey) ? (scene.textures.get(fileKey).getSourceImage() as Picture) : null;
+  return canvasTexture(scene, `portrait-${id}-${size}${picture ? '-file' : ''}`, size, size, (ctx, w) => {
     ctx.save();
     ctx.scale(w / P.unit, w / P.unit);
-    drawPortrait(ctx, look);
+    if (picture) drawPortraitPicture(ctx, picture);
+    else drawPortrait(ctx, PORTRAITS[id]);
     ctx.restore();
   });
+}
+
+/** A loaded picture file. */
+export type Picture = HTMLImageElement | HTMLCanvasElement | ImageBitmap;
+
+/** Texture key of a character's loaded picture file. */
+export function portraitFileKey(id: string): string {
+  return `portrait-file-${id}`;
+}
+
+/**
+ * A picture file as a portrait, in the same 100-unit frame as the drawing: the middle square of the
+ * picture, cropped to the circle, with the same thin frame.
+ */
+export function drawPortraitPicture(ctx: CanvasRenderingContext2D, picture: Picture): void {
+  const c = P.unit / 2;
+  const w = picture.width;
+  const h = picture.height;
+  const side = Math.min(w, h);
+  ctx.save();
+  ellipse(ctx, c, c, c, c);
+  ctx.clip();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(picture, (w - side) / 2, (h - side) / 2, side, side, 0, 0, P.unit, P.unit);
+  ctx.restore();
+  frame(ctx);
 }
 
 function ellipse(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number): void {
@@ -41,10 +72,17 @@ function fill(ctx: CanvasRenderingContext2D, color: string): void {
   ctx.fill();
 }
 
-export function drawPortrait(ctx: CanvasRenderingContext2D, look: PortraitLook | undefined): void {
+/**
+ * The drawn portrait in a 100-unit frame: round with a thin frame, or `square` with neither (the
+ * starting picture files, which the game crops itself).
+ */
+export function drawPortrait(ctx: CanvasRenderingContext2D, look: PortraitLook | undefined, square = false): void {
   const c = P.unit / 2;
   ctx.save();
-  ellipse(ctx, c, c, c, c);
+  if (square) {
+    ctx.beginPath();
+    ctx.rect(0, 0, P.unit, P.unit);
+  } else ellipse(ctx, c, c, c, c);
   ctx.clip();
   fill(ctx, look?.background ?? '#444a50');
   if (look) {
@@ -84,6 +122,11 @@ export function drawPortrait(ctx: CanvasRenderingContext2D, look: PortraitLook |
     if (look.chain) chain(ctx, look.chain);
   }
   ctx.restore();
+  if (!square) frame(ctx);
+}
+
+function frame(ctx: CanvasRenderingContext2D): void {
+  const c = P.unit / 2;
   ellipse(ctx, c, c, c - P.frame.width / 2, c - P.frame.width / 2);
   ctx.lineWidth = P.frame.width;
   ctx.strokeStyle = P.frame.color;

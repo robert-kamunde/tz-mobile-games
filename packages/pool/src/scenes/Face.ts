@@ -4,7 +4,7 @@ import { COLORS } from '../config/layout';
 import { portraitTexture } from './art/portraitArt';
 
 /**
- * A character's face: their drawn portrait (config/portraits.ts) over a named circle. The circle is
+ * A character's face: their picture file, or drawn portrait without one, over a named circle. The circle is
  * what tests find and what the picker makes tappable; the portrait covers it.
  */
 export class Face {
@@ -23,8 +23,9 @@ export class Face {
   }
 
   show(character: Character): this {
-    this.portrait.setTexture(portraitTexture(this.scene, character.id, this.radius)).setDisplaySize(2 * this.radius, 2 * this.radius);
-    this.circle.setData('character', character.id);
+    const key = portraitTexture(this.scene, character.id, this.radius);
+    this.portrait.setTexture(key).setDisplaySize(2 * this.radius, 2 * this.radius);
+    this.circle.setData('character', character.id).setData('portrait', key);
     return this;
   }
 

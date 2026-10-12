@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.20.0 (unreleased) - Character faces from picture files
+- Robert (2026-10-12): the drawn faces are too cartoonish, and he wants to be able to replace them with pictures at any time. Each character's face is now a picture file in `packages/pool/portraits/`, named after the character (`fundi.png`, `mama-ntilie.png`...). Swap a file and rebuild, and that face changes; no code changes. PNG or JPEG, square.
+- The first set of files is the current drawn faces, so the game looks the same until new pictures arrive. If a picture is missing or will not load, that character falls back to its drawn face.
+- `npm run portraits -w @tzg/pool` gets new pictures ready: it cuts each to its middle square, resizes it to 512 x 512, keeps it under 300 KB (a photo-like PNG becomes a JPEG), and saves the drawn face for any character without a picture. `npm run icons` now uses the pictures for the store feature graphic too.
+- `docs/PORTRAIT_PROMPTS.md`: one prompt per character, in one shared style, for making the faces with an image tool.
+- Bingwa confirmed as the Impossible opponent's name (Robert, 2026-10-12).
+
 ## 0.19.0 (unreleased) - Art Part C: icon, splash, store pictures and better sounds
 - **App icon:** a shiny 8-ball in front of a red and a yellow ball on green felt, at every Android size (square, round, and the adaptive icon's foreground inside its safe area).
 - **Splash screen:** the menu's pool bar, a little darker, with the Bongo Pool Table logo, landscape and portrait at every size.

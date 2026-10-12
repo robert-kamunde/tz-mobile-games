@@ -34,7 +34,7 @@ export const COMPUTER_CHARACTERS: Readonly<Record<AiLevel, Character>> = {
   easy: { id: 'dogo-mbishi', name: 'Dogo Mbishi', gender: 'male' },
   medium: { id: 'mama-ntilie', name: 'Mama Ntilie', gender: 'female' },
   hard: { id: 'mzee-kobe', name: 'Mzee Kobe', gender: 'male' },
-  /** Impossible (0.16.0): the champion of the street tables. Name chosen by Claude, for Robert to confirm. */
+  /** Impossible (0.16.0): the champion of the street tables. Name chosen by Claude, confirmed by Robert 2026-10-12. */
   impossible: { id: 'bingwa', name: 'Bingwa', gender: 'male' },
 };
 
