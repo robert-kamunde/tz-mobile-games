@@ -1,6 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, SCENE, boot, dismissHowToPlay, menuState, pickOpponent, playFromMenu, reopen, seedWins, state, tap, waitForScene } from './poolPage';
+import {
+  MENU_SCENE,
+  SCENE,
+  boot,
+  dismissHowToPlay,
+  menuState,
+  pickOpponent,
+  playFromMenu,
+  reopen,
+  seedWins,
+  state,
+  tap,
+  tapMenu,
+  waitForScene,
+} from './poolPage';
 
 const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
 const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n]) => window.__tzg!.textOf(s, n), [scene, name] as const);
@@ -9,7 +23,7 @@ const selected = async (page: Page) => (await menuState(page)).selectedCharacter
 
 /** Play: the first step is your own character. */
 async function openCharacters(page: Page): Promise<void> {
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
 }
 
@@ -47,12 +61,12 @@ test('against the computer: choose your character, then the level, see it on the
 
   // Reopened mid-game, Continue brings back the same characters.
   await reopen(page);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).players).toEqual(['Bonge', 'Mzee Kobe']);
   // And they are saved again with the game, not only shown.
   await reopen(page);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).players).toEqual(['Bonge', 'Mzee Kobe']);
 
@@ -163,7 +177,7 @@ test('a game saved before characters existed continues with the default characte
     window.localStorage.setItem('pool.match', JSON.stringify(raw));
   });
   await reopen(page);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).players).toEqual(['Fundi', 'Dogo Mbishi']);
   expect(errors).toEqual([]);

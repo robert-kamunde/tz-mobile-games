@@ -33,14 +33,19 @@ import { loadPortraitFiles } from './art/portraitFiles';
 const SOUND_ON_VOLUME = 1;
 
 type MenuPanel = 'stats' | 'rules' | 'settings' | 'exit';
+/** The main page, CHEZA (ways to play) or Mapambo (tables, cues, scenery). */
+export type MenuPage = 'main' | 'play' | 'looks';
 
 export interface MenuStart {
   readonly panel?: MenuPanel;
+  readonly page?: MenuPage;
 }
 
+type Item = { id: string; label?: string; onTap: () => void };
+
 /**
- * The first screen: Continue (only when a game is saved), Play (your character, then the opponent), Stats, Rules and
- * Settings (language), and Exit in the Android app. Buttons are named `menu-<item>`.
+ * The first screen: CHEZA (Continue, Quick game, journey), Mapambo (tables, cues, scenery), Stats, Rules,
+ * Settings, and Exit in the Android app. Buttons are named `menu-<item>`; Rudi on a sub page is `menu-back`.
  */
 export class MenuScene extends Phaser.Scene {
   static readonly KEY = SCENE_KEYS.menu;
@@ -52,6 +57,7 @@ export class MenuScene extends Phaser.Scene {
   private panel: Panel | null = null;
   private openPanel: MenuPanel | null = null;
   private hasSavedGame = false;
+  private page: MenuPage = 'main';
 
   constructor() {
     super(MenuScene.KEY);
@@ -67,6 +73,7 @@ export class MenuScene extends Phaser.Scene {
     this.slots = getPoolSlots(this);
     this.panel = null;
     this.openPanel = null;
+    this.page = data.page ?? 'main';
     // Loading also checks the saves: a damaged one is backed up and no Continue is offered.
     moveStoryGame(this.slots);
     setUpReminders(getServices(this), this.slots);
@@ -77,11 +84,90 @@ export class MenuScene extends Phaser.Scene {
     const t = this.t;
     this.add.image(0, 0, menuBackgroundTexture(this)).setOrigin(0).setName('menu-background');
     this.add.image(MENU.x, MENU.titleY, logoTexture(this, t.t('menu.title'))).setName('menu-title');
-    // Each row is one button, or two side by side (Meza and Fimbo share a row so the menu fits).
-    type Item = { id: string; onTap: () => void };
+    if (this.page === 'main') this.mainPage(services.exit, savedQuick || savedStory);
+    else this.subPage(this.page === 'play' ? this.playItems(savedQuick, savedStory) : this.looksItems());
+
+    this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice), () =>
+      lockedCharacters(t, { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) }),
+    );
+    this.looks = new LookPicker(this, PANEL.overMenu);
+    if (data.panel) this.showPanel(data.panel);
+    // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
+    onBackButton(this, () => {
+      if (this.setup.goBack()) return true;
+      if (this.looks.goBack()) return true;
+      if (!this.panel && this.page !== 'main') {
+        this.showPage('main');
+        return true;
+      }
+      if (!this.panel) return false;
+      this.closePanel();
+      return true;
+    });
+
+    registerTestProbe('pool.menu', () => ({
+      continueShown: savedQuick,
+      continueStoryShown: savedStory,
+      page: this.page,
+      savedDot: this.page === 'main' && this.hasSavedGame,
+      panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.looks.showing ? `${this.looks.showing}s` : this.openPanel,
+      selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
+      selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
+      selectedBackground: this.looks.showing === 'background' ? this.looks.selected : null,
+      lookPage: this.looks.page,
+      lookPages: this.looks.pages,
+      table: this.slots.progress.load().data.table,
+      cue: this.slots.progress.load().data.cue,
+      hand: this.slots.progress.load().data.hand,
+      background: this.slots.progress.load().data.background,
+      selectedCharacter: this.setup.selectedCharacter,
+      locale: this.t.locale,
+    }));
+  }
+
+  /** CHEZA big on top, then pairs; a dot on CHEZA says a game or journey is waiting inside. */
+  private mainPage(exit: { available: boolean; exit: () => void }, saved: boolean): void {
+    const t = this.t;
+    const m = MENU.main;
+    const play = addButton(
+      this,
+      MENU.x,
+      m.playY,
+      { name: 'menu-playMenu', label: t.t('menu.playMenu'), onTap: () => this.showPage('play') },
+      { width: m.playWidth, fontSize: m.playFontSize },
+    );
+    if (saved) {
+      const d = MENU.savedDot;
+      this.add
+        .circle(MENU.x + m.playWidth / 2 - d.inset, m.playY - play.height / 2 + d.inset, d.radius, d.color)
+        .setStrokeStyle(d.outlineWidth, d.outline)
+        .setName('menu-savedDot');
+    }
     const rows: Item[][] = [
+      [
+        { id: 'looks', onTap: () => this.showPage('looks') },
+        { id: 'stats', onTap: () => this.showPanel('stats') },
+      ],
+      [
+        { id: 'rules', onTap: () => this.showPanel('rules') },
+        { id: 'settings', onTap: () => this.showPanel('settings') },
+      ],
+      // A web page cannot close itself, so Exit is only offered in the app. A game in progress is
+      // already saved, so the popup only reassures; with none, Exit closes at once.
+      ...(exit.available ? [[{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : exit.exit()) }]] : []),
+    ];
+    this.addRows(rows, m.firstRowY, m.rowSpacing);
+  }
+
+  /** A sub page: its buttons in a column (Continue may share a row), then Rudi to the main page. */
+  private subPage(rows: Item[][]): void {
+    this.addRows([...rows, [{ id: 'back', label: this.t.t('ui.back'), onTap: () => this.showPage('main') }]], MENU.sub.firstButtonY, MENU.sub.buttonSpacing);
+  }
+
+  private playItems(savedQuick: boolean, savedStory: boolean): Item[][] {
+    return [
       // A Quick game and a story game can both be waiting; each has its own Continue.
-      ...(this.hasSavedGame
+      ...(savedQuick || savedStory
         ? [
             [
               ...(savedQuick ? [{ id: 'continue', onTap: () => this.startTable({ resume: 'quick' }) }] : []),
@@ -97,59 +183,42 @@ export class MenuScene extends Phaser.Scene {
             this.setup.show(progress.lastOpponent, progress.lastPicks, () => undefined);
           },
         },
-        { id: 'story', onTap: () => this.scene.start(SCENE_KEYS.story, {} satisfies StoryStart) },
       ],
-      [
-        { id: 'tables', onTap: () => this.showLooks('table') },
-        { id: 'cues', onTap: () => this.showLooks('cue') },
-        { id: 'backgrounds', onTap: () => this.showLooks('background') },
-      ],
-      [{ id: 'stats', onTap: () => this.showPanel('stats') }],
-      [{ id: 'rules', onTap: () => this.showPanel('rules') }],
-      [{ id: 'settings', onTap: () => this.showPanel('settings') }],
-      // A web page cannot close itself, so Exit is only offered in the app. A game in progress is
-      // already saved, so the popup only reassures; with none, Exit closes at once.
-      ...(services.exit.available ? [[{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : services.exit.exit()) }]] : []),
+      [{ id: 'story', onTap: () => this.scene.start(SCENE_KEYS.story, {} satisfies StoryStart) }],
     ];
+  }
+
+  /** Each kind shows how many of its looks are open, e.g. "Meza  3/14". */
+  private looksItems(): Item[][] {
+    const t = this.t;
+    const played = { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) };
+    const kinds = [
+      { id: 'tables', kind: 'table', ids: TABLE_IDS },
+      { id: 'cues', kind: 'cue', ids: CUE_IDS },
+      { id: 'backgrounds', kind: 'background', ids: BACKGROUND_IDS },
+    ] as const;
+    return kinds.map(({ id, kind, ids }) => [
+      {
+        id,
+        label: t.t('menu.count', { name: t.t(`menu.${id}`), n: ids.filter((look) => !lockedBy(kind, look, played)).length, total: ids.length }),
+        onTap: () => this.showLooks(kind),
+      },
+    ]);
+  }
+
+  private addRows(rows: Item[][], firstY: number, spacing: number): void {
     rows.forEach((row, i) => {
-      const rowWidth = row.length > 1 ? MENU.tripleRowWidth : BUTTON.width;
+      const rowWidth = row.length > 1 ? MENU.pairRowWidth : BUTTON.width;
       const width = (rowWidth - (row.length - 1) * MENU.pairGap) / row.length;
       row.forEach((item, j) => {
         const x = MENU.x - rowWidth / 2 + width / 2 + j * (width + MENU.pairGap);
-        addButton(this, x, MENU.firstButtonY + i * MENU.buttonSpacing, { name: `menu-${item.id}`, label: t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
+        addButton(this, x, firstY + i * spacing, { name: `menu-${item.id}`, label: item.label ?? this.t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
       });
     });
+  }
 
-    this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice), () =>
-      lockedCharacters(t, { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) }),
-    );
-    this.looks = new LookPicker(this, PANEL.overMenu);
-    if (data.panel) this.showPanel(data.panel);
-    // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
-    onBackButton(this, () => {
-      if (this.setup.goBack()) return true;
-      if (this.looks.goBack()) return true;
-      if (!this.panel) return false;
-      this.closePanel();
-      return true;
-    });
-
-    registerTestProbe('pool.menu', () => ({
-      continueShown: savedQuick,
-      continueStoryShown: savedStory,
-      panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.looks.showing ? `${this.looks.showing}s` : this.openPanel,
-      selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
-      selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
-      selectedBackground: this.looks.showing === 'background' ? this.looks.selected : null,
-      lookPage: this.looks.page,
-      lookPages: this.looks.pages,
-      table: this.slots.progress.load().data.table,
-      cue: this.slots.progress.load().data.cue,
-      hand: this.slots.progress.load().data.hand,
-      background: this.slots.progress.load().data.background,
-      selectedCharacter: this.setup.selectedCharacter,
-      locale: this.t.locale,
-    }));
+  private showPage(page: MenuPage): void {
+    this.scene.restart({ page } satisfies MenuStart);
   }
 
   /**

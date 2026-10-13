@@ -7,8 +7,10 @@ import {
   dismissHowToPlay,
   dragOnTable,
   dragSpin,
+  elementCenter,
   layout,
   menuState,
+  openMenuPage,
   playFromMenu,
   potTheBlack,
   pullPower,
@@ -17,6 +19,7 @@ import {
   setUpBlackPot,
   state,
   tap,
+  tapMenu,
   waitForScene,
   waitUntilSettled,
 } from './poolPage';
@@ -59,7 +62,7 @@ const upTo = (stop: string) => Object.fromEntries(STORY_STOPS.slice(0, STORY_STO
 
 /** From the menu to the map; on a first visit, choose the journey's character. */
 async function openMap(page: Page, character?: string): Promise<void> {
-  await tap(page, 'menu-story', MENU_SCENE);
+  await tapMenu(page, 'menu-story');
   await waitForScene(page, STORY_SCENE);
   if (!character) return;
   await expect.poll(async () => (await storyState(page)).choosing).toBe(true);
@@ -88,6 +91,7 @@ async function winCleanly(page: Page): Promise<void> {
 test('the first visit asks for the journey character, and only the first stop is open', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
+  await openMenuPage(page, 'play');
   expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Mchezo wa haraka');
   expect(await textOf(page, MENU_SCENE, 'menu-story')).toBe('Safari ya Bingwa');
 
@@ -250,7 +254,7 @@ test('a story game left half-way continues as the same stop, and its win counts'
   await playStop(page, 'mtaani');
   await reopen(page);
   expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: true });
-  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await tapMenu(page, 'menu-continueStory');
   await waitForScene(page, SCENE);
   const s = await state(page);
   expect(s.story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
@@ -280,7 +284,7 @@ test('if the person plays as a stop rival, a stand-in takes the stop', async ({ 
 test('story rewards are locked in the pickers until earned, and can be chosen after', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
   expect(await textOf(page, MENU_SCENE, 'table-gold-label')).toBe('Dhahabu\nMshinde Bingwa');
   await tap(page, 'table-gold-touch', MENU_SCENE);
@@ -295,7 +299,7 @@ test('story rewards are locked in the pickers until earned, and can be chosen af
     ['cue', 'menu-cues', 'champion', 'cues'],
     ['background', 'menu-backgrounds', 'trophies', 'backgrounds'],
   ] as const) {
-    await tap(page, button, MENU_SCENE);
+    await tapMenu(page, button);
     await expect.poll(async () => (await menuState(page)).panel).toBe(panel);
     await tap(page, `${kind}-${id}-touch`, MENU_SCENE);
     await tap(page, `${kind}-confirm`, MENU_SCENE);
@@ -314,6 +318,8 @@ test('in English, the journey and its end panel speak English', async ({ page })
   await tap(page, 'language-en', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).locale).toBe('en');
   await tap(page, 'settings-back', MENU_SCENE);
+  expect(await textOf(page, MENU_SCENE, 'menu-playMenu')).toBe('PLAY');
+  await openMenuPage(page, 'play');
   expect(await textOf(page, MENU_SCENE, 'menu-story')).toBe("Champion's Journey");
   await openMap(page, 'fundi');
   expect(await textOf(page, STORY_SCENE, 'story-title')).toBe("Champion's Journey");
@@ -380,7 +386,7 @@ test('twist: a shot limit counts down and running out loses, also after Continue
     raw.data.story.shots = 13;
     window.localStorage.setItem('pool.storyMatch', JSON.stringify(raw));
   });
-  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await tapMenu(page, 'menu-continueStory');
   await waitForScene(page, SCENE);
   expect((await state(page)).status).toContain('mapigo 1 yamebaki');
   // The break: a legal shot that does not win, the last one allowed.
@@ -431,20 +437,23 @@ test('a Quick game never replaces a story game: both are kept, each with its own
   await pullPower(page, 0.3);
   const quick = await waitUntilSettled(page);
   await reopen(page);
-  expect(await menuState(page)).toMatchObject({ continueShown: true, continueStoryShown: true });
-  // Both buttons share a row, side by side.
+  expect(await menuState(page)).toMatchObject({ continueShown: true, continueStoryShown: true, page: 'main', savedDot: true });
+  await elementCenter(page, 'menu-savedDot', MENU_SCENE);
+  // Inside CHEZA both buttons share a row, side by side, and the dot is gone.
+  await openMenuPage(page, 'play');
+  expect((await menuState(page)).savedDot).toBe(false);
   const [a, b] = await Promise.all(['menu-continue', 'menu-continueStory'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
   expect(b!.left).toBeGreaterThan(a!.right);
   expect(b!.top).toBe(a!.top);
   expect(await textOf(page, MENU_SCENE, 'menu-continueStory')).toBe('Endelea na safari');
 
-  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await tapMenu(page, 'menu-continueStory');
   await waitForScene(page, SCENE);
   expect((await state(page)).story).toMatchObject({ stop: 'mtaani' });
   expect((await state(page)).balls).toEqual(story.balls);
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).story).toBeNull();
   expect((await state(page)).balls).toEqual(quick.balls);
@@ -464,7 +473,7 @@ test('a story game saved by an older version, in the Quick game save, moves to C
   await reopen(page);
   expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: true });
   expect(await page.evaluate(() => window.localStorage.getItem('pool.match'))).toBeNull();
-  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await tapMenu(page, 'menu-continueStory');
   await waitForScene(page, SCENE);
   expect((await state(page)).story).toMatchObject({ stop: 'mtaani' });
   expect(errors).toEqual([]);

@@ -56,6 +56,10 @@ export interface MenuState {
   /** Continue for a Quick game, and for a story game. */
   continueShown: boolean;
   continueStoryShown: boolean;
+  /** The main page, CHEZA ('play') or Mapambo ('looks'). */
+  page: 'main' | 'play' | 'looks';
+  /** The dot on CHEZA saying a game or journey is waiting. */
+  savedDot: boolean;
   panel: 'picker' | 'characters' | 'tables' | 'cues' | 'backgrounds' | 'stats' | 'rules' | 'settings' | 'exit' | null;
   selectedCharacter: string | null;
   /** Selected on the open table picker. */
@@ -117,7 +121,7 @@ export async function pickOpponent(page: Page, choice: OpponentChoice, character
 
 /** From the main menu: Play, pick the characters and opponent, and wait for the table. */
 export async function playFromMenu(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
   await chooseMatch(page, MENU_SCENE, choice, characters);
   await waitForScene(page, SCENE);
@@ -163,6 +167,36 @@ export async function elementCenter(page: Page, name: string, scene = SCENE): Pr
 export async function tap(page: Page, name: string, scene = SCENE): Promise<void> {
   const p = await elementCenter(page, name, scene);
   await page.touchscreen.tap(p.x, p.y);
+}
+
+/** Which menu page holds each button that is not on the main page. */
+const MENU_PAGE_OF: Record<string, 'play' | 'looks'> = {
+  'menu-continue': 'play',
+  'menu-continueStory': 'play',
+  'menu-play': 'play',
+  'menu-story': 'play',
+  'menu-tables': 'looks',
+  'menu-cues': 'looks',
+  'menu-backgrounds': 'looks',
+};
+
+/** Opens a menu page with real taps (Rudi first when another sub page is open). */
+export async function openMenuPage(page: Page, which: 'main' | 'play' | 'looks'): Promise<void> {
+  const current = (await menuState(page)).page;
+  if (current === which) return;
+  if (current !== 'main') {
+    await tap(page, 'menu-back', MENU_SCENE);
+    await expect.poll(async () => (await menuState(page)).page).toBe('main');
+  }
+  if (which === 'main') return;
+  await tap(page, which === 'play' ? 'menu-playMenu' : 'menu-looks', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).page).toBe(which);
+}
+
+/** Taps a menu button, opening CHEZA or Mapambo first when the button lives there. */
+export async function tapMenu(page: Page, name: string): Promise<void> {
+  await openMenuPage(page, MENU_PAGE_OF[name] ?? 'main');
+  await tap(page, name, MENU_SCENE);
 }
 
 /** Drags the power bar down by a fraction of its length and lets go. */

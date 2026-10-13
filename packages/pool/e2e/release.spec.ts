@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, SCENE, boot, chooseMatch, menuState, pullPower, reopen, state, tap, waitForScene, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, SCENE, boot, chooseMatch, menuState, pullPower, reopen, state, tap, tapMenu, waitForScene, waitUntilSettled } from './poolPage';
 
 /** Presses Android's back button (the app routes the real one to the same place). */
 const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
@@ -9,7 +9,7 @@ const textOf = (page: Page, scene: string, name: string) => page.evaluate(([s, n
 
 /** From the menu: Play, two players, without closing the "how to play" panel. */
 async function startFirstGame(page: Page): Promise<void> {
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
 }
@@ -49,7 +49,7 @@ test('back on the menu closes a panel or the picker first, then leaves the app',
   await back(page);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
 
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
   await back(page);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
@@ -105,7 +105,7 @@ test('the game makes no outside network requests and keeps playing with the netw
   expect((await waitUntilSettled(page)).shots).toBe(1);
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).shots).toBe(1);
   expect(outside).toEqual([]);

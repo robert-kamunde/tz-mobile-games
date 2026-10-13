@@ -1,9 +1,24 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
 import { BACKGROUND_IDS } from '../src/config/backgrounds';
+import { CUE_IDS } from '../src/config/cues';
 import { STORY } from '../src/config/story';
 import { TABLE_IDS } from '../src/config/tables';
-import { MENU_SCENE, SCENE, menuState, playFromMenu, pullPower, reopen, seedWins, state, tap, waitForScene, waitUntilSettled } from './poolPage';
+import {
+  MENU_SCENE,
+  SCENE,
+  menuState,
+  openMenuPage,
+  playFromMenu,
+  pullPower,
+  reopen,
+  seedWins,
+  state,
+  tap,
+  tapMenu,
+  waitForScene,
+  waitUntilSettled,
+} from './poolPage';
 
 /** Earned looks stay locked here (the unlock tests below and story.spec.ts check them). */
 const isReward = (kind: string, id: string) => STORY.rewards.some((r) => r.kind === kind && r.id === id);
@@ -14,7 +29,7 @@ const FREE_BACKGROUNDS = BACKGROUND_IDS.filter((id) => !isReward('background', i
 const tableOnScreen = (page: Page) => page.evaluate(() => window.__tzg!.dataOf('Table', 'table', 'theme'));
 
 async function chooseTable(page: Page, id: string): Promise<void> {
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
   await tap(page, `table-${id}`, MENU_SCENE);
   expect((await menuState(page)).selectedTable).toBe(id);
@@ -25,7 +40,7 @@ async function chooseTable(page: Page, id: string): Promise<void> {
 test('Meza: the chosen table is played on, kept after reopening, and marked on the picker', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
   expect((await menuState(page)).selectedTable).toBe('classic');
   await tap(page, 'table-back', MENU_SCENE);
@@ -38,7 +53,7 @@ test('Meza: the chosen table is played on, kept after reopening, and marked on t
 
   await reopen(page);
   expect((await menuState(page)).table).toBe('zanzibar');
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).selectedTable).toBe('zanzibar');
   expect(errors).toEqual([]);
 });
@@ -48,7 +63,7 @@ test('Back, or the phone\'s back button, leaves the table as it was', async ({ p
   await bootTo(page, MENU_SCENE);
   await chooseTable(page, 'zanzibar');
   for (const close of ['button', 'phone'] as const) {
-    await tap(page, 'menu-tables', MENU_SCENE);
+    await tapMenu(page, 'menu-tables');
     await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
     await tap(page, 'table-classic', MENU_SCENE);
     if (close === 'button') await tap(page, 'table-back', MENU_SCENE);
@@ -70,7 +85,7 @@ test('a game in progress continues on a newly chosen table, with the balls where
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
   await chooseTable(page, 'zanzibar');
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect(await tableOnScreen(page)).toBe('zanzibar');
   expect((await state(page)).balls).toEqual(afterBreak.balls);
@@ -102,7 +117,7 @@ const cueOnScreen = (page: Page) => page.evaluate(() => window.__tzg!.dataOf('Ta
 test('Fimbo: the chosen cue is used on the table and kept after reopening; Back keeps the old one', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  await tap(page, 'menu-cues', MENU_SCENE);
+  await tapMenu(page, 'menu-cues');
   await expect.poll(async () => (await menuState(page)).panel).toBe('cues');
   expect((await menuState(page)).selectedCue).toBe('classic');
   await tap(page, 'cue-zanzibar', MENU_SCENE);
@@ -111,7 +126,7 @@ test('Fimbo: the chosen cue is used on the table and kept after reopening; Back 
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
   expect((await menuState(page)).cue).toBe('zanzibar');
 
-  await tap(page, 'menu-cues', MENU_SCENE);
+  await tapMenu(page, 'menu-cues');
   await tap(page, 'cue-classic', MENU_SCENE);
   await page.evaluate(() => window.__tzg!.back());
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
@@ -132,13 +147,16 @@ test('Mandhari: each background can be chosen and is drawn behind the table; the
   test.slow();
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  // The three look buttons share a row and none covers another.
-  const row = await Promise.all(['menu-tables', 'menu-cues', 'menu-backgrounds'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
-  for (let i = 1; i < row.length; i++) expect(row[i]!.left).toBeGreaterThan(row[i - 1]!.right);
-  for (const b of row) expect(b!.top).toBe(row[0]!.top);
+  // Mapambo: the three look buttons in a column, none covering another, each with how many are open (two free at first).
+  await openMenuPage(page, 'looks');
+  const column = await Promise.all(['menu-tables', 'menu-cues', 'menu-backgrounds', 'menu-back'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
+  for (let i = 1; i < column.length; i++) expect(column[i]!.top).toBeGreaterThan(column[i - 1]!.bottom);
+  expect(await textOf(page, 'menu-tables')).toBe(`Meza  2/${TABLE_IDS.length}`);
+  expect(await textOf(page, 'menu-cues')).toBe(`Fimbo  2/${CUE_IDS.length}`);
+  expect(await textOf(page, 'menu-backgrounds')).toBe(`Mandhari  2/${BACKGROUND_IDS.length}`);
 
   for (const id of FREE_BACKGROUNDS) {
-    await tap(page, 'menu-backgrounds', MENU_SCENE);
+    await tapMenu(page, 'menu-backgrounds');
     await expect.poll(async () => (await menuState(page)).panel).toBe('backgrounds');
     await tap(page, `background-${id}`, MENU_SCENE);
     expect((await menuState(page)).selectedBackground).toBe(id);
@@ -150,7 +168,7 @@ test('Mandhari: each background can be chosen and is drawn behind the table; the
     await waitForScene(page, MENU_SCENE);
   }
 
-  await tap(page, 'menu-backgrounds', MENU_SCENE);
+  await tapMenu(page, 'menu-backgrounds');
   const last = FREE_BACKGROUNDS[FREE_BACKGROUNDS.length - 1]!;
   expect((await menuState(page)).selectedBackground).toBe(last);
   await tap(page, 'background-classic', MENU_SCENE);
@@ -200,7 +218,7 @@ test('only two of each look are free; the others show a padlock and what earns t
     await tap(page, `${kind}-confirm`, MENU_SCENE);
     await expect.poll(async () => (await menuState(page))[kind]).toBe(ids[1]);
   }
-  await tap(page, 'menu-cues', MENU_SCENE);
+  await tapMenu(page, 'menu-cues');
   await expect.poll(async () => (await menuState(page)).panel).toBe('cues');
   expect(await menuState(page)).toMatchObject({ lookPage: 0, lookPages: 1 });
   expect(await textOf(page, 'cue-kitenge-label')).toBe('Kitenge: Shinda Sinza au mechi 6');
@@ -211,7 +229,7 @@ test('a look opens at its story stop or after enough wins, and the picker opens 
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   await seedWins(page, 3);
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
   expect(await dataOf(page, 'table-kitenge-touch', 'locked')).toBe(false);
   expect(await dataOf(page, 'table-maasai-touch', 'locked')).toBe(true);
@@ -220,12 +238,12 @@ test('a look opens at its story stop or after enough wins, and the picker opens 
   await page.evaluate(() => window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data: { character: 'fundi', stars: { fainali: 1 } } })));
   await reopen(page);
   await chooseTable(page, 'kitenge');
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await tap(page, 'table-nextPage', MENU_SCENE);
   await tap(page, 'table-ziwa', MENU_SCENE);
   await tap(page, 'table-confirm', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).table).toBe('ziwa');
-  await tap(page, 'menu-tables', MENU_SCENE);
+  await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
   expect(await menuState(page)).toMatchObject({ lookPage: 1, selectedTable: 'ziwa' });
   expect(errors).toEqual([]);

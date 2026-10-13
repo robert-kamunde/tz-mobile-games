@@ -8,6 +8,7 @@ import {
   elementCenter,
   layout,
   menuState,
+  openMenuPage,
   playFromMenu,
   potTheBlack,
   pullPower,
@@ -15,6 +16,7 @@ import {
   setUpBlackPot,
   state,
   tap,
+  tapMenu,
   waitForScene,
   waitUntilSettled,
 } from './poolPage';
@@ -33,16 +35,27 @@ async function menuAndContinue(page: Page): Promise<void> {
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
   expect((await menuState(page)).continueShown).toBe(true);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
 }
 
 test('the game opens on the menu, with no Continue before a game is played', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  expect(await menuState(page)).toEqual({ continueShown: false, continueStoryShown: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, lookPage: 0, lookPages: 0, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw' });
-  for (const name of ['menu-play', 'menu-story', 'menu-tables', 'menu-cues', 'menu-stats', 'menu-rules', 'menu-settings', 'menu-title', 'menu-background']) await elementCenter(page, name, MENU_SCENE);
+  expect(await menuState(page)).toEqual({ continueShown: false, continueStoryShown: false, page: 'main', savedDot: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, lookPage: 0, lookPages: 0, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw' });
+  // The main page: CHEZA, Mapambo, Takwimu, Sheria, Mipangilio; no dot while nothing is saved.
+  for (const name of ['menu-playMenu', 'menu-looks', 'menu-stats', 'menu-rules', 'menu-settings', 'menu-title', 'menu-background']) await elementCenter(page, name, MENU_SCENE);
+  for (const name of ['menu-savedDot', 'menu-play', 'menu-tables']) expect(await page.evaluate((n) => window.__tzg!.elementCenter('Menu', n), name)).toBeNull();
+  // CHEZA holds Quick game and the journey (no Continue yet); Rudi goes back.
+  await openMenuPage(page, 'play');
+  for (const name of ['menu-play', 'menu-story', 'menu-back']) await elementCenter(page, name, MENU_SCENE);
   expect(await page.evaluate(() => window.__tzg!.elementCenter('Menu', 'menu-continue'))).toBeNull();
+  await openMenuPage(page, 'main');
+  // Mapambo holds the looks; the phone's Back goes back to the main page, not out of the game.
+  await openMenuPage(page, 'looks');
+  for (const name of ['menu-tables', 'menu-cues', 'menu-backgrounds']) await elementCenter(page, name, MENU_SCENE);
+  await page.evaluate(() => window.__tzg!.back());
+  await expect.poll(async () => (await menuState(page)).page).toBe('main');
 
   // Rules open over the menu and Back closes them.
   await tap(page, 'menu-rules', MENU_SCENE);
@@ -52,7 +65,7 @@ test('the game opens on the menu, with no Continue before a game is played', asy
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
 
   // Back on the first step (your character) returns to the menu without starting a game.
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await expect.poll(async () => (await menuState(page)).panel).toBe('characters');
   await tap(page, 'character-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
@@ -74,7 +87,7 @@ test('Menu keeps the game: Continue brings back the same table, also after the a
 
   await reopen(page);
   expect((await menuState(page)).continueShown).toBe(true);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   const reopened = await state(page);
   expect(reopened.balls).toEqual(afterBreak.balls);
@@ -94,7 +107,7 @@ test('closing the app mid-shot resumes the game from just before that shot', asy
   await expect.poll(async () => (await state(page)).steps).toBeGreaterThan(50);
   expect((await state(page)).moving).toBe(true);
   await reopen(page);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   const resumed = await state(page);
   expect(resumed.balls).toEqual(beforeSecond.balls);
@@ -125,7 +138,7 @@ test('a finished game leaves no Continue, and a win against the computer is coun
 
   // The picker marks the last opponent.
   await tap(page, 'stats-back', MENU_SCENE);
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await tap(page, 'character-confirm', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   expect(await highlighted(page, MENU_SCENE, 'opponent-easy')).toBe(true);
@@ -143,12 +156,14 @@ test('the chosen language changes every label and is kept after reopening', asyn
   // Settings stays open, now in English.
   expect((await menuState(page)).panel).toBe('settings');
   expect(await highlighted(page, MENU_SCENE, 'language-en')).toBe(true);
-  expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Quick game');
+  expect(await textOf(page, MENU_SCENE, 'menu-playMenu')).toBe('PLAY');
+  expect(await textOf(page, MENU_SCENE, 'menu-looks')).toBe('Customise');
 
   await reopen(page);
   expect((await menuState(page)).locale).toBe('en');
+  await openMenuPage(page, 'play');
   expect(await textOf(page, MENU_SCENE, 'menu-play')).toBe('Quick game');
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   expect((await state(page)).status).toContain('Fundi');
@@ -172,7 +187,7 @@ test('a damaged saved game is set aside: the menu opens normally with no Continu
 
   // A new game still starts and is saved over the damaged one.
   await tap(page, 'stats-back', MENU_SCENE);
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   expect(JSON.parse((await storage(page, 'pool.match'))!).data.shots).toBe(0);
@@ -184,7 +199,7 @@ test('the computer resumes its own turn after the game is reopened', async ({ pa
   await boot(page, 'easy');
   await layout(page, [], { phase: 'play', current: 1, ballInHand: 'anywhere', groups: ['yellow', 'red'] });
   await reopen(page);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).opponent).toEqual({ kind: 'computer', level: 'easy' });
   await expect.poll(async () => (await state(page)).shots, { timeout: 15_000 }).toBe(1);
@@ -198,7 +213,7 @@ test('after changing the language, Menu from the table opens the main menu, not 
   await tap(page, 'language-en', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).locale).toBe('en');
   await tap(page, 'settings-back', MENU_SCENE);
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await chooseMatch(page, MENU_SCENE, 'two');
   await waitForScene(page, SCENE);
   await tap(page, 'menuButton');
@@ -246,7 +261,7 @@ test('Exit during a game asks first, says the game is saved, and the game contin
   // What the player finds when they open the app again.
   await reopen(page);
   expect((await menuState(page)).continueShown).toBe(true);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tapMenu(page, 'menu-continue');
   await waitForScene(page, SCENE);
   expect((await state(page)).balls).toEqual(afterBreak.balls);
   expect(errors).toEqual([]);
@@ -259,7 +274,7 @@ test('the opponent picker fits all five choices and Back without overlapping, on
     for (let i = 1; i < list.length; i++) expect(list[i]!.top, `button ${i}`).toBeGreaterThan(list[i - 1]!.bottom);
   };
   await bootTo(page, MENU_SCENE);
-  await tap(page, 'menu-play', MENU_SCENE);
+  await tapMenu(page, 'menu-play');
   await tap(page, 'character-confirm', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   expectApart(await boxes(MENU_SCENE));

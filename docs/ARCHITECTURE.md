@@ -111,7 +111,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `config/story.ts`, `progress/story.ts` | Story mode (A33): the eight stops and their rivals, stand-ins, levels, tables and backgrounds; star rules, titles and rewards. `starsFor`, `recordStop` (keeps the best), `isStopOpen`, `nextStop`, `titleFor`, `earnedRewards`, the `is…Locked` checks, `characterNeed` and validation. Pure. |
 | `scenes/StoryScene.ts`, `scenes/storyText.ts` | The story map, one chapter per page: stops, stars, cups and padlocks, the stop card with its twist, the journey's character picker, the chapter's rewards, Back. `storyText` words a reward's need and a twist. |
 | `scenes/EndPanel.ts` | The end-of-game panel: title, stars (story), detail, note, and Endelea / Rudia / Menyu or Ramani, with the 10 s countdown that any touch stops. |
-| `scenes/MenuScene.ts` | Main menu (first scene): Continue, Play (picker), Stats, Rules and Settings (language and sound) panels. |
+| `scenes/MenuScene.ts` | Main menu (first scene). Three pages, each a scene restart with `MenuStart.page`: main (CHEZA, Mapambo, Stats, Rules, Settings, Exit), `play` (Continue, Quick game, journey) and `looks` (table, cue and scenery pickers with counts). Panels open over any page. |
 | `scenes/TableScene.ts` | The match: starting a new game or resuming the saved one, input (aim, power, ball in hand), simulation loop, applying verdicts, saving, counting stats, starting computer turns, New game and Menu. |
 | `controls/spin.ts` | Spin control maths: a point on the cue-ball face to a tip offset (clamped to the physics' largest offset) and back. |
 | `controls/fineAim.ts` | `rotateAim`: turns the aim by a small angle (clockwise on screen for a positive angle). |

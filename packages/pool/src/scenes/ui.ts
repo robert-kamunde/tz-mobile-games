@@ -21,12 +21,12 @@ export const textStyle = (size: string, color: string = COLORS.text): Phaser.Typ
  * A button: a label over a drawn face (scenes/art/uiArt.ts). Taps fire on release, never for a touch the system cancelled (call, notification
  * shade). `width` fixes the width so stacked buttons line up; without it the button fits its text.
  */
-export function addButton(scene: Phaser.Scene, x: number, y: number, spec: ButtonSpec, options: { width?: number; originX?: number } = {}): Phaser.GameObjects.Text {
+export function addButton(scene: Phaser.Scene, x: number, y: number, spec: ButtonSpec, options: { width?: number; originX?: number; fontSize?: string } = {}): Phaser.GameObjects.Text {
   const face = scene.add.image(x, y, '__DEFAULT');
   // Made before the label so it draws underneath at the same depth.
   const button = scene.add
     .text(x, y, spec.label, {
-      ...textStyle(TEXT_STYLE.buttonSize, COLORS.buttonText),
+      ...textStyle(options.fontSize ?? TEXT_STYLE.buttonSize, COLORS.buttonText),
       padding: BUTTON.padding,
       align: 'center',
       ...(options.width ? { fixedWidth: options.width } : {}),

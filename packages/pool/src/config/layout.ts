@@ -201,17 +201,30 @@ export const LOOK_PICKER = {
   locked: { alpha: 0.35, padlock: { width: 26, height: 20, shackle: 9, color: 0xd0d6d3 } },
 } as const;
 
-/** Main menu. */
+/**
+ * Main menu (Robert, 2026-10-13): a big CHEZA (Play) button, then pairs (Mapambo and Takwimu, Sheria and
+ * Mipangilio) and Toka. CHEZA and Mapambo open sub pages of one column with Rudi at the bottom.
+ */
 export const MENU = {
   x: DESIGN.width / 2,
   titleY: 82,
-  /** Up to seven rows (Continue to Exit) fit between the title and the bottom edge. */
-  firstButtonY: 190,
-  buttonSpacing: 70,
+  main: {
+    /** CHEZA, bigger than the rest because it is what most people came for. */
+    playY: 236,
+    playWidth: 520,
+    playFontSize: '40px',
+    /** The rows of pairs and Toka below CHEZA. */
+    firstRowY: 348,
+    rowSpacing: 84,
+  },
+  /** Quick game, journey and Continue (CHEZA); tables, cues and scenery (Mapambo). Up to five rows with Rudi. */
+  sub: { firstButtonY: 212, buttonSpacing: 80 },
   /** Between two buttons sharing a row. */
   pairGap: 16,
-  /** A row of three (Meza, Fimbo, Mandhari) is wider than one button so each label fits. */
-  tripleRowWidth: 620,
+  /** A row of two is wider than one button so each label fits. */
+  pairRowWidth: 620,
+  /** The dot on CHEZA when a game or journey is waiting to be continued, inset from the top-right corner. */
+  savedDot: { radius: 12, inset: 14, color: 0xf2994a, outline: 0x101418, outlineWidth: 3 },
 } as const;
 
 /**

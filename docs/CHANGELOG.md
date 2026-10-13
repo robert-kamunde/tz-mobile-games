@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.29.0 (unreleased) - A shorter main menu: CHEZA and Mapambo
+- Robert chose "Build both" (2026-10-13): the main menu had grown to seven rows. It now has four: a big **CHEZA** (PLAY), then **Mapambo** (Customise) beside Takwimu, Sheria beside Mipangilio, and Toka (Android app only).
+- **CHEZA** opens a page with Endelea na mchezo / Endelea na safari (when a game is waiting), Mchezo wa haraka, Safari ya Bingwa and Rudi. An orange dot on CHEZA says a game or journey game is waiting inside.
+- **Mapambo** opens Meza, Fimbo and Mandhari, each showing how many are open (for example "Meza  2/9"), and Rudi.
+- The phone's Back button on CHEZA or Mapambo goes back to the main page.
+
 ## 0.28.0 (unreleased) - Play reminders
 - Robert chose "Build now" (2026-10-13). The Android app can remind a player to come back, with a phone notification the phone sets by itself (no internet, no server, no personal data). The reminder is about whatever is most useful: an unfinished journey game ("Mchezo wako wa Kariakoo bado unaendelea. Mama Ntilie anakusubiri!"), an unfinished game, a look one win away ("Ushindi 1 tu na upate meza ya Kitenge!"), the next journey stop, or simply "Meza iko tayari. Njoo ucheze!".
 - Gentle by design: one reminder at a time, only after a day away, at least two days apart, always at 6 in the evening. Opening the game removes it.

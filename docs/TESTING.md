@@ -111,7 +111,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Back keeps the table | Selecting another table then Back, or the phone's back button, leaves the saved table unchanged and does not leave the app. |
 | Continue on a new table | A game in progress continues on a table chosen meanwhile, with the balls where they were. |
 | Every table | Each of the six tables draws and plays a break with no errors. |
-| Mandhari | Meza, Fimbo and Mandhari share a row without overlapping. Each of the six backgrounds can be chosen and is drawn on the table screen; the picker marks the saved one; Back keeps it; it survives reopening. |
+| Mandhari | Under Mapambo, Meza, Fimbo and Mandhari stand in a column without overlapping, each with its count (2 open at first). Each of the six backgrounds can be chosen and is drawn on the table screen; the picker marks the saved one; Back keeps it; it survives reopening. |
 | Choose a cue | Fimbo opens with Klasiki selected; choosing Maasai saves it; selecting another then the phone's back button keeps Maasai (and the table unchanged); the table scene draws the Maasai cue; kept after reopening. |
 
 #### Spin and fine aim (4 scenarios, `controls.spec.ts`)
@@ -125,7 +125,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 #### Menu and saving (10 scenarios, `menu.spec.ts`)
 | Scenario | Checks |
 |---|---|
-| Menu first | The game opens on the menu in Kiswahili with Play, Stats, Rules, Settings and the placeholder label, and no Continue; Rules opens with the rules text and Back closes it; Back on the picker returns to the menu without starting a game. |
+| Menu first | The game opens on the main page in Kiswahili with CHEZA, Mapambo, Stats, Rules, Settings, no dot and no Continue; CHEZA holds Quick game, the journey and Rudi; Mapambo holds the looks and the phone's Back returns to the main page; Rules opens with the rules text and Back closes it; Back on the picker returns to the menu without starting a game. |
 | Menu and Continue | After a break, Menu then Continue brings back the same balls, match and opponent; after reopening the page the same again. |
 | Exit, no game | Exit ("Toka") closes the game at once with no popup. |
 | Exit during a game | The popup says the game is saved; its Back button and the phone's back button close it without closing the game; Exit then closes; after reopening, Continue brings back the same balls. |
@@ -136,7 +136,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Menu after a language change | Change to English, play, tap Menu: the main menu opens with no panel (failed before the fix). |
 | Computer resumes | A game saved on the computer's turn: after reopening and Continue, the computer plays its shot by itself. |
 
-All pool scenarios start from the menu: Play, then the opponent, with real taps.
+All pool scenarios start from the menu: CHEZA, Quick game, then the opponent, with real taps (`tapMenu` opens CHEZA or Mapambo first).
 
 #### Sound (7 scenarios, `sound.spec.ts`)
 Sounds are read through the `sound()` test hook (sound state and the sounds actually started, with their level); the headless browser has no speakers.
