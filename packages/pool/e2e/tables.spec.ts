@@ -190,7 +190,7 @@ test('only two of each look are free; the others show a padlock and what earns t
   expect(FREE_BACKGROUNDS).toEqual(['classic', 'wood']);
   for (const kind of ['table', 'background'] as const) {
     const ids = kind === 'table' ? TABLE_IDS : BACKGROUND_IDS;
-    await tap(page, `menu-${kind}s`, MENU_SCENE);
+    await tapMenu(page, `menu-${kind}s`);
     await expect.poll(async () => (await menuState(page)).panel).toBe(`${kind}s`);
     expect(await menuState(page)).toMatchObject({ lookPage: 0, lookPages: 2 });
     expect(await visible(page, `${kind}-prevPage`)).toBe(false);

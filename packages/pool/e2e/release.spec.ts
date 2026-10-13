@@ -54,6 +54,11 @@ test('back on the menu closes a panel or the picker first, then leaves the app',
   await back(page);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
   expect(await leaves(page)).toBe(0);
+  // On CHEZA, back goes to the main page first.
+  expect((await menuState(page)).page).toBe('play');
+  await back(page);
+  await expect.poll(async () => (await menuState(page)).page).toBe('main');
+  expect(await leaves(page)).toBe(0);
 
   await back(page);
   expect(await leaves(page)).toBe(1);
