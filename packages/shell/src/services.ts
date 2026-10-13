@@ -16,6 +16,7 @@ import {
   type Translator,
 } from '@tzg/core';
 import { exitApp, isNativeApp, leaveApp } from './nativeApp';
+import { createReminders, type Reminders } from './reminders';
 import { SoundBoard } from './sound';
 
 /**
@@ -34,6 +35,8 @@ export interface Services {
   readonly back: BackButton;
   /** Closing the game from its menu; `available` is false on a web page, which cannot close itself. */
   readonly exit: AppExit;
+  /** Play reminders as phone notifications; `available` is false on a web page. */
+  readonly reminders: Reminders;
   getSettings(): Readonly<Settings>;
   /** Applies a partial change, persists it, and returns the new settings. */
   updateSettings(change: Partial<Settings>): Readonly<Settings>;
@@ -71,6 +74,8 @@ export function createServices(options: CreateServicesOptions): Services {
     logger.child('exit'),
   );
 
+  const reminders = createReminders(logger.child('reminders'), import.meta.env.MODE === 'e2e');
+
   // Persist on every pause: Android may kill a backgrounded app without further notice.
   lifecycle.on('pause', () => settingsSlot.save(settings));
 
@@ -83,6 +88,7 @@ export function createServices(options: CreateServicesOptions): Services {
     sound,
     back,
     exit,
+    reminders,
     getSettings: () => settings,
     updateSettings(change) {
       settings = { ...settings, ...change };

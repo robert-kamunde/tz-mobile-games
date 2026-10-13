@@ -1,6 +1,6 @@
 {
   "name": "@tzg/pool",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "private": true,
   "type": "module",
   "description": "Bongo Pool Table. Physics and rules are plain TypeScript in src/physics; Phaser is used only in src/scenes.",
@@ -19,6 +19,7 @@
     "@capacitor/android": "8.5.3",
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
+    "@capacitor/local-notifications": "8.3.1",
     "@tzg/core": "0.1.0",
     "@tzg/shell": "0.1.0",
     "phaser": "4.2.1"

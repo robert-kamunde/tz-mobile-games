@@ -3,6 +3,7 @@ import type { TableConfig } from '../config/table';
 import { PROGRESS_VERSION, defaultProgress, validateProgress, type PoolProgress } from './progress';
 import { TIPS_VERSION, defaultTips, validateTips, type PoolTips } from './tips';
 import { SAVED_MATCH_VERSION, validateSavedMatch, type SavedMatch } from './savedMatch';
+import { REMINDERS_VERSION, defaultReminderPrefs, validateReminderPrefs, type ReminderPrefs } from './reminders';
 import { STORY_VERSION, defaultStory, validateStory, type StoryProgress } from './story';
 
 /** The pool game's save slots, under the game's key prefix (e.g. `pool.match`). */
@@ -18,6 +19,8 @@ export interface PoolSlots {
   readonly tips: SaveSlot<PoolTips>;
   /** Story mode: the journey's character and the stars won (0.24.0). */
   readonly story: SaveSlot<StoryProgress>;
+  /** Play reminders: the Settings switch and when reminders were set (0.28.0). */
+  readonly reminders: SaveSlot<ReminderPrefs>;
 }
 
 export function createPoolSlots(gameId: string, store: KeyValueStore, table: TableConfig, logger?: Logger): PoolSlots {
@@ -64,6 +67,14 @@ export function createPoolSlots(gameId: string, store: KeyValueStore, table: Tab
       version: STORY_VERSION,
       defaults: defaultStory,
       validate: validateStory,
+      store,
+      ...log,
+    }),
+    reminders: createSaveSlot<ReminderPrefs>({
+      key: `${gameId}.reminders`,
+      version: REMINDERS_VERSION,
+      defaults: defaultReminderPrefs,
+      validate: validateReminderPrefs,
       store,
       ...log,
     }),

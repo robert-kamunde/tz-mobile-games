@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.28.0 (unreleased) - Play reminders
+- Robert chose "Build now" (2026-10-13). The Android app can remind a player to come back, with a phone notification the phone sets by itself (no internet, no server, no personal data). The reminder is about whatever is most useful: an unfinished journey game ("Mchezo wako wa Kariakoo bado unaendelea. Mama Ntilie anakusubiri!"), an unfinished game, a look one win away ("Ushindi 1 tu na upate meza ya Kitenge!"), the next journey stop, or simply "Meza iko tayari. Njoo ucheze!".
+- Gentle by design: one reminder at a time, only after a day away, at least two days apart, always at 6 in the evening. Opening the game removes it.
+- The player is asked to allow notifications once, after their first win against the computer, not when the game first opens. **Vikumbusho** in Mipangilio turns reminders on or off (only in the Android app).
+- New: the notification plugin `@capacitor/local-notifications` 8.3.1 and a white status-bar icon. After pulling, run `npm install` before syncing the Android project.
+- Birthday wishes were left out: they would need a date of birth (personal data).
+
 ## 0.27.0 (unreleased) - Quick game no longer loses the journey game
 - Fix (Robert, 2026-10-13): starting a Quick game while a Safari ya Bingwa game was half-way replaced it, because both used the same save. They are now saved apart: the menu shows **Endelea na mchezo** for the Quick game and **Endelea na safari** for the story game, side by side when both are waiting. A story game saved by an older version moves to Endelea na safari on its own. (Stars already won were never lost; only the half-played stop game was.)
 

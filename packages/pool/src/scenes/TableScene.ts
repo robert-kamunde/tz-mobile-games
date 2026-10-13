@@ -47,6 +47,7 @@ import type { CharacterPicks } from '../progress/characters';
 import type { StoryTwist } from '../config/story';
 import { STORY } from '../config/story';
 import { lockedCharacters } from './storyText';
+import { askForRemindersOnce } from './reminderSetup';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { computerWins, recordGame } from '../progress/progress';
 import { restoreBalls, toSavedBalls, type SavedMatch } from '../progress/savedMatch';
@@ -638,6 +639,7 @@ export class TableScene extends Phaser.Scene {
   private recordResult(winner: PlayerId): void {
     const progress = this.slots.progress.load().data;
     this.slots.progress.save(recordGame(progress, this.opponent, winner));
+    if (this.opponent.kind === 'computer' && winner === PERSON) askForRemindersOnce(getServices(this), this.slots);
   }
 
   private turnMessage(): string {

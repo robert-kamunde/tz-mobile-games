@@ -16,6 +16,7 @@
   "dependencies": {
     "@capacitor/app": "8.1.2",
     "@capacitor/core": "8.5.3",
+    "@capacitor/local-notifications": "8.3.1",
     "@tzg/core": "0.1.0",
     "phaser": "4.2.1"
   },

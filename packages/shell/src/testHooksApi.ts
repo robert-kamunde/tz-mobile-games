@@ -32,6 +32,12 @@ export interface TestHooks {
   backLeaves(): number;
   /** How many times the menu's Exit closed the game (browser tests only count; nothing closes). */
   exits(): number;
+  /**
+   * Play reminders in tests: whether notifications are allowed, how often the player was asked, and
+   * the reminder waiting (its time as ms). `answerReminders` sets what the player will answer.
+   */
+  reminders(): { allowed: boolean; asks: number; waiting: { title: string; body: string; at: number } | null };
+  answerReminders(allow: boolean): void;
   frameCpuStats(): { frames: number; averageMs: number; maxMs: number };
   resetFrameCpuStats(): void;
   /** Converts a point in design pixels (e.g. 1280x720 space) to page (CSS) pixels. */

@@ -75,6 +75,7 @@ The icon and feature graphic are drawn by `npm run icons -w @tzg/pool`.
 - Saved games, stats and settings stay on the phone (Android app storage) and are never sent anywhere. Android's own backup may copy them to the player's Google account; that is Android's backup, not ours, and is not "collection" under Play's definition.
 - No account, no ads, no analytics, no crash reporting, no network requests (checked by the offline browser test).
 - Data encrypted in transit: not applicable (nothing is sent).
+- Play reminders (0.28.0) are local notifications set by the phone itself; no push service, no data leaves the phone. Android 13 and later ask the player's permission (POST_NOTIFICATIONS).
 - Deletion: clearing the app's data or uninstalling removes everything.
 
 If ads, analytics or online play are added later, this form and the privacy policy must change before that release.

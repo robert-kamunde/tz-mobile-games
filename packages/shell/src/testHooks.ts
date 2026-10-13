@@ -1,4 +1,5 @@
 import type * as Phaser from 'phaser';
+import type { TestReminders } from './reminders';
 import type { Services } from './services';
 import type { RotateOverlay } from './rotateOverlay';
 import type { TestHooks } from './testHooksApi';
@@ -66,6 +67,13 @@ export function installTestHooks(game: Phaser.Game, services: Services, rotateOv
     back: () => services.back.press(),
     backLeaves: () => services.back.leaveCount,
     exits: () => services.exit.exitCount,
+    reminders() {
+      const r = services.reminders as TestReminders;
+      return { allowed: r.granted, asks: r.asks, waiting: r.waiting && { title: r.waiting.title, body: r.waiting.body, at: r.waiting.at.getTime() } };
+    },
+    answerReminders(allow) {
+      (services.reminders as TestReminders).answer = allow;
+    },
     frameCpuStats: () => ({ frames: cpu.frames, averageMs: cpu.frames ? cpu.totalMs / cpu.frames : 0, maxMs: cpu.maxMs }),
     resetFrameCpuStats() {
       cpu.frames = 0;

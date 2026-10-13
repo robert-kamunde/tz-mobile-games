@@ -23,6 +23,7 @@ import type { StoryStart } from './StoryScene';
 import { computerWins } from '../progress/progress';
 import { lockedBy } from '../progress/story';
 import { lockedCharacters, needText } from './storyText';
+import { setUpReminders } from './reminderSetup';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 import { loadPortraitFiles } from './art/portraitFiles';
@@ -68,6 +69,7 @@ export class MenuScene extends Phaser.Scene {
     this.openPanel = null;
     // Loading also checks the saves: a damaged one is backed up and no Continue is offered.
     moveStoryGame(this.slots);
+    setUpReminders(getServices(this), this.slots);
     const savedQuick = this.slots.match.load().data !== null;
     const savedStory = this.slots.storyMatch.load().data !== null;
     this.hasSavedGame = savedQuick || savedStory;
@@ -268,10 +270,36 @@ export class MenuScene extends Phaser.Scene {
               },
             })),
           },
+          // Play reminders, only where the phone can show them (the Android app).
+          ...(services.reminders.available ? [this.remindersRow()] : []),
         ],
       });
     }
     this.openPanel = kind;
+  }
+
+  /** Vikumbusho: on asks the phone for permission when it was not given; off removes the waiting reminder. */
+  private remindersRow() {
+    const t = this.t;
+    const services = getServices(this);
+    const on = this.slots.reminders.load().data.on;
+    const set = (wanted: boolean) => {
+      if (wanted === on) return;
+      this.slots.reminders.save({ ...this.slots.reminders.load().data, on: wanted, asked: true });
+      if (wanted) {
+        void services.reminders.allowed().then((allowed) => (allowed ? undefined : services.reminders.ask()));
+      } else {
+        void services.reminders.replace(null);
+      }
+      this.scene.restart({ panel: 'settings' } satisfies MenuStart);
+    };
+    return {
+      label: t.t('settings.reminders'),
+      choices: [
+        { name: 'reminders-on', label: t.t('settings.on'), highlighted: on, onTap: () => set(true) },
+        { name: 'reminders-off', label: t.t('settings.off'), highlighted: !on, onTap: () => set(false) },
+      ],
+    };
   }
 
   private closePanel(): void {
