@@ -4,7 +4,7 @@ import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { AI_LEVEL_IDS } from '../config/ai';
 import { COMPUTER_CHARACTERS } from '../config/characters';
 import { BUTTON, COLORS, HANDS, LOOK_PICKER, MENU, PANEL, TABLE_LAYOUT, TEXT_STYLE } from '../config/layout';
-import type { PoolSlots } from '../progress/slots';
+import { moveStoryGame, type PoolSlots } from '../progress/slots';
 import { CUE_ART, TABLE_ART } from '../config/art';
 import { BACKGROUNDS, BACKGROUND_IDS, isBackgroundId } from '../config/backgrounds';
 import { CUE_IDS, CUE_STYLES, isCueId } from '../config/cues';
@@ -66,8 +66,11 @@ export class MenuScene extends Phaser.Scene {
     this.slots = getPoolSlots(this);
     this.panel = null;
     this.openPanel = null;
-    // Loading also checks the save: a damaged one is backed up and no Continue is offered.
-    this.hasSavedGame = this.slots.match.load().data !== null;
+    // Loading also checks the saves: a damaged one is backed up and no Continue is offered.
+    moveStoryGame(this.slots);
+    const savedQuick = this.slots.match.load().data !== null;
+    const savedStory = this.slots.storyMatch.load().data !== null;
+    this.hasSavedGame = savedQuick || savedStory;
 
     const t = this.t;
     this.add.image(0, 0, menuBackgroundTexture(this)).setOrigin(0).setName('menu-background');
@@ -75,7 +78,15 @@ export class MenuScene extends Phaser.Scene {
     // Each row is one button, or two side by side (Meza and Fimbo share a row so the menu fits).
     type Item = { id: string; onTap: () => void };
     const rows: Item[][] = [
-      ...(this.hasSavedGame ? [[{ id: 'continue', onTap: () => this.startTable({ resume: true }) }]] : []),
+      // A Quick game and a story game can both be waiting; each has its own Continue.
+      ...(this.hasSavedGame
+        ? [
+            [
+              ...(savedQuick ? [{ id: 'continue', onTap: () => this.startTable({ resume: 'quick' }) }] : []),
+              ...(savedStory ? [{ id: 'continueStory', onTap: () => this.startTable({ resume: 'story' }) }] : []),
+            ],
+          ]
+        : []),
       [
         {
           id: 'play',
@@ -122,7 +133,8 @@ export class MenuScene extends Phaser.Scene {
     });
 
     registerTestProbe('pool.menu', () => ({
-      continueShown: this.hasSavedGame,
+      continueShown: savedQuick,
+      continueStoryShown: savedStory,
       panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.looks.showing ? `${this.looks.showing}s` : this.openPanel,
       selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
       selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,

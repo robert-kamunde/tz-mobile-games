@@ -53,7 +53,9 @@ export interface PoolState {
 }
 
 export interface MenuState {
+  /** Continue for a Quick game, and for a story game. */
   continueShown: boolean;
+  continueStoryShown: boolean;
   panel: 'picker' | 'characters' | 'tables' | 'cues' | 'backgrounds' | 'stats' | 'rules' | 'settings' | 'exit' | null;
   selectedCharacter: string | null;
   /** Selected on the open table picker. */

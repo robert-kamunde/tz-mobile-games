@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.27.0 (unreleased) - Quick game no longer loses the journey game
+- Fix (Robert, 2026-10-13): starting a Quick game while a Safari ya Bingwa game was half-way replaced it, because both used the same save. They are now saved apart: the menu shows **Endelea na mchezo** for the Quick game and **Endelea na safari** for the story game, side by side when both are waiting. A story game saved by an older version moves to Endelea na safari on its own. (Stars already won were never lost; only the half-played stop game was.)
+
 ## 0.26.0 (unreleased) - Picker pages, earned looks and characters
 - Fix (Robert, 2026-10-12): in Meza and Mandhari the ninth item (Ziwa) was cut off and could not be reached. The table, cue and scenery pickers now show a page at a time (8 per page) with ‹ › arrows beside Back and Chagua, and the page number after the title ("Chagua meza 1/2"). Robert chose pages over scrolling. A picker opens on the page of the current choice.
 - **Only two of each look are free** (Robert, 2026-10-12): tables Klasiki and Zanzibar, cues Klasiki and Zanzibar, scenery Klasiki and Mbao. The other twelve open by playing, in this order, each at its story stop **or** after enough wins against the computer (3, 6, 9 ... 36), whichever comes first: Kitenge table (Kariakoo), Kitenge cue (Sinza), Kanga scenery (Mwenge), Maasai table (Bagamoyo), Maasai cue (Dodoma), Bahari scenery (Tanga), Tingatinga table (Babati), Tingatinga cue (Karatu), Nyota scenery (Bukoba), Makonde table (Mbeya), Makonde cue (Mtwara), Makuti scenery (Pemba). Story wins count toward the wins too. The chapter and star rewards of 0.25.0 are unchanged. No coins, no buying.

@@ -7,8 +7,13 @@ import { STORY_VERSION, defaultStory, validateStory, type StoryProgress } from '
 
 /** The pool game's save slots, under the game's key prefix (e.g. `pool.match`). */
 export interface PoolSlots {
-  /** The game in progress; loads null when there is none (or it was unreadable). */
+  /** The Quick game in progress; loads null when there is none (or it was unreadable). */
   readonly match: SaveSlot<SavedMatch | null>;
+  /**
+   * The story game in progress, kept apart so a Quick game never replaces it (Robert, 2026-10-13).
+   * Before 0.27.0 a story game was saved in `match`; `moveStoryGame` moves it here.
+   */
+  readonly storyMatch: SaveSlot<SavedMatch | null>;
   readonly progress: SaveSlot<PoolProgress>;
   readonly tips: SaveSlot<PoolTips>;
   /** Story mode: the journey's character and the stars won (0.24.0). */
@@ -23,6 +28,18 @@ export function createPoolSlots(gameId: string, store: KeyValueStore, table: Tab
       version: SAVED_MATCH_VERSION,
       defaults: () => null,
       validate: (raw) => validateSavedMatch(raw, table),
+      store,
+      ...log,
+    }),
+    storyMatch: createSaveSlot<SavedMatch | null>({
+      key: `${gameId}.storyMatch`,
+      version: SAVED_MATCH_VERSION,
+      defaults: () => null,
+      // Only a story game belongs here.
+      validate: (raw) => {
+        const saved = validateSavedMatch(raw, table);
+        return saved?.story ? saved : null;
+      },
       store,
       ...log,
     }),
@@ -51,4 +68,12 @@ export function createPoolSlots(gameId: string, store: KeyValueStore, table: Tab
       ...log,
     }),
   };
+}
+
+/** A story game saved before 0.27.0 sits in the Quick game slot: moves it to its own slot. */
+export function moveStoryGame(slots: PoolSlots): void {
+  const saved = slots.match.load().data;
+  if (!saved?.story) return;
+  if (slots.storyMatch.load().data === null) slots.storyMatch.save(saved);
+  slots.match.clear();
 }

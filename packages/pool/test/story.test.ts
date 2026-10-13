@@ -6,7 +6,7 @@ import { CUE_IDS } from '../src/config/cues';
 import { QUIP_LINES } from '../src/config/quips';
 import { STORY, STORY_CHAPTERS, STORY_STOPS } from '../src/config/story';
 import { TABLE_IDS } from '../src/config/tables';
-import { createPoolSlots } from '../src/progress/slots';
+import { createPoolSlots, moveStoryGame } from '../src/progress/slots';
 import {
   MAX_STARS,
   characterById,
@@ -178,5 +178,31 @@ describe('story mode', () => {
     expect(validateStoryGame({ stop: 'ubungo', fouls: 0, shots: -2 })).toBeNull();
     expect(validateSavedMatch({ ...base, story: { stop: 'nowhere', fouls: 0 } }, UK_7FT_TABLE)).toBeNull();
     expect(validateStoryGame({ stop: 'sinza', fouls: -1 })).toBeNull();
+  });
+
+  it('keeps a story game apart from the Quick game, and moves one saved the old way', () => {
+    const base = {
+      opponent: { kind: 'computer' as const, level: 'easy' as const },
+      picks: ['fundi', 'mwamba'] as const,
+      match: startMatch(0),
+      balls: rackBalls(UK_7FT_TABLE).map((b) => ({ id: b.id, x: b.x, y: b.y, pocketed: false })),
+      shots: 0,
+    };
+    const storyGame = { ...base, story: { stop: 'sinza', fouls: 0, shots: 0 } };
+    const store = new MemoryStore();
+    const slots = createPoolSlots('pool', store, UK_7FT_TABLE);
+    // A Quick game is not a story game.
+    slots.storyMatch.save(base);
+    expect(slots.storyMatch.load().data).toBeNull();
+    // Saved the old way: moved, and the Quick game slot is freed.
+    slots.match.save(storyGame);
+    moveStoryGame(slots);
+    expect(slots.match.load().data).toBeNull();
+    expect(slots.storyMatch.load().data?.story?.stop).toBe('sinza');
+    // A Quick game stays where it is.
+    slots.match.save(base);
+    moveStoryGame(slots);
+    expect(slots.match.load().data).not.toBeNull();
+    expect(slots.storyMatch.load().data?.story?.stop).toBe('sinza');
   });
 });

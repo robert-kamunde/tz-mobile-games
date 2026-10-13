@@ -106,7 +106,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `progress/savedMatch.ts` | The saved game in progress (A17): `toSavedBalls`, `restoreBalls`, `validateSavedMatch`. |
 | `progress/progress.ts` | Stats and the last opponent: `recordGame`, `validateProgress`. |
 | `progress/tips.ts` | One-time help already shown (`howToPlaySeen`). |
-| `progress/slots.ts` | The save slots `pool.match`, `pool.progress`, `pool.tips` and `pool.story`. |
+| `progress/slots.ts` | The save slots `pool.match`, `pool.storyMatch`, `pool.progress`, `pool.tips` and `pool.story`; `moveStoryGame` moves a story game saved before 0.27.0 out of `pool.match`. |
 | `config/story.ts`, `progress/story.ts` | Story mode (A33): the eight stops and their rivals, stand-ins, levels, tables and backgrounds; star rules, titles and rewards. `starsFor`, `recordStop` (keeps the best), `isStopOpen`, `nextStop`, `titleFor`, `earnedRewards`, the `is…Locked` checks, `characterNeed` and validation. Pure. |
 | `scenes/StoryScene.ts`, `scenes/storyText.ts` | The story map, one chapter per page: stops, stars, cups and padlocks, the stop card with its twist, the journey's character picker, the chapter's rewards, Back. `storyText` words a reward's need and a twist. |
 | `scenes/EndPanel.ts` | The end-of-game panel: title, stars (story), detail, note, and Endelea / Rudia / Menyu or Ramani, with the 10 s countdown that any touch stops. |
@@ -144,7 +144,8 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `pool.match` | pool | 1 | The game in progress (A17): `{ opponent, picks: [id, id], match, balls: [{ id, x, y, pocketed }], shots }`. Removed when the game ends. `picks` is new in 0.9.0 and may be missing (A23). |
 | `pool.progress` | pool | 1 | `{ vsComputer: { easy, medium, hard: { played, won } }, twoPlayerGames, lastOpponent, lastPicks, table, cue, hand, background }` (`lastPicks` new in 0.9.0, `table` 0.11.0, `cue` 0.12.0, `hand` 0.14.0, `background` 0.15.0; each may be missing and falls back to its default) |
 | `pool.tips` | pool | 1 | `{ howToPlaySeen }` |
-| `pool.story` | pool | 1 | Story mode (0.24.0): `{ character, stars: { <stopId>: 1..3 } }`. Titles and rewards are worked out from the stars. `pool.match` may carry `story: { stop, fouls, shots }` for a story game in progress (`shots`, the person's shots for a shot limit, is new in 0.25.0 and counts from 0 when missing). |
+| `pool.story` | pool | 1 | Story mode (0.24.0): `{ character, stars: { <stopId>: 1..3 } }`. Titles and rewards are worked out from the stars. A story game in progress is saved like `pool.match` with `story: { stop, fouls, shots }` (`shots`, the person's shots for a shot limit, is new in 0.25.0 and counts from 0 when missing); from 0.27.0 it has its own slot, `pool.storyMatch`, below. |
+| `pool.storyMatch` | pool | 1 | The story game in progress (0.27.0), as `pool.match` and always with `story`, so a Quick game never replaces it. Before 0.27.0 it lived in `pool.match`; the menu moves it on start. |
 | `<key>.backup` | core | n/a | The last unreadable value of that key, as stored (A18). |
 
 Pool's `gameId` is `pool`.

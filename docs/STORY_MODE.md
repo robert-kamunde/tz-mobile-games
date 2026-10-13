@@ -26,7 +26,7 @@ questions at the end: this name, eight stops, these star rules, build it now ("l
 Differences from the plan below, found while building:
 - Titles show on the map (under your name) and on the end panel when earned, not in the player
   panel on the table: there is no room beside the name there.
-- Starting a stop replaces a saved Quick game, as starting any new game does.
+- Starting a stop replaces a saved Quick game, as starting any new game does. (Changed in 0.27.0: a story game and a Quick game are saved apart, each with its own Continue on the menu.)
 - The trophy for a beaten stop is a small gold cup on the stop's face; Bingwa's is the same cup.
 - The rewards are named Dhahabu (table), Bingwa (cue) and Vikombe (background) in the pickers.
 

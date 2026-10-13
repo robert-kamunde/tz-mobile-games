@@ -89,7 +89,8 @@ const COMPUTER_PLAYER: PlayerId = 1;
 const PERSON: PlayerId = 0;
 
 /** How the table is opened: a new game (opponent and characters), the saved game, or a story stop. */
-export type TableStart = MatchChoice | { readonly resume: true } | { readonly story: string };
+/** A new game, a saved one (the Quick game or the story game), or a story stop. */
+export type TableStart = MatchChoice | { readonly resume: 'quick' | 'story' } | { readonly story: string };
 
 /**
  * A Blackball match on one table, against another person on the same phone or the computer.
@@ -172,7 +173,7 @@ export class TableScene extends Phaser.Scene {
     this.story = null;
     const looks = this.slots.progress.load().data;
     const played = this.played;
-    const saved = 'resume' in start ? this.slots.match.load().data : null;
+    const saved = 'resume' in start ? (start.resume === 'story' ? this.slots.storyMatch : this.slots.match).load().data : null;
     // A story stop is played on its own table and background; locked looks fall back to the defaults.
     const stop = storyStop('story' in start ? start.story : (saved?.story?.stop ?? ''));
     const table = stop?.table ?? (isTableLocked(looks.table, played) ? DEFAULT_TABLE : looks.table);
@@ -436,12 +437,13 @@ export class TableScene extends Phaser.Scene {
    * game from before the shot is saved: a shot cut off half way cannot be judged.
    */
   private saveMatch(): void {
+    const slot = this.story ? this.slots.storyMatch : this.slots.match;
     if (this.match.phase === 'over') {
-      this.slots.match.clear();
+      slot.clear();
       return;
     }
     const game = this.sim.isMoving ? this.beforeShot : this.snapshot();
-    if (game) this.slots.match.save(game);
+    if (game) slot.save(game);
   }
 
   /** A panel over the table (choosing a game or "how to play"): the table ignores the player meanwhile. */

@@ -9,6 +9,7 @@ import {
   dragSpin,
   layout,
   menuState,
+  playFromMenu,
   potTheBlack,
   pullPower,
   reopen,
@@ -238,7 +239,7 @@ test('untouched, the end panel goes back to the map', async ({ page }) => {
   // The finished stop is not offered as Continue.
   await back(page);
   await waitForScene(page, MENU_SCENE);
-  expect((await menuState(page)).continueShown).toBe(false);
+  expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: false });
   expect(errors).toEqual([]);
 });
 
@@ -248,8 +249,8 @@ test('a story game left half-way continues as the same stop, and its win counts'
   await openMap(page, 'fundi');
   await playStop(page, 'mtaani');
   await reopen(page);
-  expect((await menuState(page)).continueShown).toBe(true);
-  await tap(page, 'menu-continue', MENU_SCENE);
+  expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: true });
+  await tap(page, 'menu-continueStory', MENU_SCENE);
   await waitForScene(page, SCENE);
   const s = await state(page);
   expect(s.story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
@@ -375,11 +376,11 @@ test('twist: a shot limit counts down and running out loses, also after Continue
   // The game is saved when it is closed; then, as if 13 shots had been played before that.
   await reopen(page);
   await page.evaluate(() => {
-    const raw = JSON.parse(window.localStorage.getItem('pool.match')!) as { data: { story: { shots: number } } };
+    const raw = JSON.parse(window.localStorage.getItem('pool.storyMatch')!) as { data: { story: { shots: number } } };
     raw.data.story.shots = 13;
-    window.localStorage.setItem('pool.match', JSON.stringify(raw));
+    window.localStorage.setItem('pool.storyMatch', JSON.stringify(raw));
   });
-  await tap(page, 'menu-continue', MENU_SCENE);
+  await tap(page, 'menu-continueStory', MENU_SCENE);
   await waitForScene(page, SCENE);
   expect((await state(page)).status).toContain('mapigo 1 yamebaki');
   // The break: a legal shot that does not win, the last one allowed.
@@ -411,5 +412,60 @@ test('a stop card names the look it earns', async ({ page }) => {
   await tap(page, 'stop-kariakoo', STORY_SCENE);
   await expect.poll(async () => (await storyState(page)).card).toBe('kariakoo');
   expect(await textOf(page, STORY_SCENE, 'stopCard-body')).toContain('Zawadi: meza ya Kitenge!');
+  expect(errors).toEqual([]);
+});
+
+test('a Quick game never replaces a story game: both are kept, each with its own Continue', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openMap(page, 'fundi');
+  await playStop(page, 'mtaani');
+  await pullPower(page, 0.3);
+  const story = await waitUntilSettled(page);
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: true });
+  // A new Quick game, left half-way too.
+  await playFromMenu(page, 'two');
+  expect((await state(page)).story).toBeNull();
+  await pullPower(page, 0.3);
+  const quick = await waitUntilSettled(page);
+  await reopen(page);
+  expect(await menuState(page)).toMatchObject({ continueShown: true, continueStoryShown: true });
+  // Both buttons share a row, side by side.
+  const [a, b] = await Promise.all(['menu-continue', 'menu-continueStory'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
+  expect(b!.left).toBeGreaterThan(a!.right);
+  expect(b!.top).toBe(a!.top);
+  expect(await textOf(page, MENU_SCENE, 'menu-continueStory')).toBe('Endelea na safari');
+
+  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).story).toMatchObject({ stop: 'mtaani' });
+  expect((await state(page)).balls).toEqual(story.balls);
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  await tap(page, 'menu-continue', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).story).toBeNull();
+  expect((await state(page)).balls).toEqual(quick.balls);
+  expect(errors).toEqual([]);
+});
+
+test('a story game saved by an older version, in the Quick game save, moves to Continue journey', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openMap(page, 'fundi');
+  await playStop(page, 'mtaani');
+  await reopen(page);
+  await page.evaluate(() => {
+    window.localStorage.setItem('pool.match', window.localStorage.getItem('pool.storyMatch')!);
+    window.localStorage.removeItem('pool.storyMatch');
+  });
+  await reopen(page);
+  expect(await menuState(page)).toMatchObject({ continueShown: false, continueStoryShown: true });
+  expect(await page.evaluate(() => window.localStorage.getItem('pool.match'))).toBeNull();
+  await tap(page, 'menu-continueStory', MENU_SCENE);
+  await waitForScene(page, SCENE);
+  expect((await state(page)).story).toMatchObject({ stop: 'mtaani' });
   expect(errors).toEqual([]);
 });
