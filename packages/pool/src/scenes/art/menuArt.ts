@@ -1,6 +1,7 @@
 import type * as Phaser from 'phaser';
-import { LOGO_ART, MENU_ART } from '../../config/art';
+import { ART_FILES, LOGO_ART, MENU_ART } from '../../config/art';
 import { DESIGN } from '../../config/layout';
+import { artFileKey, artPicture } from './artFiles';
 import { canvasTexture } from './canvasArt';
 
 const FULL = Math.PI * 2;
@@ -14,9 +15,26 @@ function scatter(seed: number): () => number {
   };
 }
 
-/** The menu's background: a pool bar at night (MENU_ART), drawn once. */
+/** The texture of the menu background made from Robert's picture. */
+export const MENU_PICTURE_KEY = 'menu-bar-picture';
+
+/**
+ * The menu's background, screen-sized: Robert's picture (art/menu-background.jpg) scaled to cover
+ * the screen, or else the drawn pool bar (MENU_ART).
+ */
 export function menuBackgroundTexture(scene: Phaser.Scene): string {
+  const picture = artPicture(scene, 'menu-background');
+  if (picture) return canvasTexture(scene, MENU_PICTURE_KEY, DESIGN.width, DESIGN.height, (ctx, w, h) => drawCover(ctx, picture, w, h));
   return canvasTexture(scene, 'menu-bar', DESIGN.width, DESIGN.height, (ctx, w, h) => drawMenuBar(ctx, w, h));
+}
+
+/** Draws a picture scaled to cover w x h, centred (the edges that do not fit are cut off). */
+export function drawCover(ctx: CanvasRenderingContext2D, picture: CanvasImageSource, w: number, h: number): void {
+  const pw = Number((picture as { width: number }).width);
+  const ph = Number((picture as { height: number }).height);
+  const k = Math.max(w / pw, h / ph);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(picture, (w - pw * k) / 2, (h - ph * k) / 2, pw * k, ph * k);
 }
 
 export function drawMenuBar(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -353,9 +371,17 @@ function poolTableEdge(ctx: CanvasRenderingContext2D, w: number, h: number): voi
   }
 }
 
-/** The title logo (LOGO_ART) for the game's name, e.g. "Bongo Pool Table". */
-export function logoTexture(scene: Phaser.Scene, title: string): string {
-  return canvasTexture(scene, `logo-${title}`, LOGO_ART.width, LOGO_ART.height, (ctx, w) => drawLogo(ctx, w, title));
+/**
+ * The title logo: Robert's picture (art/logo.png, ART_FILES.logoWidth wide), or else drawn (LOGO_ART)
+ * for the game's name, e.g. "Bongo Pool Table". Returns the texture and the size to show it at.
+ */
+export function logoTexture(scene: Phaser.Scene, title: string): { key: string; width: number; height: number; picture: boolean } {
+  const picture = artPicture(scene, 'logo');
+  if (picture) {
+    const width = ART_FILES.logoWidth;
+    return { key: artFileKey('logo'), picture: true, width, height: (width * Number((picture as { height: number }).height)) / Number((picture as { width: number }).width) };
+  }
+  return { key: canvasTexture(scene, `logo-${title}`, LOGO_ART.width, LOGO_ART.height, (ctx, w) => drawLogo(ctx, w, title)), width: LOGO_ART.width, height: LOGO_ART.height, picture: false };
 }
 
 export function drawLogo(ctx: CanvasRenderingContext2D, w: number, title: string): void {

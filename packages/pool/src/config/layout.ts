@@ -207,18 +207,19 @@ export const LOOK_PICKER = {
  */
 export const MENU = {
   x: DESIGN.width / 2,
-  titleY: 82,
+  /** Centre of the logo; Robert's picture logo (0.31.0) is about 200 high, so the buttons start lower. */
+  titleY: 108,
   main: {
     /** CHEZA, bigger than the rest because it is what most people came for. */
-    playY: 236,
+    playY: 258,
     playWidth: 520,
     playFontSize: '40px',
     /** The rows of pairs and Toka below CHEZA. */
-    firstRowY: 348,
-    rowSpacing: 84,
+    firstRowY: 360,
+    rowSpacing: 80,
   },
   /** Quick game, journey and Continue (CHEZA); tables, cues and scenery (Mapambo). Up to five rows with Rudi. */
-  sub: { firstButtonY: 212, buttonSpacing: 80 },
+  sub: { firstButtonY: 236, buttonSpacing: 76 },
   /** Between two buttons sharing a row. */
   pairGap: 16,
   /** A row of two is wider than one button so each label fits. */

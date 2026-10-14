@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.0 (unreleased) - Robert's logo, menu background and app icon
+- Robert made the pictures with ChatGPT from the prompts in `docs/ART_PROMPTS.md` (2026-10-14). They are now the game's title logo (with crossed cues), the menu and journey-map background, and the app icon on the phone and the Play store. The splash screen and the Play feature graphic are built from the same pictures, so everything matches.
+- The pictures are files in `packages/pool/art/` (originals in `art/source/`): replacing one and rebuilding changes it, as with the faces. If a picture is missing the game falls back to the drawn version.
+- The menu buttons sit a little lower to make room for the taller logo.
+- Robert must pull and rebuild the Android app to get the new icon and splash.
+
 ## 0.30.0 (unreleased) - Balls take the long way to the tube
 - Robert chose "Build it" (2026-10-14): a potted ball used to reach the tube at once from any pocket, which only looked right for the corner next to the tube. Now it rolls unseen under the table first, for longer the farther its pocket is from the tube: about 0.03 s from the corner by the tube, 0.6 s from the bottom corner on that side and the near middle pocket, 0.9 s from the far middle pocket, and 1.3 to 1.4 s from the two far corners (then the short roll along the pipe as before). For left-handed players the tube is on the other side, so the near and far pockets swap.
 - New sounds: a soft rumble while a ball is under the table (longer for far pockets), a roll along the pipe, and the click as it lands in the tube. The pocket sound is now just the knock into the pocket.

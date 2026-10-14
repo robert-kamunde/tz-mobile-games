@@ -2,7 +2,7 @@ import { LOGO_ART, PORTRAIT_ART, STORE_ART } from '../../config/art';
 import { DESIGN } from '../../config/layout';
 import { PORTRAITS } from '../../config/portraits';
 import { drawBall } from './ballArt';
-import { drawLogo, drawMenuBar, eightBall } from './menuArt';
+import { drawCover, drawLogo, drawMenuBar, eightBall } from './menuArt';
 import { drawPortrait, drawPortraitPicture } from './portraitArt';
 
 /**
@@ -31,6 +31,17 @@ export async function usePortraitPicture(id: string, url: string): Promise<void>
   image.src = url;
   await image.decode();
   pictures[id] = image;
+}
+
+/** Robert's pictures (packages/pool/art) the script handed over; without one the drawn art is used. */
+const art: Partial<Record<'logo' | 'menu-background' | 'icon', HTMLImageElement>> = {};
+
+/** For the script: use this picture file (a data URL) for the logo, the menu background or the icon. */
+export async function useArtPicture(id: 'logo' | 'menu-background' | 'icon', url: string): Promise<void> {
+  const image = new Image();
+  image.src = url;
+  await image.decode();
+  art[id] = image;
 }
 
 /** For the script: a character's drawn face as a square PNG data URL, the starting picture file. */
@@ -75,6 +86,23 @@ function shadow(ctx: CanvasRenderingContext2D, x: number, y: number, r: number):
 }
 
 export function drawIcon(ctx: CanvasRenderingContext2D, size: number, shape: IconShape): void {
+  const picture = art.icon;
+  if (picture) {
+    ctx.save();
+    if (shape === 'foreground') {
+      const s = size * S.foregroundPictureScale;
+      ctx.translate((size - s) / 2, (size - s) / 2);
+      drawCover(ctx, picture, s, s);
+    } else {
+      ctx.beginPath();
+      if (shape === 'round') ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      else ctx.roundRect(0, 0, size, size, size * S.iconCorner);
+      ctx.clip();
+      drawCover(ctx, picture, size, size);
+    }
+    ctx.restore();
+    return;
+  }
   if (shape !== 'foreground') {
     ctx.beginPath();
     if (shape === 'round') ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
@@ -87,6 +115,10 @@ export function drawIcon(ctx: CanvasRenderingContext2D, size: number, shape: Ico
 
 /** The menu's bar picture, scaled to cover w × h and centred. */
 function barCover(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+  if (art['menu-background']) {
+    drawCover(ctx, art['menu-background'], w, h);
+    return;
+  }
   const bar = document.createElement('canvas');
   bar.width = DESIGN.width;
   bar.height = DESIGN.height;
@@ -95,21 +127,33 @@ function barCover(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   ctx.drawImage(bar, (w - DESIGN.width * k) / 2, (h - DESIGN.height * k) / 2, DESIGN.width * k, DESIGN.height * k);
 }
 
-/** The logo `width` pixels wide, centred on (x, y). */
-function logo(ctx: CanvasRenderingContext2D, x: number, y: number, width: number): void {
+/** The logo `width` pixels wide, centred on (x, y); returns its height. */
+function logo(ctx: CanvasRenderingContext2D, x: number, y: number, width: number): number {
+  const picture = art.logo;
+  if (picture) {
+    const height = (width * picture.height) / picture.width;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(picture, x - width / 2, y - height / 2, width, height);
+    return height;
+  }
   const k = width / LOGO_ART.width;
   ctx.save();
   ctx.translate(x - width / 2, y - (LOGO_ART.height * k) / 2);
   ctx.scale(k, k);
   drawLogo(ctx, LOGO_ART.width, GAME_NAME);
   ctx.restore();
+  return LOGO_ART.height * k;
 }
 
 export function drawSplash(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   barCover(ctx, w, h);
   ctx.fillStyle = S.splashShade;
   ctx.fillRect(0, 0, w, h);
-  logo(ctx, w / 2, h / 2, w * (w >= h ? S.splashLogoWidth.landscape : S.splashLogoWidth.portrait));
+  const picture = art.logo;
+  const width = picture
+    ? Math.min(w * S.splashPictureLogo.maxWidth, (h * S.splashPictureLogo.maxHeight * picture.width) / picture.height)
+    : w * (w >= h ? S.splashLogoWidth.landscape : S.splashLogoWidth.portrait);
+  logo(ctx, w / 2, h / 2, width);
 }
 
 export function drawFeatureGraphic(ctx: CanvasRenderingContext2D, w: number, h: number): void {
@@ -123,13 +167,13 @@ export function drawFeatureGraphic(ctx: CanvasRenderingContext2D, w: number, h: 
   ctx.fillRect(0, 0, w, h);
   const logoW = w * f.logoWidth;
   const logoX = w * 0.04 + logoW / 2;
-  logo(ctx, logoX, h * 0.42, logoW);
+  const logoH = logo(ctx, logoX, h * 0.42, logoW);
   ctx.font = `700 ${Math.round(h * 0.07)}px ${LOGO_ART.font}`;
   ctx.textAlign = 'center';
   ctx.fillStyle = f.taglineColor;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
   ctx.shadowBlur = 8;
-  ctx.fillText(f.tagline, logoX, h * 0.42 + (LOGO_ART.height * logoW) / LOGO_ART.width / 2 + h * 0.1);
+  ctx.fillText(f.tagline, logoX, h * 0.42 + logoH / 2 + h * 0.1);
   ctx.shadowColor = 'rgba(0, 0, 0, 0)';
   // Three characters, overlapping, on the right.
   const r = h * f.faceRadius;

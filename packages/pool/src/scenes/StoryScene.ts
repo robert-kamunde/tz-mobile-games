@@ -13,6 +13,7 @@ import { drawCup } from './art/backgroundArt';
 import { canvasTexture } from './art/canvasArt';
 import { menuBackgroundTexture } from './art/menuArt';
 import { loadPortraitFiles } from './art/portraitFiles';
+import { loadArtFiles } from './art/artFiles';
 import { CharacterPicker } from './CharacterPicker';
 import { Face } from './Face';
 import type { MenuStart } from './MenuScene';
@@ -53,6 +54,7 @@ export class StoryScene extends Phaser.Scene {
 
   preload(): void {
     loadPortraitFiles(this);
+    loadArtFiles(this);
   }
 
   create(data: StoryStart = {}): void {

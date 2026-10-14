@@ -15,7 +15,7 @@ import { MatchSetup } from './MatchSetup';
 import { LookPicker } from './LookPicker';
 import { backgroundTexture, type PreviewTable } from './art/backgroundArt';
 import { cueTexture } from './art/cueArt';
-import { logoTexture, menuBackgroundTexture } from './art/menuArt';
+import { MENU_PICTURE_KEY, logoTexture, menuBackgroundTexture } from './art/menuArt';
 import { tableTexture } from './art/tableTexture';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
@@ -27,6 +27,7 @@ import { setUpReminders } from './reminderSetup';
 import type { TableStart } from './TableScene';
 import { Panel, addButton, textStyle } from './ui';
 import { loadPortraitFiles } from './art/portraitFiles';
+import { loadArtFiles } from './art/artFiles';
 
 /** Which menu panel is open, if any. Settings reopens itself after a language change. */
 /** Sound is on or off for now; a volume slider can come with real sounds. */
@@ -65,6 +66,7 @@ export class MenuScene extends Phaser.Scene {
 
   preload(): void {
     loadPortraitFiles(this);
+    loadArtFiles(this);
   }
 
   create(data: MenuStart = {}): void {
@@ -82,8 +84,11 @@ export class MenuScene extends Phaser.Scene {
     this.hasSavedGame = savedQuick || savedStory;
 
     const t = this.t;
-    this.add.image(0, 0, menuBackgroundTexture(this)).setOrigin(0).setName('menu-background');
-    this.add.image(MENU.x, MENU.titleY, logoTexture(this, t.t('menu.title'))).setName('menu-title');
+    // `picture` tells tests whether Robert's pictures (art/) are showing rather than the drawn art.
+    const background = menuBackgroundTexture(this);
+    this.add.image(0, 0, background).setOrigin(0).setName('menu-background').setData('picture', background === MENU_PICTURE_KEY);
+    const logo = logoTexture(this, t.t('menu.title'));
+    this.add.image(MENU.x, MENU.titleY, logo.key).setDisplaySize(logo.width, logo.height).setName('menu-title').setData('picture', logo.picture);
     if (this.page === 'main') this.mainPage(services.exit, savedQuick || savedStory);
     else this.subPage(this.page === 'play' ? this.playItems(savedQuick, savedStory) : this.looksItems());
 

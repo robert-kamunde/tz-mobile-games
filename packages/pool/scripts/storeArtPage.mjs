@@ -18,6 +18,15 @@ export function portraitFiles() {
     .map((name) => ({ id: path.basename(name, path.extname(name)), file: path.join(portraitsDir, name), type: TYPES[path.extname(name).toLowerCase()] }));
 }
 
+export const artDir = path.join(root, 'art');
+
+/** Robert's pictures in art/ (logo, menu-background, icon): [{ id, file, type }]. */
+export function artFiles() {
+  return readdirSync(artDir)
+    .filter((name) => TYPES[path.extname(name).toLowerCase()])
+    .map((name) => ({ id: path.basename(name, path.extname(name)), file: path.join(artDir, name), type: TYPES[path.extname(name).toLowerCase()] }));
+}
+
 /** A file as a data URL. */
 export function dataUrl(file, type) {
   return `data:${type};base64,${readFileSync(file).toString('base64')}`;

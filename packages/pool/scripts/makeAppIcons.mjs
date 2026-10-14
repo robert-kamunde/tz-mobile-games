@@ -1,10 +1,11 @@
 // Draws the app icon, splash screens and store graphics (Part C) at every size Android and Google
 // Play need, into the Android project and store/. The drawing is the game's own art
-// (src/scenes/art/storeArt.ts) and the face pictures in portraits/, run in a headless browser.
+// (src/scenes/art/storeArt.ts) with Robert's pictures in art/ and the face pictures in portraits/,
+// run in a headless browser.
 // Run with `npm run icons -w @tzg/pool`.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { dataUrl, openStoreArt, portraitFiles, root } from './storeArtPage.mjs';
+import { artFiles, dataUrl, openStoreArt, portraitFiles, root } from './storeArtPage.mjs';
 
 const res = path.join(root, 'android/app/src/main/res');
 const store = path.join(root, 'store');
@@ -18,6 +19,11 @@ const { tab, close } = await openStoreArt();
 // The feature graphic shows the same face pictures as the game.
 for (const { id, file, type } of portraitFiles()) {
   await tab.evaluate(([i, url]) => window.StoreArt.usePortraitPicture(i, url), [id, dataUrl(file, type)]);
+}
+
+// Robert's logo, menu background and icon pictures (art/) replace the drawn ones.
+for (const { id, file, type } of artFiles()) {
+  await tab.evaluate(([i, url]) => window.StoreArt.useArtPicture(i, url), [id, dataUrl(file, type)]);
 }
 
 async function render(kind, w, h, file) {

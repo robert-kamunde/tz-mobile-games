@@ -138,6 +138,20 @@ export const PORTRAIT_ART = {
  * `<character id>.png` (or .jpg). Swapping a file changes that face; a missing file falls back to
  * the drawing above. `npm run portraits -w @tzg/pool` squares and shrinks new files to this size.
  */
+/**
+ * Robert's pictures for the title logo, menu background and app icon (0.31.0), in packages/pool/art:
+ * `logo.png` (transparent), `menu-background.jpg` (16:9) and `icon.jpg` (square, used only by
+ * `npm run icons`). Each replaces the drawn version; without the file the drawn one is used.
+ */
+export const ART_FILES = {
+  /** Shown in the game (the icon is not). */
+  inGame: ['logo', 'menu-background'],
+  /** Largest file allowed in the app, so the pictures stay light on a low-end phone. */
+  maxBytes: 400_000,
+  /** The logo picture's width on the menu, design pixels (its height follows the picture). */
+  logoWidth: 396,
+} as const;
+
 export const PORTRAIT_FILES = {
   /** Width and height of every file, in pixels. The game crops it to a circle. */
   size: 512,
@@ -238,6 +252,13 @@ export const STORE_ART = {
   splashShade: 'rgba(0, 0, 0, 0.35)',
   /** Logo box width as a fraction of the screen width (the lettering fills about two thirds of the box). */
   splashLogoWidth: { landscape: 0.7, portrait: 1.25 },
+  /** Robert's picture logo (0.31.0) is taller for its width: it fits within these fractions of the splash. */
+  splashPictureLogo: { maxWidth: 0.8, maxHeight: 0.5 },
+  /**
+   * Robert's icon picture on the adaptive icon's foreground layer (108 dp, of which launchers show the
+   * middle 72 dp): drawn this fraction of the layer wide, so the visible window shows 80% of it.
+   */
+  foregroundPictureScale: 90 / 108,
   feature: {
     tagline: 'Pool ya bar, mfukoni mwako',
     taglineColor: '#ffffff',

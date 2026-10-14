@@ -18,12 +18,13 @@ Milestone 9: art and sound, in three parts, each sent to Robert as a phone build
 - **Rematch and auto-menu (done, 0.23.0, 2026-10-12; Robert's request):** Rudia and Menyu on the end panel; back to the menu after 10 seconds unless the screen is touched.
 - **Story mode, Safari ya Bingwa (done, 0.24.0, 2026-10-12; Robert's idea, "launch can wait"):** a map of eight stops, three stars per stop, titles and three story-only rewards (gold table, champion cue, trophy wall). Plan in `STORY_MODE.md`.
 - **Story mode in three chapters (done, 0.25.0, 2026-10-12; Robert chose "3 chapters now"):** 27 stops, four twists, ten new rivals with Robert's ChatGPT faces, Kilimanjaro and lake tables and backgrounds as chapter rewards.
+- **Robert's art (done, 0.31.0, 2026-10-14):** his ChatGPT logo, menu background and app icon are in the game (files in `packages/pool/art/`); the splash and feature graphic are built from them. The store screenshots still show the old menu and faces; redo before release.
 - **Balls take the long way to the tube (done, 0.30.0, 2026-10-14; Robert chose "Build it"):** a potted ball waits under the table for longer the farther its pocket is from the tube (near corner at once, far corners about 1.4 s), with a rumble, a pipe roll and a landing click. The new sounds are not yet heard on a phone.
 - **Shorter main menu (done, 0.29.0, 2026-10-13; Robert chose "Build both"):** four rows: a big CHEZA (Continue, Quick game, journey inside, dot when a game waits), Mapambo (Meza, Fimbo, Mandhari with counts) and Takwimu, Sheria and Mipangilio, Toka.
 - **Play reminders (built, 0.28.0, 2026-10-13; Robert chose "Build now"):** local phone notifications, at most one, after a day away, 18:00; asked after the first win; Settings switch. Not yet seen on a phone (KNOWN_ISSUES U13).
 - **Quick game and journey game saved apart (done, 0.27.0, 2026-10-13):** two Continue buttons when both are waiting.
 - **Picker pages and earned looks (done, 0.26.0, 2026-10-12):** pickers page 8 at a time (fixes the hidden Ziwa table); only two of each look free, the rest earned by story stops or wins; Bishoo and Kichwa start locked.
-- Waiting on Robert: confirming ChatGPT's terms allow the faces in a commercial app, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
+- Waiting on Robert: confirming ChatGPT's terms allow the faces and the art pictures in a commercial app, the email domain (farddatasolutions.net, double d, vs the app ID's fardatasolutions), a public link for the privacy policy, a Google Play developer account.
 
 ### Milestone 8 scope (done)
 Robert's request (2026-10-11): character selection before playing, looks only, Tanzanian street nicknames (nothing vulgar), 75% men and 25% women.
