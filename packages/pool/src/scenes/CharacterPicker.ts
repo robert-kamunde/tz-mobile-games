@@ -3,7 +3,7 @@ import { PLAYER_CHARACTERS } from '../config/characters';
 import { BUTTON, CHARACTER_PICKER, COLORS, PANEL, TEXT_STYLE } from '../config/layout';
 import { padlock } from './LookPicker';
 import { Face } from './Face';
-import { Panel, addButton, textStyle, type PanelSpec, addLockTag } from './ui';
+import { Panel, addButton, addLockTag, addNewMark, textStyle, type PanelSpec } from './ui';
 
 export interface CharacterChoice {
   readonly title: string;
@@ -15,6 +15,9 @@ export interface CharacterChoice {
   readonly taken?: string;
   /** Characters not earned yet, with what earns them: faded, padlocked, and cannot be chosen. */
   readonly locked?: ReadonlyMap<string, string>;
+  /** Newly unlocked characters, marked MPYA with `newLabel` (0.35.0); marks are `character-<id>-new`. */
+  readonly fresh?: ReadonlySet<string>;
+  readonly newLabel?: string;
   /** "Next" for player 1 of two, otherwise "Start". */
   readonly confirmLabel: string;
   readonly backLabel: string;
@@ -88,6 +91,9 @@ export class CharacterPicker {
         });
       }
       face.circle.setData('taken', taken).setData('locked', Boolean(need));
+      if (!need && choice.fresh?.has(character.id) && choice.newLabel) {
+        this.objects.push(...addNewMark(this.scene, `character-${character.id}-new`, choice.newLabel, fx + c.faceRadius + c.newMark.dx, fy - c.faceRadius - c.newMark.dy));
+      }
       this.rings.set(character.id, ring);
       this.objects.push(ring, ...face.objects, label);
     });

@@ -1,6 +1,6 @@
 import type * as Phaser from 'phaser';
-import { BUTTON, COLORS, LOOK_PICKER, PANEL, TEXT_STYLE } from '../config/layout';
-import { Panel, addButton, addLockTag, textStyle, type PanelSpec } from './ui';
+import { BUTTON, COLORS, LOOK_PICKER, NEW_MARK, PANEL, TEXT_STYLE } from '../config/layout';
+import { Panel, addButton, addLockTag, addNewMark, textStyle, type PanelSpec } from './ui';
 
 export interface LookItem {
   readonly id: string;
@@ -9,6 +9,8 @@ export interface LookItem {
   readonly texture: string;
   /** Not earned yet (story mode): what earns it. It cannot be chosen. */
   readonly locked?: string;
+  /** Newly unlocked and not looked at yet: marked MPYA (0.35.0). */
+  readonly fresh?: boolean;
 }
 
 export interface LookChoice {
@@ -22,6 +24,8 @@ export interface LookChoice {
   readonly layout: (typeof LOOK_PICKER)['table' | 'background' | 'cue'];
   /** How many are open, shown at the top left with a bar: `label` reads like "Zimefunguliwa 4/9". */
   readonly progress?: { readonly open: number; readonly total: number; readonly label: string };
+  /** The MPYA mark's text; marks are named `<prefix>-<id>-new`. */
+  readonly newLabel?: string;
   readonly selected: string;
   readonly confirmLabel: string;
   readonly backLabel: string;
@@ -64,13 +68,14 @@ export class LookPicker {
     return this.choice ? Math.ceil(this.choice.items.length / this.perPage(this.choice)) : 0;
   }
 
-  /** Opens on the page holding the current choice. */
+  /** Opens on the page holding the first new look, else the current choice. */
   show(choice: LookChoice): void {
     this.hide();
     this.choice = choice;
     const start = choice.items.find((item) => item.id === choice.selected && !item.locked) ?? choice.items.find((item) => !item.locked)!;
     this.selectedId = start.id;
-    this.showPage(Math.floor(choice.items.indexOf(start) / this.perPage(choice)));
+    const shown = choice.items.find((item) => item.fresh) ?? start;
+    this.showPage(Math.floor(choice.items.indexOf(shown) / this.perPage(choice)));
   }
 
   private perPage(choice: LookChoice): number {
@@ -122,6 +127,9 @@ export class LookPicker {
         image.setAlpha(LOOK_PICKER.locked.alpha);
         this.objects.push(padlock(this.scene, px, py));
         continue;
+      }
+      if (item.fresh && choice.newLabel) {
+        this.objects.push(...addNewMark(this.scene, `${choice.prefix}-${item.id}-new`, choice.newLabel, px + image.width / 2 + c.selectedFrame.gap, py - frame.height / 2 - NEW_MARK.inset));
       }
       hit.setInteractive({ useHandCursor: true });
       hit.on('pointerup', (pointer: Phaser.Input.Pointer) => {

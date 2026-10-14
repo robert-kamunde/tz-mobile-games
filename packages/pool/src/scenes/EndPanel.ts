@@ -160,6 +160,11 @@ export class EndPanel {
     });
   }
 
+  /** Stops the count without a touch, for example while an unlock popup covers the panel. */
+  holdCount(): void {
+    this.stopCount();
+  }
+
   private stopCount(): void {
     this.timer?.remove();
     this.timer = null;

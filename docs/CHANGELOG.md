@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.35.0 (unreleased) - "Imefunguliwa!" when something unlocks
+- Robert chose "Popup with extras" (2026-10-14): earning a new table, cue, scenery, character or journey title used to be easy to miss.
+- **Popup:** right after the game that earned it, over the end panel, a gold-framed "Imefunguliwa!" shows the item's picture (a character's face, a crown for a title), its name and "Hongera!", with a burst of gold sparkles and a short rising fanfare. Several unlocks show one after another. The end panel waits (no countdown to the menu) while one is showing.
+- **Tumia sasa (use it now)** on a table, cue or scenery puts it on at once (from the next game); **Sawa** just closes. A character or title has Sawa only. The phone's Back works like Sawa.
+- **MPYA (new):** a red "MPYA" tag marks a newly unlocked look in its picker and a new character on "Chagua mhusika", until that picker has been opened once. A red dot on Mapambo, and on Meza, Fimbo or Mandhari, says there is something new inside. The table, cue or scenery picker opens on the page with the new look.
+- **Never missed:** if the app closes before the popup is seen, it shows the next time the menu opens. On a phone that played before this version, what was already earned is not announced again.
+
 ## 0.34.0 (unreleased) - Clearer, richer menu screens
 - Robert chose "Build all five" (2026-10-14).
 - **Mapambo:** the Meza, Fimbo and Mandhari buttons no longer show counts. Each picker shows "Zimefunguliwa 4/9" (Unlocked) with a thin gold bar at the top left.

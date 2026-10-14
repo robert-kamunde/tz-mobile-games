@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { getServices } from '@tzg/shell';
 import { UI_ART } from '../config/art';
-import { BUTTON, COLORS, DESIGN, PANEL, TEXT_STYLE } from '../config/layout';
+import { BUTTON, COLORS, DESIGN, NEW_MARK, PANEL, TEXT_STYLE } from '../config/layout';
 import { SOUND_MIX } from '../config/sound';
 import { buttonTexture, lockTagTexture, panelTexture, ribbonTexture } from './art/uiArt';
 import { loadPoolSounds } from './poolSounds';
@@ -117,6 +117,10 @@ export interface PanelSpec {
   readonly rows?: readonly { readonly label: string; readonly choices: readonly ButtonSpec[] }[];
   /** Back button at the bottom, if the panel can be closed. */
   readonly back?: ButtonSpec;
+  /** Drawn at this depth instead of PANEL.depth (the unlock popup sits above other panels). */
+  readonly depth?: number;
+  /** The dimmed screen around the panel swallows taps too, so nothing underneath can be pressed. */
+  readonly modal?: boolean;
 }
 
 /** What earns a locked character or look: a gold-edged tag with a padlock, made by `addLockTag`. */
@@ -148,6 +152,26 @@ export function addLockTag(scene: Phaser.Scene, name: string, text: string, maxW
       label.setPosition(x - width / 2 + t.padX + t.iconWidth, top + t.padY);
     },
   };
+}
+
+/**
+ * MPYA (new, 0.35.0): a small red pill with a gold edge for a newly unlocked look or character, its
+ * top right corner at (right, top). The text is named `name`.
+ */
+export function addNewMark(scene: Phaser.Scene, name: string, text: string, right: number, top: number): [Phaser.GameObjects.Graphics, Phaser.GameObjects.Text] {
+  const m = NEW_MARK;
+  const label = scene.add.text(0, 0, text, { ...textStyle(m.size, m.text), fontStyle: 'bold' }).setName(name);
+  const w = label.width + 2 * m.padX;
+  const h = label.height + 2 * m.padY;
+  const pill = scene.add
+    .graphics()
+    .fillStyle(m.fill, 1)
+    .fillRoundedRect(right - w, top, w, h, h / 2)
+    .lineStyle(2, m.edge, 1)
+    .strokeRoundedRect(right - w, top, w, h, h / 2);
+  label.setPosition(right - w + m.padX, top + m.padY);
+  scene.children.bringToTop(label);
+  return [pill, label];
 }
 
 /**
@@ -199,6 +223,7 @@ export class Panel {
     const top = y - height / 2;
     const d = UI_ART.panel.dim;
     const dim = scene.add.rectangle(DESIGN.width / 2, DESIGN.height / 2, DESIGN.width, DESIGN.height, d.color, d.alpha);
+    if (spec.modal) dim.setInteractive();
     // The box swallows taps; the drawn panel over it is what shows.
     const box = scene.add.rectangle(x, y, width, height, COLORS.overlay, PANEL.hitAlpha).setName(spec.name).setInteractive();
     const look = scene.add.image(x, y, panelTexture(scene, width, height)).setAlpha(alpha);
@@ -239,7 +264,7 @@ export class Panel {
       nextY = bottom + PANEL.gap;
     }
     if (spec.back) this.objects.push(addButton(scene, x, top + height - PANEL.backBottom, spec.back));
-    for (const o of this.objects) o.setDepth(PANEL.depth);
+    for (const o of this.objects) o.setDepth(spec.depth ?? PANEL.depth);
     popIn(scene, dim, [look, ribbon, title]);
   }
 

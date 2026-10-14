@@ -31,6 +31,8 @@ export class MatchSetup {
   /** The characters chosen so far in this setup. */
   private picks: CharacterPicks = DEFAULT_PICKS;
   private onCancel: (() => void) | undefined;
+  /** Marked MPYA for the rest of this setup. */
+  private fresh: ReadonlySet<string> = new Set();
 
   constructor(
     scene: Phaser.Scene,
@@ -41,6 +43,8 @@ export class MatchSetup {
     private readonly lockedCharacters: () => ReadonlyMap<string, string>,
     /** The person's games against each computer level, shown on the opponent cards. */
     records: () => Readonly<Record<AiLevel, LevelRecord>>,
+    /** Newly unlocked characters to mark MPYA; calling it also counts them as seen (0.35.0). */
+    private readonly takeNewCharacters: () => ReadonlySet<string> = () => new Set(),
   ) {
     this.opponents = new OpponentPicker(
       scene,
@@ -73,6 +77,7 @@ export class MatchSetup {
     this.last = { opponent: lastOpponent, picks: lastPicks ?? DEFAULT_PICKS };
     this.picks = this.last.picks;
     this.onCancel = onCancel;
+    this.fresh = this.takeNewCharacters();
     this.chooseFirstCharacter();
   }
 
@@ -84,6 +89,8 @@ export class MatchSetup {
       title: t.t('characters.title'),
       selected: this.picks[0],
       locked: this.lockedCharacters(),
+      fresh: this.fresh,
+      newLabel: t.t('unlock.new'),
       confirmLabel: t.t('characters.next'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => {
@@ -110,6 +117,8 @@ export class MatchSetup {
       selected: this.picks[1],
       taken: this.picks[0],
       locked: this.lockedCharacters(),
+      fresh: this.fresh,
+      newLabel: t.t('unlock.new'),
       confirmLabel: t.t('characters.start'),
       backLabel: t.t('ui.back'),
       onConfirm: (id) => this.finish({ opponent, picks: [this.picks[0], id] }),

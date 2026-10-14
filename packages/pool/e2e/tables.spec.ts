@@ -243,7 +243,10 @@ test('a look opens at its story stop or after enough wins, and the picker opens 
   expect(await dataOf(page, 'table-maasai-touch', 'locked')).toBe(true);
   await tap(page, 'table-back', MENU_SCENE);
   // A journey with Bingwa beaten has earned the Ziwa table, on page 2.
-  await page.evaluate(() => window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data: { character: 'fundi', stars: { fainali: 1 } } })));
+  await page.evaluate(() => {
+    window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data: { character: 'fundi', stars: { fainali: 1 } } }));
+    window.localStorage.removeItem('pool.unlocks');
+  });
   await reopen(page);
   await chooseTable(page, 'kitenge');
   await tapMenu(page, 'menu-tables');

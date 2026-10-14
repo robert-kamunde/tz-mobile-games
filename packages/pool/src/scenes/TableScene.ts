@@ -70,6 +70,8 @@ import { ComputerTurn } from './ComputerTurn';
 import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
 import type { EndSpec } from './EndPanel';
+import { UnlockPopup } from './UnlockPopup';
+import { announceUnlocks, startUnlockTracking, takeFresh } from './unlockFlow';
 import type { StoryStart } from './StoryScene';
 import { MatchSetup, type MatchChoice } from './MatchSetup';
 import { getPoolSlots } from './poolSlots';
@@ -110,6 +112,7 @@ export class TableScene extends Phaser.Scene {
   private spin!: SpinControl;
   private fineAim!: FineAim;
   private hud!: MatchHud;
+  private unlockPopup!: UnlockPopup;
   private setup!: MatchSetup;
   /** The one-time "how to play" panel on the first game, while it shows. */
   private howToPlay: Panel | null = null;
@@ -198,7 +201,7 @@ export class TableScene extends Phaser.Scene {
       leave: () => (this.story ? this.openStoryMap() : this.goToMenu()),
     });
     this.sides = sides;
-    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played), () => this.slots.progress.load().data.vsComputer);
+    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played), () => this.slots.progress.load().data.vsComputer, () => takeFresh(this.slots, 'character'));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
     addButton(this, sides.controlX(HUD.menu.left), HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: sides.controlOriginX(0) }).setDepth(HUD.depth);
@@ -237,10 +240,13 @@ export class TableScene extends Phaser.Scene {
       offResume();
     });
 
+    this.unlockPopup = new UnlockPopup(this, this.t);
+    startUnlockTracking(this.slots);
     this.registerProbes();
     // Back closes the help or steps back through choosing a game, otherwise does what Menu does (nothing while balls roll),
     // or on a story game's end panel goes to the map.
     onBackButton(this, () => {
+      if (this.unlockPopup.goBack()) return true;
       if (this.howToPlay) this.closeHowToPlay();
       else if (this.setup.goBack()) return true;
       // On the end panel Back does what its last button does: the map in story mode.
@@ -583,6 +589,8 @@ export class TableScene extends Phaser.Scene {
       this.recordResult(ending.winner);
       const notes = [...this.unlockNotes(before, this.played), ...(end.note ? [end.note] : [])];
       this.hud.showGameOver({ ...end, ...(notes.length ? { note: notes.join('\n') } : {}) });
+      // Anything this game unlocked pops up over the end panel, which then waits for a button.
+      if (announceUnlocks(this.slots, this.unlockPopup)) this.hud.holdEndCount();
       this.hud.setStatus('');
     } else {
       messages.push(this.turnMessage());
@@ -844,6 +852,7 @@ export class TableScene extends Phaser.Scene {
       opponent: this.opponent,
       computer: this.computer.currentPhase,
       pickerShown: this.setup.visible,
+      unlockShown: this.unlockPopup.current,
       setupStep: this.setup.step,
       selectedCharacter: this.setup.selectedCharacter,
       players: [this.hud.playerName(0), this.hud.playerName(1)],

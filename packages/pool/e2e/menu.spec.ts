@@ -42,7 +42,7 @@ async function menuAndContinue(page: Page): Promise<void> {
 test('the game opens on the menu, with no Continue before a game is played', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  expect(await menuState(page)).toEqual({ continueShown: false, continueStoryShown: false, page: 'main', savedDot: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, lookPage: 0, lookPages: 0, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw' });
+  expect(await menuState(page)).toEqual({ continueShown: false, continueStoryShown: false, page: 'main', savedDot: false, panel: null, selectedCharacter: null, selectedTable: null, selectedCue: null, selectedBackground: null, lookPage: 0, lookPages: 0, table: 'classic', cue: 'classic', hand: 'right', background: 'classic', locale: 'sw', newDots: [], unlockShown: null });
   // Robert's logo and menu pictures (art/) show, not the drawn ones.
   for (const name of ['menu-title', 'menu-background']) expect(await page.evaluate((n) => window.__tzg!.dataOf('Menu', n, 'picture'), name), name).toBe(true);
   // The main page: CHEZA, Mapambo, Takwimu, Sheria, Mipangilio; no dot while nothing is saved.

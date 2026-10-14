@@ -47,6 +47,8 @@ export interface PoolState {
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
   pickerShown: boolean;
+  /** The unlock shown in the "Imefunguliwa!" popup, or null. */
+  unlockShown: string | null;
   setupStep: 'opponent' | 'characters' | null;
   selectedCharacter: string | null;
   players: [string, string];
@@ -85,6 +87,10 @@ export interface MenuState {
   /** The saved background. */
   background: string;
   locale: string;
+  /** Menu buttons with a red new-unlock dot. */
+  newDots: string[];
+  /** The unlock shown in the "Imefunguliwa!" popup, or null. */
+  unlockShown: string | null;
 }
 
 export const SCENE = 'Table';
@@ -285,7 +291,10 @@ export async function dragFineAim(page: Page, designDx: number, options: { cance
 
 export const aimAngle = (aim: { x: number; y: number }) => Math.atan2(aim.y, aim.x);
 
-/** Writes games won against the computer straight into the save, as earlier play would have, and reopens the game. */
+/**
+ * Writes games won against the computer straight into the save, as earlier play would have, and
+ * reopens the game. What they unlock counts as already announced.
+ */
 export async function seedWins(page: Page, wins: number): Promise<void> {
   await page.evaluate((won) => {
     const raw = window.localStorage.getItem('pool.progress');
@@ -293,6 +302,8 @@ export async function seedWins(page: Page, wins: number): Promise<void> {
     const vsComputer = { ...((data?.vsComputer as Record<string, unknown>) ?? {}), easy: { played: won, won } };
     const base = data ?? { twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: 'classic', cue: 'classic', hand: 'right', background: 'classic' };
     window.localStorage.setItem('pool.progress', JSON.stringify({ v: 1, data: { ...base, vsComputer } }));
+    // Seeded as if played before 0.35.0: what this earns counts as already announced (no popups).
+    window.localStorage.removeItem('pool.unlocks');
   }, wins);
   await reopen(page);
 }

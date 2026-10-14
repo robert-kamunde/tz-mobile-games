@@ -20,8 +20,13 @@ import { setUpReminders } from './reminderSetup';
 import type { TableStart } from './TableScene';
 import { Panel, addButton } from './ui';
 import { StatsPanel } from './StatsPanel';
+import { UnlockPopup } from './UnlockPopup';
+import { announceUnlocks, takeFresh } from './unlockFlow';
+import { hasFresh, type UnlockKind } from '../progress/unlocks';
 import { loadPortraitFiles } from './art/portraitFiles';
 import { loadArtFiles } from './art/artFiles';
+
+const LOOK_KINDS: readonly UnlockKind[] = ['table', 'cue', 'background'];
 
 /** Which menu panel is open, if any. Settings reopens itself after a language change. */
 /** Sound is on or off for now; a volume slider can come with real sounds. */
@@ -36,7 +41,8 @@ export interface MenuStart {
   readonly page?: MenuPage;
 }
 
-type Item = { id: string; label?: string; onTap: () => void };
+/** `dot`: something new inside (an unlocked look not yet looked at, 0.35.0). */
+type Item = { id: string; label?: string; dot?: boolean; onTap: () => void };
 
 /**
  * The first screen: CHEZA (Continue, Quick game, journey), Mapambo (tables, cues, scenery), Stats, Rules,
@@ -52,6 +58,9 @@ export class MenuScene extends Phaser.Scene {
   private panel: Panel | StatsPanel | null = null;
   private openPanel: MenuPanel | null = null;
   private hasSavedGame = false;
+  private unlockPopup!: UnlockPopup;
+  /** Menu buttons showing a new-unlock dot (tests). */
+  private newDots = new Set<string>();
   private page: MenuPage = 'main';
 
   constructor() {
@@ -70,6 +79,7 @@ export class MenuScene extends Phaser.Scene {
     this.panel = null;
     this.openPanel = null;
     this.page = data.page ?? 'main';
+    this.newDots = new Set();
     // Loading also checks the saves: a damaged one is backed up and no Continue is offered.
     moveStoryGame(this.slots);
     setUpReminders(getServices(this), this.slots);
@@ -89,11 +99,16 @@ export class MenuScene extends Phaser.Scene {
     this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice), () =>
       lockedCharacters(t, { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) }),
       () => this.slots.progress.load().data.vsComputer,
+      () => takeFresh(this.slots, 'character'),
     );
+    this.unlockPopup = new UnlockPopup(this, t);
+    // Unlocks not shown yet (the app closed before their popup) show here.
+    announceUnlocks(this.slots, this.unlockPopup);
     this.looks = new LookPicker(this, PANEL.overMenu);
     if (data.panel) this.showPanel(data.panel);
     // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
     onBackButton(this, () => {
+      if (this.unlockPopup.goBack()) return true;
       if (this.setup.goBack()) return true;
       if (this.looks.goBack()) return true;
       if (!this.panel && this.page !== 'main') {
@@ -110,6 +125,8 @@ export class MenuScene extends Phaser.Scene {
       continueStoryShown: savedStory,
       page: this.page,
       savedDot: this.page === 'main' && this.hasSavedGame,
+      newDots: [...this.newDots],
+      unlockShown: this.unlockPopup.current,
       panel: this.setup.step === 'opponent' ? 'picker' : this.setup.step === 'characters' ? 'characters' : this.looks.showing ? `${this.looks.showing}s` : this.openPanel,
       selectedTable: this.looks.showing === 'table' ? this.looks.selected : null,
       selectedCue: this.looks.showing === 'cue' ? this.looks.selected : null,
@@ -145,7 +162,7 @@ export class MenuScene extends Phaser.Scene {
     }
     const rows: Item[][] = [
       [
-        { id: 'looks', onTap: () => this.showPage('looks') },
+        { id: 'looks', dot: hasFresh(this.slots.unlocks.load().data, LOOK_KINDS), onTap: () => this.showPage('looks') },
         { id: 'stats', onTap: () => this.showPanel('stats') },
       ],
       [
@@ -195,9 +212,11 @@ export class MenuScene extends Phaser.Scene {
       { id: 'cues', kind: 'cue', ids: CUE_IDS },
       { id: 'backgrounds', kind: 'background', ids: BACKGROUND_IDS },
     ] as const;
+    const unlocks = this.slots.unlocks.load().data;
     return kinds.map(({ id, kind }) => [
       {
         id,
+        dot: hasFresh(unlocks, [kind]),
         onTap: () => this.showLooks(kind),
       },
     ]);
@@ -209,7 +228,16 @@ export class MenuScene extends Phaser.Scene {
       const width = (rowWidth - (row.length - 1) * MENU.pairGap) / row.length;
       row.forEach((item, j) => {
         const x = MENU.x - rowWidth / 2 + width / 2 + j * (width + MENU.pairGap);
-        addButton(this, x, firstY + i * spacing, { name: `menu-${item.id}`, label: item.label ?? this.t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
+        const y = firstY + i * spacing;
+        const button = addButton(this, x, y, { name: `menu-${item.id}`, label: item.label ?? this.t.t(`menu.${item.id}`), onTap: item.onTap }, { width });
+        if (item.dot) {
+          const d = MENU.newDot;
+          this.add
+            .circle(x + width / 2 - d.inset, y - button.height / 2 + d.inset, d.radius, d.color)
+            .setStrokeStyle(d.outlineWidth, d.outline)
+            .setName(`menu-${item.id}-newDot`);
+          this.newDots.add(item.id);
+        }
       });
     });
   }
@@ -226,6 +254,12 @@ export class MenuScene extends Phaser.Scene {
     const t = this.t;
     const progress = this.slots.progress.load().data;
     const played = { story: this.slots.story.load().data, wins: computerWins(progress) };
+    // Newly unlocked looks are marked MPYA this once; the dots on the menu go when it closes.
+    const fresh = takeFresh(this.slots, kind);
+    const close = () => {
+      this.looks.hide();
+      if (fresh.size > 0) this.showPage(this.page);
+    };
     // Locked looks show with what earns them, until earned.
     const locked = (kind: 'table' | 'cue' | 'background', id: string) => {
       const reward = lockedBy(kind, id, played);
@@ -237,14 +271,16 @@ export class MenuScene extends Phaser.Scene {
             id,
             label: t.t(`table.${id}`),
             texture: lookTexture(this, 'table', id),
+            fresh: fresh.has(id),
             ...locked('table', id),
           }))
         : kind === 'cue'
-          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: lookTexture(this, 'cue', id), ...locked('cue', id) }))
+          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: lookTexture(this, 'cue', id), fresh: fresh.has(id), ...locked('cue', id) }))
           : BACKGROUND_IDS.map((id) => ({
               id,
               label: t.t(`background.${id}`),
               texture: lookTexture(this, 'background', id),
+              fresh: fresh.has(id),
               ...locked('background', id),
             }));
     const open = items.filter((item) => !('locked' in item)).length;
@@ -255,6 +291,7 @@ export class MenuScene extends Phaser.Scene {
       layout: LOOK_PICKER[kind],
       // How many are open shows here rather than on the Mapambo buttons (Robert, 2026-10-14).
       progress: { open, total: items.length, label: t.t('looks.open', { n: open, total: items.length }) },
+      newLabel: t.t('unlock.new'),
       selected: kind === 'table' ? progress.table : kind === 'cue' ? progress.cue : progress.background,
       confirmLabel: t.t('looks.choose'),
       backLabel: t.t('ui.back'),
@@ -263,9 +300,9 @@ export class MenuScene extends Phaser.Scene {
         if (kind === 'table' && isTableId(id)) this.slots.progress.save({ ...latest, table: id });
         if (kind === 'cue' && isCueId(id)) this.slots.progress.save({ ...latest, cue: id });
         if (kind === 'background' && isBackgroundId(id)) this.slots.progress.save({ ...latest, background: id });
-        this.looks.hide();
+        close();
       },
-      onBack: () => this.looks.hide(),
+      onBack: close,
     });
   }
 

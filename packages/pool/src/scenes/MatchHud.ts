@@ -276,6 +276,11 @@ export class MatchHud {
     this.end.show(spec);
   }
 
+  /** The end panel stays until a button is pressed (an unlock popup is over it). */
+  holdEndCount(): void {
+    this.end.holdCount();
+  }
+
   hideGameOver(): void {
     this.matchActive = true;
     this.end.hide();

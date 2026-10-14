@@ -201,6 +201,28 @@ export const STATS_PANEL = {
   friendsGap: 14,
 } as const;
 
+/**
+ * "Imefunguliwa!" (0.35.0): one popup per new unlock, over everything, in the middle of the screen.
+ * Distances are from the panel's top unless named otherwise.
+ */
+export const UNLOCK_POPUP = {
+  area: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 600, height: 480, alpha: 1 },
+  kindFromTop: 92,
+  picture: { fromTop: 200, width: 320, height: 150, faceRadius: 68, badgeSize: 120 },
+  nameFromTop: 292,
+  nameSize: '38px',
+  nameColor: '#f2c94c',
+  messageGap: 8,
+  buttons: { fromBottom: 52, width: 230, gap: 24 },
+  /** Gold sparkles bursting out from the picture over the popup. */
+  sparkles: { count: 24, from: 70, to: 300, radius: 13, inner: 6, ms: 1000, colors: [0xf2c94c, 0xffe58a, 0xffffff] },
+  /** Above every other panel, including the end-of-game panel. */
+  depth: 30,
+} as const;
+
+/** The MPYA (new) mark on a newly unlocked look or character in its picker. */
+export const NEW_MARK = { fill: 0xc62828, edge: 0xf2c94c, text: '#ffffff', padX: 6, padY: 1, size: '20px', inset: 2 } as const;
+
 export const CHARACTER_PICKER = {
   columns: 4,
   faceRadius: 38,
@@ -211,6 +233,8 @@ export const CHARACTER_PICKER = {
   /** Between a face and its name, and a name and a locked character's tag. */
   nameGap: 8,
   lockTagGap: 4,
+  /** The MPYA mark's top right corner, out from the face's top right. */
+  newMark: { dx: 14, dy: 4 },
   /** A name and its lock text wrap to the column, less this gap between neighbours. */
   labelGap: 8,
   selectedRing: { width: 5, color: 0xf2c94c },
@@ -276,6 +300,8 @@ export const MENU = {
   pairRowWidth: 620,
   /** The dot on CHEZA when a game or journey is waiting to be continued, inset from the top-right corner. */
   savedDot: { radius: 12, inset: 14, color: 0xf2994a, outline: 0x101418, outlineWidth: 3 },
+  /** A red dot on Mapambo and on Meza, Fimbo or Mandhari: a newly unlocked look not yet looked at (0.35.0). */
+  newDot: { radius: 11, inset: 12, color: 0xc62828, outline: 0xf2c94c, outlineWidth: 3 },
 } as const;
 
 /**

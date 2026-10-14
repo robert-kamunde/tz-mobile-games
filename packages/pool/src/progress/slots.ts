@@ -5,6 +5,7 @@ import { TIPS_VERSION, defaultTips, validateTips, type PoolTips } from './tips';
 import { SAVED_MATCH_VERSION, validateSavedMatch, type SavedMatch } from './savedMatch';
 import { REMINDERS_VERSION, defaultReminderPrefs, validateReminderPrefs, type ReminderPrefs } from './reminders';
 import { STORY_VERSION, defaultStory, validateStory, type StoryProgress } from './story';
+import { UNLOCKS_VERSION, defaultUnlocks, validateUnlocks, type UnlockState } from './unlocks';
 
 /** The pool game's save slots, under the game's key prefix (e.g. `pool.match`). */
 export interface PoolSlots {
@@ -21,6 +22,8 @@ export interface PoolSlots {
   readonly story: SaveSlot<StoryProgress>;
   /** Play reminders: the Settings switch and when reminders were set (0.28.0). */
   readonly reminders: SaveSlot<ReminderPrefs>;
+  /** Unlocks already announced, and those still marked new in their pickers (0.35.0). */
+  readonly unlocks: SaveSlot<UnlockState>;
 }
 
 export function createPoolSlots(gameId: string, store: KeyValueStore, table: TableConfig, logger?: Logger): PoolSlots {
@@ -75,6 +78,14 @@ export function createPoolSlots(gameId: string, store: KeyValueStore, table: Tab
       version: REMINDERS_VERSION,
       defaults: defaultReminderPrefs,
       validate: validateReminderPrefs,
+      store,
+      ...log,
+    }),
+    unlocks: createSaveSlot<UnlockState>({
+      key: `${gameId}.unlocks`,
+      version: UNLOCKS_VERSION,
+      defaults: defaultUnlocks,
+      validate: validateUnlocks,
       store,
       ...log,
     }),

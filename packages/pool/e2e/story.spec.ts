@@ -53,7 +53,11 @@ const litStars = async (page: Page) => {
 
 /** Writes a journey straight into the save, as an earlier session would have left it, and reopens the game. */
 async function seedJourney(page: Page, character: string, stars: Record<string, number>): Promise<void> {
-  await page.evaluate((data) => window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data })), { character, stars });
+  // What the seeded journey earned counts as already announced (no unlock popups).
+  await page.evaluate((data) => {
+    window.localStorage.setItem('pool.story', JSON.stringify({ v: 1, data }));
+    window.localStorage.removeItem('pool.unlocks');
+  }, { character, stars });
   await reopen(page);
 }
 
