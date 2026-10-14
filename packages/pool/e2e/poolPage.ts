@@ -25,6 +25,8 @@ export interface PoolState {
   /** Potted balls still rolling under the table, and each pocket's time to the tube (ms, pocket ids 0-5). */
   tubeWaiting: number[];
   tubeDelays: number[];
+  /** Red balls' white dot: where it sits on the ball (fractions of the radius) and whether it is on top. */
+  spots: { id: number; dx: number; dy: number; visible: boolean }[];
   events: string[];
   match: MatchState;
   verdict: ShotVerdict | null;

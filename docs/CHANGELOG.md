@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.32.0 (unreleased) - A quieter rumble, rolling dots and premium buttons
+- Robert chose "Build all four" (2026-10-14).
+- **Rumble:** the sound of a ball rolling under the table is about a third as loud as before, and deeper and softer.
+- **Tube:** the pipe no longer lies over the table's rail. It ends in a dark opening at the rail's edge, darkening as it goes under the table, so a potted ball comes out of the dark. The tube and pipe cast a soft shadow.
+- **Red balls:** the white dot now rolls with the ball during a shot: it moves round the ball, squashes towards the edge and disappears underneath, then comes back over the top. It does not move when balls are placed (a new rack, ball in hand, a loaded game). Looks only: the physics are unchanged.
+- **Buttons:** deep teal-green with a thin gold border, a soft bevel and cream bold text. Main actions (CHEZA, Chagua, Anza) and the current choice are gold with dark text. A button sinks in a little while pressed, and every press gives a soft tick.
+- **Popups:** a dark wooden frame with a gold edge, the title on a red ribbon like the logo's, the screen around it dimmed, and a short pop-in. The end-of-game panel pops in too.
+
 ## 0.31.0 (unreleased) - Robert's logo, menu background and app icon
 - Robert made the pictures with ChatGPT from the prompts in `docs/ART_PROMPTS.md` (2026-10-14). They are now the game's title logo (with crossed cues), the menu and journey-map background, and the app icon on the phone and the Play store. The splash screen and the Play feature graphic are built from the same pictures, so everything matches.
 - The pictures are files in `packages/pool/art/` (originals in `art/source/`): replacing one and rebuilding changes it, as with the faces. If a picture is missing the game falls back to the drawn version.

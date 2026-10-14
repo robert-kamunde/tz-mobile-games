@@ -138,7 +138,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       MENU.x,
       m.playY,
-      { name: 'menu-playMenu', label: t.t('menu.playMenu'), onTap: () => this.showPage('play') },
+      { name: 'menu-playMenu', label: t.t('menu.playMenu'), primary: true, onTap: () => this.showPage('play') },
       { width: m.playWidth, fontSize: m.playFontSize },
     );
     if (saved) {

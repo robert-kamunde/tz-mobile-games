@@ -68,6 +68,11 @@ export const BALL_ART = {
    * players). Fraction of the ball radius.
    */
   redSpot: { radius: 0.36, color: '#ffffff' },
+  /**
+   * The spot rolls with the ball (0.32.0). A ball moving further than this between two frames
+   * (metres) was placed, not rolled, and its spot stays put. Near the edge the spot fades out.
+   */
+  rollingSpot: { maxStep: 0.2, fadeBelow: 0.25 },
 } as const;
 
 export const CUE_ART = {
@@ -163,24 +168,44 @@ export const PORTRAIT_FILES = {
 
 /** Buttons and panels (Milestone 9 Part B): rounded, softly lit, with a thin gold edge on panels. */
 export const UI_ART = {
+  /**
+   * Buttons (0.32.0, Robert asked for a premium feel): deep teal-green with a thin gold border, a
+   * soft bevel and cream bold text. Main actions (`primary`) and the current or last choice
+   * (`highlighted`) are gold with dark text.
+   */
   button: {
     radius: 12,
-    /** Top and bottom of the face, normal and highlighted (the current or last choice). */
-    face: ['#ffffff', '#dfe5ea'],
-    highlight: ['#ffd96a', '#e0a92a'],
-    /** A darker lip along the bottom so the button looks raised. */
-    lip: { height: 3, color: 'rgba(0, 0, 0, 0.28)' },
-    edge: { width: 1, color: 'rgba(0, 0, 0, 0.35)' },
-    /** Shine along the top edge. */
-    shine: 'rgba(255, 255, 255, 0.6)',
+    /** Top and bottom of the face. */
+    face: ['#1f7a63', '#0e4a3b'],
+    gold: ['#ffe08a', '#d29a2a'],
+    /** A darker lip along the bottom so the button looks raised; it closes up while pressed. */
+    lip: { height: 4, color: 'rgba(0, 0, 0, 0.45)' },
+    edge: { width: 1.5, color: '#e2b54a', goldColor: '#7a5212' },
+    /** Bevel: light along the top inside edge, shade along the bottom. */
+    bevel: { width: 2, light: 'rgba(255, 255, 255, 0.28)', dark: 'rgba(0, 0, 0, 0.25)' },
+    /** A soft gloss over the top half of the face. */
+    gloss: 'rgba(255, 255, 255, 0.10)',
+    text: { color: '#fff3d6', goldColor: '#2a1a06', bold: true },
+    /** Text shadow under the cream text, and a faint light one under the dark gold text. */
+    textShadow: { dy: 2, blur: 2, color: 'rgba(0, 0, 0, 0.6)', goldColor: 'rgba(255, 255, 255, 0.35)' },
+    /** Pressed: drawn this much smaller, so it sinks in under the finger. */
+    pressScale: 0.95,
   },
+  /**
+   * Popups (0.32.0): a dark wooden frame with a gold edge, a red ribbon under the title like the
+   * logo's, the screen around dimmed, and a short pop-in.
+   */
   panel: {
     radius: 18,
-    /** Lighter at the top, darker at the bottom; the panel's own alpha still applies. */
-    top: '#1c252d',
-    bottom: '#0b0e11',
-    edge: { width: 2, color: 'rgba(242, 201, 76, 0.55)' },
-    inner: { inset: 5, width: 1, color: 'rgba(255, 255, 255, 0.08)' },
+    /** Inside the frame, lighter at the top; the panel's own alpha still applies. */
+    top: '#1b2622',
+    bottom: '#0b0f0d',
+    frame: { width: 14, light: '#8a5428', dark: '#3c2210', grain: 'rgba(0, 0, 0, 0.18)', grainSpacing: 5 },
+    edge: { width: 2, color: '#e2b54a' },
+    inner: { width: 1.5, color: 'rgba(226, 181, 74, 0.6)' },
+    ribbon: { padX: 46, padY: 8, notch: 16, top: '#d23a2c', bottom: '#8f1d14', edge: '#f2c94c', edgeWidth: 1.5, tailDrop: 6, tail: '#6b130c' },
+    dim: { color: 0x0b0e11, alpha: 0.55 },
+    pop: { ms: 180, fromScale: 0.92, ease: 'Back.Out' },
   },
 } as const;
 
@@ -231,8 +256,14 @@ export const TUBE_ART = {
   /** Bright streak down the front of the glass, drawn over the balls. */
   shine: { x: 0.3, width: 0.16, color: 'rgba(255, 255, 255, 0.28)' },
   cap: { height: 9, light: '#c9d1d8', dark: '#6b747c' },
-  /** Pipe between the tube and the table rail runs this far into the rail. */
-  pipeOverlap: 8,
+  /**
+   * Where the pipe meets the table (0.32.0, Robert found it looked laid over the table): it ends in a
+   * dark opening on the rail's outer edge, `extraWidth`/`extraHeight` wider and taller than a ball
+   * and the pipe, and darkens towards it over `fadeRadii` ball radii, so a ball comes out of the dark.
+   */
+  mouth: { extraWidth: 1, extraHeight: 2, core: 'rgba(4, 6, 8, 0.97)', rim: 'rgba(0, 0, 0, 0.55)', fadeRadii: 3, fadeAlpha: 0.8 },
+  /** Soft shadow the tube and pipe cast on the background, offset down and away from the light. */
+  shadow: { color: 'rgba(0, 0, 0, 0.45)', blur: 7, dx: 4, dy: 6 },
 } as const;
 
 /**

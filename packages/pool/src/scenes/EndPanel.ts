@@ -3,7 +3,7 @@ import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
 import { STORY } from '../config/story';
 import { panelTexture } from './art/uiArt';
-import { addButton, textStyle } from './ui';
+import { addButton, popIn, textStyle } from './ui';
 
 /** What the end panel says after a game. */
 export interface EndSpec {
@@ -113,7 +113,8 @@ export class EndPanel {
     const top = g.y - g.height / 2;
     const buttonsY = Math.max(g.y + g.buttonsDy, y + this.leave.height / 2);
     const height = buttonsY + g.height / 2 - g.buttonsDy - top;
-    this.panel.setTexture(panelTexture(this.scene, g.width, height)).setY(top + height / 2);
+    this.panel.setTexture(panelTexture(this.scene, g.width, height)).setY(top + height / 2).setScale(1).setAlpha(g.alpha);
+    popIn(this.scene, null, [this.panel]);
 
     this.leaveKey = spec.story ? 'story.map' : 'pool.menu';
     const buttons = spec.next ? [this.next, this.rematch, this.leave] : [this.rematch, this.leave];

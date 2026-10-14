@@ -71,3 +71,17 @@ test('a ball potted in the far corner rolls under the table, rumbling, before it
   await expect.poll(async () => (await page.evaluate(() => (window.__tzg!.sound() as { played: { name: string }[] }).played.map((p) => p.name))).slice(heard)).toContain('tubeLand');
   expect(errors).toEqual([]);
 });
+
+test("the red balls' white dots roll with the balls on the break, and start on top", async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  const before = (await state(page)).spots;
+  expect(before.length).toBe(7);
+  for (const s of before) expect(s).toMatchObject({ dx: 0, dy: 0, visible: true });
+  await pullPower(page, 1);
+  // Moving reds turn their dots away from the top; some roll far enough to hide them underneath.
+  await expect.poll(async () => (await state(page)).spots.filter((s) => Math.hypot(s.dx, s.dy) > 0.3).length, { intervals: [50] }).toBeGreaterThan(0);
+  await waitUntilSettled(page);
+  for (const s of (await state(page)).spots) expect(Math.hypot(s.dx, s.dy)).toBeLessThanOrEqual(1 + 1e-9);
+  expect(errors).toEqual([]);
+});

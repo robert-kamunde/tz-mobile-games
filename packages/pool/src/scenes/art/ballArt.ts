@@ -13,19 +13,55 @@ export function ballTexture(scene: Phaser.Scene, kind: BallKind, radius: number)
   return canvasTexture(scene, `ball-${kind}-${radius.toFixed(2)}`, size, size, (ctx, w, h) => drawBall(ctx, w / 2, h / 2, radius, kind));
 }
 
+/**
+ * A ball on the table in three layers, so a red ball's spot can roll between them (0.32.0): the
+ * plain colour, then the spot (`ballSpotTexture`), then the light and shine (`ballShadeTexture`).
+ */
+export function ballBaseTexture(scene: Phaser.Scene, kind: BallKind, radius: number): string {
+  const size = 2 * (radius + PAD);
+  return canvasTexture(scene, `ball-base-${kind}-${radius.toFixed(2)}`, size, size, (ctx, w, h) => drawBallBase(ctx, w / 2, h / 2, radius, kind, false));
+}
+
+/** The red ball's white spot, facing the viewer; squashed and moved as the ball rolls. */
+export function ballSpotTexture(scene: Phaser.Scene, radius: number): string {
+  const r = radius * BALL_ART.redSpot.radius;
+  const size = 2 * (r + PAD);
+  return canvasTexture(scene, `ball-spot-${radius.toFixed(2)}`, size, size, (ctx, w, h) => {
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+    ctx.fillStyle = BALL_ART.redSpot.color;
+    ctx.fill();
+  });
+}
+
+/** The light, edge, outline and shine over a ball, transparent elsewhere. */
+export function ballShadeTexture(scene: Phaser.Scene, radius: number): string {
+  const size = 2 * (radius + PAD);
+  return canvasTexture(scene, `ball-shade-${radius.toFixed(2)}`, size, size, (ctx, w, h) => drawBallShade(ctx, w / 2, h / 2, radius));
+}
+
 /** Draws a shaded ball centred on (cx, cy); also used for the store pictures (scripts/storeArt.ts). */
 export function drawBall(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, kind: BallKind): void {
+  drawBallBase(ctx, cx, cy, radius, kind, true);
+  drawBallShade(ctx, cx, cy, radius);
+}
+
+function drawBallBase(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number, kind: BallKind, spot: boolean): void {
   const b = BALL_ART;
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.fillStyle = css(COLORS.ball[kind]);
   ctx.fill();
-  if (kind === 'red') {
+  if (kind === 'red' && spot) {
     ctx.beginPath();
     ctx.arc(cx, cy, radius * b.redSpot.radius, 0, Math.PI * 2);
     ctx.fillStyle = b.redSpot.color;
     ctx.fill();
   }
+}
+
+function drawBallShade(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number): void {
+  const b = BALL_ART;
   // Light from the top left: a soft highlight over the colour and a darker edge.
   const hx = cx - radius * b.highlightOffset;
   const hy = cy - radius * b.highlightOffset;

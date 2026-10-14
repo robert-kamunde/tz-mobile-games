@@ -4,11 +4,19 @@ import { TABLE_DEPTH, TABLE_LAYOUT, type ScreenSides } from '../config/layout';
 import type { TableConfig } from '../config/table';
 import type { TableTheme } from '../config/tables';
 import type { Ball, TableGeometry, Vec2 } from '../physics/types';
-import { ballShadowTexture, ballTexture } from './art/ballArt';
+import { ballBaseTexture, ballShadeTexture, ballShadowTexture, ballSpotTexture, ballTexture } from './art/ballArt';
+import { RollingSpot } from './rollingSpot';
 import { PottedTube } from './PottedTube';
 import type { BackgroundStyle } from '../config/backgrounds';
 import { dropOtherSceneTextures, sceneTexture } from './art/backgroundArt';
 import { dropOtherTableTextures, tableTexture, tableTextureOrigin } from './art/tableTexture';
+
+/** A ball's images. Reds have their spot and the shading over it as separate images so the spot can roll. */
+interface BallSprites {
+  ball: Phaser.GameObjects.Image;
+  shadow: Phaser.GameObjects.Image;
+  spot?: { image: Phaser.GameObjects.Image; shade: Phaser.GameObjects.Image; rolling: RollingSpot; radius: number };
+}
 
 /**
  * Draws the table and balls with the drawn art (Milestone 9, `scenes/art/`).
@@ -16,7 +24,7 @@ import { dropOtherTableTextures, tableTexture, tableTextureOrigin } from './art/
  */
 export class TableView {
   private tube: PottedTube | null = null;
-  private readonly ballSprites = new Map<number, { ball: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image }>();
+  private readonly ballSprites = new Map<number, BallSprites>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -102,15 +110,61 @@ export class TableView {
       let sprites = this.ballSprites.get(ball.id);
       if (!sprites) {
         const radius = this.px(ball.radius);
+        const red = ball.kind === 'red';
         sprites = {
           shadow: this.scene.add.image(0, 0, ballShadowTexture(this.scene, radius)).setDepth(TABLE_DEPTH.shadows),
-          ball: this.scene.add.image(0, 0, ballTexture(this.scene, ball.kind, radius)).setName(`ball-${ball.id}`).setDepth(TABLE_DEPTH.balls),
+          ball: this.scene.add
+            .image(0, 0, red ? ballBaseTexture(this.scene, ball.kind, radius) : ballTexture(this.scene, ball.kind, radius))
+            .setName(`ball-${ball.id}`)
+            .setDepth(TABLE_DEPTH.balls),
         };
+        if (red) {
+          // Added after the ball at the same depth, so they draw over it in this order.
+          sprites.spot = {
+            image: this.scene.add.image(0, 0, ballSpotTexture(this.scene, radius)).setName(`spot-${ball.id}`).setDepth(TABLE_DEPTH.balls),
+            shade: this.scene.add.image(0, 0, ballShadeTexture(this.scene, radius)).setDepth(TABLE_DEPTH.balls),
+            rolling: new RollingSpot(BALL_ART.rollingSpot.maxStep),
+            radius,
+          };
+        }
         this.ballSprites.set(ball.id, sprites);
       }
       const p = this.toDesign(ball.x, ball.y);
       sprites.ball.setPosition(p.x, p.y).setVisible(!ball.pocketed);
       sprites.shadow.setPosition(p.x + s.offsetX, p.y + s.offsetY).setVisible(!ball.pocketed);
+      if (sprites.spot) this.placeSpot(sprites.spot, ball, p, options.live === true);
     }
+  }
+
+  /**
+   * Rolls a red ball's spot by how far it moved during a shot (`live`; anything else is a placement),
+   * then draws it where it now faces.
+   */
+  private placeSpot(spot: NonNullable<BallSprites['spot']>, ball: Ball, p: Vec2, live: boolean): void {
+    if (ball.pocketed) {
+      spot.rolling.reset();
+      spot.image.setVisible(false);
+      spot.shade.setVisible(false);
+      return;
+    }
+    if (live) spot.rolling.rollTo({ x: ball.x, y: ball.y }, ball.radius);
+    else spot.rolling.placeAt({ x: ball.x, y: ball.y });
+    const v = spot.rolling.view;
+    // The table is drawn with x right and y down, so table directions are screen directions.
+    spot.shade.setPosition(p.x, p.y).setVisible(true);
+    spot.image
+      .setPosition(p.x + v.dx * spot.radius, p.y + v.dy * spot.radius)
+      .setRotation(v.angle)
+      .setScale(Math.max(v.squash, 0.01), 1)
+      .setAlpha(Math.min(1, v.squash / BALL_ART.rollingSpot.fadeBelow))
+      .setVisible(v.visible);
+  }
+
+  /** Where each red ball's spot shows (browser tests): offset from the ball's centre as fractions of its radius. */
+  get spots(): { id: number; dx: number; dy: number; visible: boolean }[] {
+    return [...this.ballSprites.entries()]
+      .filter(([, s]) => s.spot)
+      .map(([id, s]) => ({ id, ...s.spot!.rolling.view }))
+      .map(({ id, dx, dy, visible }) => ({ id, dx, dy, visible }));
   }
 }

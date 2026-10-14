@@ -5,7 +5,7 @@ import type { SoundRecipe } from '@tzg/core';
  * same names. Version 2 (Part C, 0.19.0): each sound is built like the real thing, from a few short
  * ringing modes, band-limited noise for the contact, and soft starts so nothing clicks harshly.
  */
-export type PoolSound = 'cue' | 'ball' | 'cushion' | 'pocket' | 'underRoll' | 'tubeRoll' | 'tubeLand';
+export type PoolSound = 'cue' | 'ball' | 'cushion' | 'pocket' | 'underRoll' | 'tubeRoll' | 'tubeLand' | 'tap';
 
 export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
   // Leather tip on the cue ball: a dull "tock". A low wooden body, the ball's own ring, a soft scuff.
@@ -54,10 +54,11 @@ export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
   },
   // The return under the table (0.30.0): a soft, low rumble. Played again and again, overlapping,
   // for as long as a ball is on its way, so a far pocket rumbles longer than a near one.
+  // 0.32.0: deeper and softer (lower cutoff, slower fade-in, gentler flutter) after Robert found it loud.
   underRoll: {
     seconds: 0.3,
     peak: 0.7,
-    layers: [{ kind: 'noise', cutoffHz: 520, highHz: 60, decay: 0.12, level: 1, attack: 0.07, tremoloHz: 19 }],
+    layers: [{ kind: 'noise', cutoffHz: 300, highHz: 45, decay: 0.13, level: 1, attack: 0.1, tremoloHz: 14 }],
   },
   // Along the short pipe into the tube: a brighter roll on glass.
   tubeRoll: {
@@ -73,6 +74,16 @@ export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
       { kind: 'tone', startHz: 3500, endHz: 3450, decay: 0.012, level: 1 },
       { kind: 'tone', startHz: 5700, endHz: 5650, decay: 0.006, level: 0.45 },
       { kind: 'noise', cutoffHz: 8000, highHz: 2000, decay: 0.0015, level: 0.8 },
+    ],
+  },
+  // A button press (0.32.0): a soft, short wooden tick, quieter than any sound on the table.
+  tap: {
+    seconds: 0.05,
+    peak: 0.6,
+    layers: [
+      { kind: 'tone', startHz: 1250, endHz: 1050, decay: 0.008, level: 1, attack: 0.001 },
+      { kind: 'tone', startHz: 2600, endHz: 2500, decay: 0.003, level: 0.25 },
+      { kind: 'noise', cutoffHz: 3500, highHz: 700, decay: 0.002, level: 0.4, attack: 0.0005 },
     ],
   },
 };
@@ -99,10 +110,13 @@ export const SOUND_MIX = {
   cueMax: 1,
   pocket: 0.9,
   /** The return: under the table (repeated every `underRollEveryMs`), along the pipe, and landing. */
-  underRoll: 0.35,
+  /** 0.32.0: about a third of the 0.30.0 level (0.35), which Robert found too loud. */
+  underRoll: 0.12,
   underRollEveryMs: 220,
   tubeRoll: 0.4,
   tubeLand: 0.55,
+  /** Every button press. */
+  tap: 0.3,
   /**
    * Thinning: a sound of the same kind within this many physics steps (1 ms each) of the last one is
    * dropped unless it is at least this much louder, and at most this many sounds start per frame.

@@ -120,7 +120,7 @@ export class LookPicker {
     const buttonWidth = Math.min(BUTTON.rowWidth, width / 2 - PANEL.sideMargin);
     this.objects.push(
       addButton(this.scene, x - c.buttonOffsetX, buttonY, { name: `${choice.prefix}-back`, label: choice.backLabel, onTap: () => this.goBack() }, { width: buttonWidth }),
-      addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: `${choice.prefix}-confirm`, label: choice.confirmLabel, onTap: () => this.selectedId && choice.onConfirm(this.selectedId) }, { width: buttonWidth }),
+      addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: `${choice.prefix}-confirm`, label: choice.confirmLabel, primary: true, onTap: () => this.selectedId && choice.onConfirm(this.selectedId) }, { width: buttonWidth }),
     );
     const nav = c.pageNav;
     if (page > 0) this.objects.push(addButton(this.scene, x - nav.arrowDx, buttonY, { name: `${choice.prefix}-prevPage`, label: '‹', onTap: () => this.showPage(page - 1) }, { width: nav.arrowWidth }));

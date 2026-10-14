@@ -10,8 +10,11 @@ import { canvasTexture } from './art/canvasArt';
 /** Where Bounce.Out first reaches the bottom (1 / 2.75 of the way). */
 const FIRST_BOUNCE = 1 / 2.75;
 
-/** Above the balls on the table's edge, below the aim guide: the glass front sits over the tube's balls. */
-const DEPTH = { back: TABLE_DEPTH.shadows, balls: TABLE_DEPTH.balls, front: TABLE_DEPTH.balls + 0.5 };
+/**
+ * Above the balls on the table's edge, below the aim guide: the glass front sits over the tube's
+ * balls. The shadow lies on the table picture (depth 0) under everything else.
+ */
+const DEPTH = { shadow: TABLE_DEPTH.shadows - 0.5, back: TABLE_DEPTH.shadows, balls: TABLE_DEPTH.balls, front: TABLE_DEPTH.balls + 0.5 };
 
 /**
  * The see-through tube potted balls roll into (Robert, 2026-10-11). Looks only: it follows the
@@ -30,7 +33,10 @@ export class PottedTube {
   private nextRumble = 0;
   /** Design-pixel geometry, for the right hand; `x()` mirrors it for the left. */
   private readonly half: number;
+  /** The opening on the rail's outer edge, where a ball comes out from under the table. */
   private readonly pipeEnd: number;
+  /** Half the opening's width. */
+  private readonly mouthRx: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -41,16 +47,19 @@ export class PottedTube {
   ) {
     const inner = ballRadius + TUBE.clearance;
     this.half = inner + TUBE.wall;
-    this.pipeEnd = TABLE_LAYOUT.originX - TABLE_LAYOUT.railWidth + TUBE_ART.pipeOverlap;
+    this.pipeEnd = TABLE_LAYOUT.originX - TABLE_LAYOUT.railWidth;
+    this.mouthRx = ballRadius + TUBE_ART.mouth.extraWidth;
     const left = TUBE.x - this.half;
-    const width = this.pipeEnd - left;
+    const width = this.pipeEnd + this.mouthRx - left;
     const height = TUBE.bottom - TUBE.top;
     const flip = sides.hand === 'left';
-    const at = (key: string, depth: number) =>
+    const at = (key: string, depth: number, dx = 0, dy = 0) =>
       scene.add
-        .image(this.x(left + width / 2), TUBE.top + height / 2, key)
+        .image(this.x(left + width / 2) + (flip ? -dx : dx), TUBE.top + height / 2 + dy, key)
         .setFlipX(flip)
         .setDepth(depth);
+    const s = TUBE_ART.shadow;
+    at(this.shadowTexture(width, height), DEPTH.shadow, s.dx, s.dy).setName('tube-shadow');
     at(this.texture('back', width, height), DEPTH.back).setName('tube');
     at(this.texture('front', width, height), DEPTH.front);
     // Moved by hand each frame from the scene clock rather than with tweens, so a slow or busy
@@ -166,6 +175,32 @@ export class PottedTube {
     this.underTable.push({ id: ball.id, image, at: now + this.underTableMs(this.toDesign(ball.x, ball.y)) });
   }
 
+  /** The tube and pipe's outline, in texture pixels: the pipe stops at the opening's centre. */
+  private outline(ctx: CanvasRenderingContext2D, w: number, h: number): void {
+    const pipeTop = TUBE.entryY - TUBE.top - this.half;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, 2 * this.half, h, this.half);
+    ctx.rect(this.half, pipeTop, w - this.mouthRx - this.half, 2 * this.half);
+  }
+
+  /** The soft shadow under the tube and pipe, drawn once, centred like the tube with room for the blur. */
+  private shadowTexture(width: number, height: number): string {
+    const s = TUBE_ART.shadow;
+    const pad = 2 * s.blur;
+    const key = `tube-shadow-${Math.round(width)}x${Math.round(height)}-${this.ballRadius.toFixed(2)}`;
+    return canvasTexture(this.scene, key, width + 2 * pad, height + 2 * pad, (ctx, w) => {
+      // Only the blurred shadow is wanted: the shape is drawn off the canvas and its shadow thrown back on.
+      const away = 2 * w;
+      ctx.shadowColor = s.color;
+      ctx.shadowBlur = s.blur;
+      ctx.shadowOffsetX = away;
+      ctx.translate(pad - away, pad);
+      this.outline(ctx, width, height);
+      ctx.fillStyle = '#000';
+      ctx.fill();
+    });
+  }
+
   /** The tube's glass, pipe and caps, drawn once: the back (inside) and the front (glass over the balls). */
   private texture(layer: 'back' | 'front', width: number, height: number): string {
     const a = TUBE_ART;
@@ -173,11 +208,8 @@ export class PottedTube {
     return canvasTexture(this.scene, `tube-${layer}-${Math.round(width)}x${Math.round(height)}-${r.toFixed(2)}`, width, height, (ctx, w, h) => {
       const tubeW = 2 * this.half;
       const pipeTop = TUBE.entryY - TUBE.top - this.half;
-      const shape = () => {
-        ctx.beginPath();
-        ctx.roundRect(0, 0, tubeW, h, this.half);
-        ctx.rect(this.half, pipeTop, w - this.half, 2 * this.half);
-      };
+      const mouthX = w - this.mouthRx;
+      const shape = () => this.outline(ctx, w, h);
       if (layer === 'back') {
         shape();
         ctx.fillStyle = a.inside;
@@ -194,10 +226,33 @@ export class PottedTube {
       ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(tubeW - a.edgeWidth / 2, pipeTop);
-      ctx.lineTo(w, pipeTop);
+      ctx.lineTo(mouthX, pipeTop);
       ctx.moveTo(tubeW - a.edgeWidth / 2, pipeTop + 2 * this.half);
-      ctx.lineTo(w, pipeTop + 2 * this.half);
+      ctx.lineTo(mouthX, pipeTop + 2 * this.half);
       ctx.stroke();
+      // The pipe darkens towards the table, as it goes under it.
+      const m = a.mouth;
+      const fadeFrom = Math.max(tubeW, mouthX - m.fadeRadii * r);
+      const dark = ctx.createLinearGradient(fadeFrom, 0, mouthX, 0);
+      dark.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      dark.addColorStop(1, `rgba(0, 0, 0, ${m.fadeAlpha})`);
+      ctx.fillStyle = dark;
+      ctx.fillRect(fadeFrom, pipeTop, mouthX - fadeFrom, 2 * this.half);
+      // The opening in the rail's edge, an upright oval, darkest in the middle.
+      const ry = this.half + m.extraHeight;
+      const cy = TUBE.entryY - TUBE.top;
+      ctx.save();
+      ctx.translate(mouthX, cy);
+      ctx.scale(this.mouthRx / ry, 1);
+      const hole = ctx.createRadialGradient(0, 0, 0, 0, 0, ry);
+      hole.addColorStop(0, m.core);
+      hole.addColorStop(0.8, m.core);
+      hole.addColorStop(1, m.rim);
+      ctx.fillStyle = hole;
+      ctx.beginPath();
+      ctx.arc(0, 0, ry, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
       // A bright streak down the front.
       ctx.fillStyle = a.shine.color;
       ctx.beginPath();

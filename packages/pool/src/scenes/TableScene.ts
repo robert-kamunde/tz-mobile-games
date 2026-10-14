@@ -828,6 +828,7 @@ export class TableScene extends Phaser.Scene {
       tube: this.view.tubeIds,
       tubeWaiting: this.view.tubeWaitingIds,
       tubeDelays: this.geometry.pockets.map((p) => Math.round(this.view.tubeDelayMs(p.center))),
+      spots: this.view.spots,
       events: this.sim.shotEvents().map((e) => e.type),
       match: this.match,
       verdict: this.lastResult?.verdict ?? null,

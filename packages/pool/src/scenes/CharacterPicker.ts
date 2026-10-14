@@ -92,7 +92,7 @@ export class CharacterPicker {
     const buttonWidth = Math.min(BUTTON.rowWidth, width / 2 - PANEL.sideMargin);
     this.objects.push(
       addButton(this.scene, x - c.buttonOffsetX, buttonY, { name: 'character-back', label: choice.backLabel, onTap: () => choice.onBack() }, { width: buttonWidth }),
-      addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: 'character-confirm', label: choice.confirmLabel, onTap: () => this.confirm() }, { width: buttonWidth }),
+      addButton(this.scene, x + c.buttonOffsetX, buttonY, { name: 'character-confirm', label: choice.confirmLabel, primary: true, onTap: () => this.confirm() }, { width: buttonWidth }),
     );
     for (const o of this.objects) (o as unknown as Phaser.GameObjects.Components.Depth).setDepth(PANEL.depth);
     const usable = (id: string) => id !== choice.taken && !choice.locked?.has(id) && this.rings.has(id);
