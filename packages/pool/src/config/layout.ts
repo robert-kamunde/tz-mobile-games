@@ -299,9 +299,9 @@ export const MENU = {
   /** A row of two is wider than one button so each label fits. */
   pairRowWidth: 620,
   /** The dot on CHEZA when a game or journey is waiting to be continued, inset from the top-right corner. */
-  savedDot: { radius: 12, inset: 14, color: 0xf2994a, outline: 0x101418, outlineWidth: 3 },
+  savedDot: { radius: 8, inset: 12, color: 0xf2994a, outline: 0x101418, outlineWidth: 2 },
   /** A red dot on Mapambo and on Meza, Fimbo or Mandhari: a newly unlocked look not yet looked at (0.35.0). */
-  newDot: { radius: 11, inset: 12, color: 0xc62828, outline: 0xf2c94c, outlineWidth: 3 },
+  newDot: { radius: 7, inset: 10, color: 0xc62828, outline: 0xf2c94c, outlineWidth: 2 },
 } as const;
 
 /**
