@@ -49,6 +49,7 @@ export function drawTable(ctx: CanvasRenderingContext2D, frame: TableFrame, geom
   // Pockets: a hole with an inside wall and a leather rim on the rail.
   const pocketRadius = px(Math.max(config.cornerMouth, config.middleMouth) / 2 + config.dropRadius / 2);
   const middle = { x: play.x + play.width / 2, y: play.y + play.height / 2 };
+  for (const pocket of geometry.pockets) drawCup(ctx, frame, at(pocket.center.x, pocket.center.y), pocketRadius, middle);
   for (const pocket of geometry.pockets) drawPocket(ctx, at(pocket.center.x, pocket.center.y), pocketRadius, middle);
 
   // Jaws and cushion noses, as the physics sees them.
@@ -69,6 +70,54 @@ export function drawTable(ctx: CanvasRenderingContext2D, frame: TableFrame, geom
 }
 
 // ---- Pockets and cushions ---------------------------------------------------------------------
+
+/**
+ * A pocket's leather cup on the rail: from the hole out to the table's edge. A corner pocket's
+ * fills the whole corner; a middle pocket's is as wide as the hole.
+ */
+function drawCup(ctx: CanvasRenderingContext2D, frame: TableFrame, c: Vec2, radius: number, middle: Vec2): void {
+  const cup = TABLE_ART.pocket.cup;
+  const { outer } = frame;
+  const corner = Math.abs(c.x - middle.x) > outer.width / 4;
+  const edgeX = c.x < middle.x ? outer.x : outer.x + outer.width;
+  const edgeY = c.y < middle.y ? outer.y : outer.y + outer.height;
+  ctx.save();
+  roundRect(ctx, outer.x, outer.y, outer.width, outer.height, TABLE_ART.rail.cornerRadius);
+  ctx.clip();
+  ctx.beginPath();
+  if (corner) {
+    // From the hole's centre out to the corner, and round the hole's far side.
+    ctx.rect(Math.min(c.x, edgeX), Math.min(c.y, edgeY), Math.abs(edgeX - c.x), Math.abs(edgeY - c.y));
+  } else {
+    ctx.rect(c.x - radius, Math.min(c.y, edgeY), 2 * radius, Math.abs(edgeY - c.y));
+  }
+  ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+  const g = ctx.createRadialGradient(c.x, c.y, radius * 0.8, c.x, c.y, radius * 1.8);
+  g.addColorStop(0, cup.light);
+  g.addColorStop(1, cup.dark);
+  ctx.fillStyle = g;
+  ctx.fill('nonzero');
+  ctx.restore();
+  // A thin dark seam where the leather meets the wood.
+  ctx.save();
+  roundRect(ctx, outer.x, outer.y, outer.width, outer.height, TABLE_ART.rail.cornerRadius);
+  ctx.clip();
+  ctx.strokeStyle = cup.edge;
+  ctx.lineWidth = cup.edgeWidth;
+  ctx.beginPath();
+  if (corner) {
+    ctx.moveTo(c.x, edgeY);
+    ctx.lineTo(c.x, c.y);
+    ctx.lineTo(edgeX, c.y);
+  } else {
+    ctx.moveTo(c.x - radius, edgeY);
+    ctx.lineTo(c.x - radius, c.y);
+    ctx.moveTo(c.x + radius, edgeY);
+    ctx.lineTo(c.x + radius, c.y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
 
 /** A pocket seen from above: a black bottom towards the table's middle, the far wall lit, a rim. */
 function drawPocket(ctx: CanvasRenderingContext2D, c: Vec2, radius: number, middle: Vec2): void {

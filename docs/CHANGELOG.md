@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.33.1 (unreleased) - Tube collar and leather pocket cups
+- Robert (2026-10-14): where the tube's pipe met the table looked like a black oval stuck on. The oval is gone: the pipe now goes under the rail through a metal collar, like the tube's caps, with a soft shadow on the rail. A ball comes out from under the collar dimly and brightens as it rolls along.
+- Robert (2026-10-14): wood showed in the table's corners outside the corner holes. Every pocket now has a leather cup over the rail, from the hole out to the table's edge, so the corner pockets fill their corners.
+
 ## 0.33.0 (unreleased) - Tables with depth
 - Robert chose "Whole table" (2026-10-14): the tables looked flat, mostly because the pockets were plain black circles.
 - **Pockets:** you can now see into each hole. The bottom is black, the inside wall shows on the far side, lit by the lamp over the table, and a leather rim catches the light.

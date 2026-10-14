@@ -55,6 +55,11 @@ export const TABLE_ART = {
     rim: '#1e120a',
     rimLight: 'rgba(255, 222, 170, 0.45)',
     rimWidth: 4,
+    /**
+     * Leather cups (0.33.1, Robert saw wood in the corner outside the hole): each pocket's leather
+     * covers the rail from the hole to the table's edge, filling the corner on corner pockets.
+     */
+    cup: { light: '#4a2e1c', dark: '#1c110a', edge: 'rgba(0, 0, 0, 0.55)', edgeWidth: 1.5 },
   },
   /** A potted ball sinks into the hole: it shrinks, darkens and fades over `ms`. */
   sink: { ms: 220, scale: 0.55, tint: 0x2a2a2a },
@@ -293,11 +298,16 @@ export const TUBE_ART = {
   shine: { x: 0.3, width: 0.16, color: 'rgba(255, 255, 255, 0.28)' },
   cap: { height: 9, light: '#c9d1d8', dark: '#6b747c' },
   /**
-   * Where the pipe meets the table (0.32.0, Robert found it looked laid over the table): it ends in a
-   * dark opening on the rail's outer edge, `extraWidth`/`extraHeight` wider and taller than a ball
-   * and the pipe, and darkens towards it over `fadeRadii` ball radii, so a ball comes out of the dark.
+   * Where the pipe meets the table. 0.32.0 ended it in a dark oval, which Robert found looked stuck
+   * on; 0.33.1 fits a metal collar instead, like the tube's caps: `width` wide, `extra` taller than the
+   * pipe on each side, reaching `overhang` onto the rail, with a soft `contact` shadow on the rail
+   * beside it. The pipe darkens towards the collar over `fadeRadii` ball radii, and a ball fades in
+   * as it comes out from under it.
    */
-  mouth: { extraWidth: 1, extraHeight: 2, core: 'rgba(4, 6, 8, 0.97)', rim: 'rgba(0, 0, 0, 0.55)', fadeRadii: 3, fadeAlpha: 0.8 },
+  /** A ball coming out of the pipe is fully seen this far along it. */
+  fadeInAlong: 0.5,
+  collar: { width: 6, extra: 3, overhang: 2, radius: 2, contact: { width: 6, color: 'rgba(0, 0, 0, 0.45)' } },
+  mouth: { fadeRadii: 2.5, fadeAlpha: 0.75 },
   /** Soft shadow the tube and pipe cast on the background, offset down and away from the light. */
   shadow: { color: 'rgba(0, 0, 0, 0.45)', blur: 7, dx: 4, dy: 6 },
 } as const;

@@ -33,10 +33,12 @@ export class PottedTube {
   private nextRumble = 0;
   /** Design-pixel geometry, for the right hand; `x()` mirrors it for the left. */
   private readonly half: number;
-  /** The opening on the rail's outer edge, where a ball comes out from under the table. */
+  /** The rail's outer edge, where the pipe goes under the table. */
   private readonly pipeEnd: number;
-  /** Half the opening's width. */
-  private readonly mouthRx: number;
+  /** Where a ball comes out: just clear of the collar, so it never shows over the rail. */
+  private readonly ballStart: number;
+  /** How far the drawing reaches past the rail's edge: the collar's overhang and its shadow on the rail. */
+  private readonly beyondRail: number;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -48,9 +50,11 @@ export class PottedTube {
     const inner = ballRadius + TUBE.clearance;
     this.half = inner + TUBE.wall;
     this.pipeEnd = TABLE_LAYOUT.originX - TABLE_LAYOUT.railWidth;
-    this.mouthRx = ballRadius + TUBE_ART.mouth.extraWidth;
+    const c = TUBE_ART.collar;
+    this.beyondRail = c.overhang + c.contact.width;
+    this.ballStart = this.pipeEnd + c.overhang - c.width - ballRadius;
     const left = TUBE.x - this.half;
-    const width = this.pipeEnd + this.mouthRx - left;
+    const width = this.pipeEnd + this.beyondRail - left;
     const height = TUBE.bottom - TUBE.top;
     const flip = sides.hand === 'left';
     const at = (key: string, depth: number, dx = 0, dy = 0) =>
@@ -75,7 +79,9 @@ export class PottedTube {
     for (const [image, r] of this.rolling) {
       const t = now - r.start;
       const along = Math.min(1, t / TUBE.pipeMs);
-      image.x = this.x(this.pipeEnd + (TUBE.x - this.pipeEnd) * along);
+      image.x = this.x(this.ballStart + (TUBE.x - this.ballStart) * along);
+      // Coming out from under the collar, out of the dark.
+      image.setAlpha(Math.min(1, along / TUBE_ART.fadeInAlong));
       const fall = Math.min(1, Math.max(0, (t - TUBE.pipeMs) / r.fallMs));
       image.y = TUBE.entryY + (this.restY(r.n) - TUBE.entryY) * Phaser.Math.Easing.Bounce.Out(fall);
       // The first touch down of the bounce.
@@ -95,7 +101,7 @@ export class PottedTube {
       const { id, image, at } = this.underTable.shift()!;
       const n = this.order.length;
       this.order.push({ id, image });
-      image.setPosition(this.x(this.pipeEnd), TUBE.entryY).setVisible(true);
+      image.setPosition(this.x(this.ballStart), TUBE.entryY).setAlpha(0).setVisible(true);
       const fall = this.restY(n) - TUBE.entryY;
       const fallMs = Math.min(TUBE.maxFallMs, Math.sqrt((2 * fall) / TUBE.gravity) * 1000);
       // Timed from when it was due, so a slow frame cannot stretch the roll.
@@ -175,12 +181,12 @@ export class PottedTube {
     this.underTable.push({ id: ball.id, image, at: now + this.underTableMs(this.toDesign(ball.x, ball.y)) });
   }
 
-  /** The tube and pipe's outline, in texture pixels: the pipe stops at the opening's centre. */
+  /** The tube and pipe's outline, in texture pixels: the pipe stops at the rail's edge. */
   private outline(ctx: CanvasRenderingContext2D, w: number, h: number): void {
     const pipeTop = TUBE.entryY - TUBE.top - this.half;
     ctx.beginPath();
     ctx.roundRect(0, 0, 2 * this.half, h, this.half);
-    ctx.rect(this.half, pipeTop, w - this.mouthRx - this.half, 2 * this.half);
+    ctx.rect(this.half, pipeTop, w - this.beyondRail - this.half, 2 * this.half);
   }
 
   /** The soft shadow under the tube and pipe, drawn once, centred like the tube with room for the blur. */
@@ -208,7 +214,7 @@ export class PottedTube {
     return canvasTexture(this.scene, `tube-${layer}-${Math.round(width)}x${Math.round(height)}-${r.toFixed(2)}`, width, height, (ctx, w, h) => {
       const tubeW = 2 * this.half;
       const pipeTop = TUBE.entryY - TUBE.top - this.half;
-      const mouthX = w - this.mouthRx;
+      const mouthX = w - this.beyondRail;
       const shape = () => this.outline(ctx, w, h);
       if (layer === 'back') {
         shape();
@@ -238,21 +244,25 @@ export class PottedTube {
       dark.addColorStop(1, `rgba(0, 0, 0, ${m.fadeAlpha})`);
       ctx.fillStyle = dark;
       ctx.fillRect(fadeFrom, pipeTop, mouthX - fadeFrom, 2 * this.half);
-      // The opening in the rail's edge, an upright oval, darkest in the middle.
-      const ry = this.half + m.extraHeight;
+      // The metal collar where the pipe goes under the rail, and its shadow on the rail.
+      const c = a.collar;
       const cy = TUBE.entryY - TUBE.top;
-      ctx.save();
-      ctx.translate(mouthX, cy);
-      ctx.scale(this.mouthRx / ry, 1);
-      const hole = ctx.createRadialGradient(0, 0, 0, 0, 0, ry);
-      hole.addColorStop(0, m.core);
-      hole.addColorStop(0.8, m.core);
-      hole.addColorStop(1, m.rim);
-      ctx.fillStyle = hole;
+      const collarTop = cy - this.half - c.extra;
+      const collarH = 2 * (this.half + c.extra);
+      const collarRight = mouthX + c.overhang;
+      const contact = ctx.createLinearGradient(collarRight, 0, collarRight + c.contact.width, 0);
+      contact.addColorStop(0, c.contact.color);
+      contact.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = contact;
+      ctx.fillRect(collarRight, collarTop + 1, c.contact.width, collarH - 2);
+      const metal = ctx.createLinearGradient(0, collarTop, 0, collarTop + collarH);
+      metal.addColorStop(0, a.cap.dark);
+      metal.addColorStop(0.35, a.cap.light);
+      metal.addColorStop(1, a.cap.dark);
+      ctx.fillStyle = metal;
       ctx.beginPath();
-      ctx.arc(0, 0, ry, 0, 2 * Math.PI);
+      ctx.roundRect(collarRight - c.width, collarTop, c.width, collarH, c.radius);
       ctx.fill();
-      ctx.restore();
       // A bright streak down the front.
       ctx.fillStyle = a.shine.color;
       ctx.beginPath();
