@@ -156,7 +156,10 @@ test('in English the pickers are translated and the names stay as they are', asy
   await openCharacters(page);
   expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Next');
   await toOpponents(page);
-  expect(await textOf(page, MENU_SCENE, 'opponent-easy')).toBe('Dogo Mbishi (Easy)');
+  expect(await textOf(page, MENU_SCENE, 'opponentPicker-title')).toBe('Who will you play?');
+  expect(await textOf(page, MENU_SCENE, 'opponent-two')).toBe('Play a friend (one phone)');
+  expect(await textOf(page, MENU_SCENE, 'opponent-easy-level')).toBe('Easy');
+  expect(await textOf(page, MENU_SCENE, 'opponent-easy-record')).toBe('Not played yet');
   await tap(page, 'opponent-two', MENU_SCENE);
   await expect.poll(() => textOf(page, MENU_SCENE, 'characterPicker-body')).toBe('Player 2');
   expect(await textOf(page, MENU_SCENE, 'character-confirm')).toBe('Start');
@@ -192,8 +195,11 @@ test('Bishoo and Kichwa start locked, with what earns them; ten wins open Kichwa
   expect(await locked(page, 'bishoo')).toBe(true);
   expect(await locked(page, 'kichwa')).toBe(true);
   expect(await locked(page, 'malkia')).toBe(false);
-  expect(await textOf(page, MENU_SCENE, 'character-bishoo-label')).toBe('Bishoo\nMaliza Sura 1');
-  expect(await textOf(page, MENU_SCENE, 'character-kichwa-label')).toBe('Kichwa\nShinda mechi 10');
+  // The name alone, and what earns it in a separate padlock tag (0.34.0).
+  expect(await textOf(page, MENU_SCENE, 'character-bishoo-label')).toBe('Bishoo');
+  expect(await textOf(page, MENU_SCENE, 'character-bishoo-lock')).toBe('Maliza Sura 1');
+  expect(await textOf(page, MENU_SCENE, 'character-kichwa-label')).toBe('Kichwa');
+  expect(await textOf(page, MENU_SCENE, 'character-kichwa-lock')).toBe('Shinda mechi 10');
   await tap(page, 'character-kichwa', MENU_SCENE);
   expect(await selected(page)).toBe('fundi');
   // Player 2 cannot take a locked one either.

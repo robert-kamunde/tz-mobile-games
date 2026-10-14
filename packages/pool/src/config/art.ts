@@ -246,7 +246,15 @@ export const UI_ART = {
     inner: { width: 1.5, color: 'rgba(226, 181, 74, 0.6)' },
     ribbon: { padX: 46, padY: 8, notch: 16, top: '#d23a2c', bottom: '#8f1d14', edge: '#f2c94c', edgeWidth: 1.5, tailDrop: 6, tail: '#6b130c' },
     dim: { color: 0x0b0e11, alpha: 0.55 },
+    /**
+     * What earns a locked character or look (0.34.0, Robert: it read like part of the name): a small
+     * gold-edged tag with a padlock under the name.
+     */
+    lockTag: { padX: 10, padY: 4, iconWidth: 18, radius: 8, fill: 'rgba(40, 28, 8, 0.85)', edge: '#c9a03a', text: '#f2c94c', icon: '#f2c94c' },
     pop: { ms: 180, fromScale: 0.92, ease: 'Back.Out' },
+    /** A crown on a beaten computer player (Takwimu), a tick on an earned journey reward (0.34.0). */
+    crown: { fill: '#f2c94c', edge: '#8a6414', jewel: '#c62828' },
+    tick: { fill: '#3fae6a', edge: '#1d5c37', mark: '#ffffff' },
   },
 } as const;
 

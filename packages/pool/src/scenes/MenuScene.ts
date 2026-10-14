@@ -1,22 +1,15 @@
 import * as Phaser from 'phaser';
 import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
-import { AI_LEVEL_IDS } from '../config/ai';
-import { COMPUTER_CHARACTERS } from '../config/characters';
-import { BUTTON, COLORS, HANDS, LOOK_PICKER, MENU, PANEL, TABLE_LAYOUT, TEXT_STYLE } from '../config/layout';
+import { BUTTON, HANDS, LOOK_PICKER, MENU, PANEL } from '../config/layout';
 import { moveStoryGame, type PoolSlots } from '../progress/slots';
-import { CUE_ART, TABLE_ART } from '../config/art';
-import { BACKGROUNDS, BACKGROUND_IDS, isBackgroundId } from '../config/backgrounds';
-import { CUE_IDS, CUE_STYLES, isCueId } from '../config/cues';
-import { UK_7FT_TABLE } from '../config/table';
-import { TABLE_IDS, TABLE_THEMES, isTableId } from '../config/tables';
-import { buildTableGeometry } from '../physics/geometry';
+import { BACKGROUND_IDS, isBackgroundId } from '../config/backgrounds';
+import { CUE_IDS, isCueId } from '../config/cues';
+import { TABLE_IDS, isTableId } from '../config/tables';
 import { MatchSetup } from './MatchSetup';
 import { LookPicker } from './LookPicker';
-import { backgroundTexture, type PreviewTable } from './art/backgroundArt';
-import { cueTexture } from './art/cueArt';
 import { MENU_PICTURE_KEY, logoTexture, menuBackgroundTexture } from './art/menuArt';
-import { tableTexture } from './art/tableTexture';
+import { lookTexture } from './art/lookArt';
 import { getPoolSlots } from './poolSlots';
 import { SCENE_KEYS } from './sceneKeys';
 import type { StoryStart } from './StoryScene';
@@ -25,7 +18,8 @@ import { lockedBy } from '../progress/story';
 import { lockedCharacters, needText } from './storyText';
 import { setUpReminders } from './reminderSetup';
 import type { TableStart } from './TableScene';
-import { Panel, addButton, textStyle } from './ui';
+import { Panel, addButton } from './ui';
+import { StatsPanel } from './StatsPanel';
 import { loadPortraitFiles } from './art/portraitFiles';
 import { loadArtFiles } from './art/artFiles';
 
@@ -55,7 +49,7 @@ export class MenuScene extends Phaser.Scene {
   private slots!: PoolSlots;
   private setup!: MatchSetup;
   private looks!: LookPicker;
-  private panel: Panel | null = null;
+  private panel: Panel | StatsPanel | null = null;
   private openPanel: MenuPanel | null = null;
   private hasSavedGame = false;
   private page: MenuPage = 'main';
@@ -94,6 +88,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.setup = new MatchSetup(this, t, PANEL.overMenu, (choice) => this.startTable(choice), () =>
       lockedCharacters(t, { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) }),
+      () => this.slots.progress.load().data.vsComputer,
     );
     this.looks = new LookPicker(this, PANEL.overMenu);
     if (data.panel) this.showPanel(data.panel);
@@ -195,17 +190,14 @@ export class MenuScene extends Phaser.Scene {
 
   /** Each kind shows how many of its looks are open, e.g. "Meza  3/14". */
   private looksItems(): Item[][] {
-    const t = this.t;
-    const played = { story: this.slots.story.load().data, wins: computerWins(this.slots.progress.load().data) };
     const kinds = [
       { id: 'tables', kind: 'table', ids: TABLE_IDS },
       { id: 'cues', kind: 'cue', ids: CUE_IDS },
       { id: 'backgrounds', kind: 'background', ids: BACKGROUND_IDS },
     ] as const;
-    return kinds.map(({ id, kind, ids }) => [
+    return kinds.map(({ id, kind }) => [
       {
         id,
-        label: t.t('menu.count', { name: t.t(`menu.${id}`), n: ids.filter((look) => !lockedBy(kind, look, played)).length, total: ids.length }),
         onTap: () => this.showLooks(kind),
       },
     ]);
@@ -234,7 +226,6 @@ export class MenuScene extends Phaser.Scene {
     const t = this.t;
     const progress = this.slots.progress.load().data;
     const played = { story: this.slots.story.load().data, wins: computerWins(progress) };
-    const geometry = buildTableGeometry(UK_7FT_TABLE);
     // Locked looks show with what earns them, until earned.
     const locked = (kind: 'table' | 'cue' | 'background', id: string) => {
       const reward = lockedBy(kind, id, played);
@@ -245,22 +236,25 @@ export class MenuScene extends Phaser.Scene {
         ? TABLE_IDS.map((id) => ({
             id,
             label: t.t(`table.${id}`),
-            texture: tableTexture(this, geometry, UK_7FT_TABLE, TABLE_THEMES[id], TABLE_ART.previewScale).key,
+            texture: lookTexture(this, 'table', id),
             ...locked('table', id),
           }))
         : kind === 'cue'
-          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: cueTexture(this, CUE_STYLES[id], CUE_ART.previewScale), ...locked('cue', id) }))
+          ? CUE_IDS.map((id) => ({ id, label: t.t(`cue.${id}`), texture: lookTexture(this, 'cue', id), ...locked('cue', id) }))
           : BACKGROUND_IDS.map((id) => ({
               id,
               label: t.t(`background.${id}`),
-              texture: backgroundTexture(this, BACKGROUNDS[id], previewTable(geometry.length)),
+              texture: lookTexture(this, 'background', id),
               ...locked('background', id),
             }));
+    const open = items.filter((item) => !('locked' in item)).length;
     this.looks.show({
       prefix: kind,
       title: t.t(`${kind}s.title`),
       items,
       layout: LOOK_PICKER[kind],
+      // How many are open shows here rather than on the Mapambo buttons (Robert, 2026-10-14).
+      progress: { open, total: items.length, label: t.t('looks.open', { n: open, total: items.length }) },
       selected: kind === 'table' ? progress.table : kind === 'cue' ? progress.cue : progress.background,
       confirmLabel: t.t('looks.choose'),
       backLabel: t.t('ui.back'),
@@ -285,10 +279,7 @@ export class MenuScene extends Phaser.Scene {
     const back = { name: `${kind}-back`, label: t.t('ui.back'), onTap: () => this.closePanel() };
     const common = { name: `${kind}Panel`, area: PANEL.overMenu, title: t.t(`${kind}.title`), back };
     if (kind === 'stats') {
-      const progress = this.slots.progress.load().data;
-      const lines = AI_LEVEL_IDS.map((level) => t.t('stats.vsComputer', { name: COMPUTER_CHARACTERS[level].name, level: t.t(`level.${level}`), ...progress.vsComputer[level] }));
-      lines.push(t.t('stats.twoPlayers', { n: progress.twoPlayerGames }));
-      this.panel = new Panel(this, { ...common, body: lines.join('\n') });
+      this.panel = new StatsPanel(this, t, PANEL.overMenu, this.slots.progress.load().data, this.slots.story.load().data, () => this.closePanel());
     } else if (kind === 'exit') {
       const exit = getServices(this).exit;
       this.panel = new Panel(this, { ...common, body: t.t('exit.body'), buttons: [{ name: 'exit-confirm', label: t.t('exit.confirm'), onTap: () => exit.exit() }] });
@@ -381,11 +372,4 @@ export class MenuScene extends Phaser.Scene {
     this.panel = null;
     this.openPanel = null;
   }
-}
-
-/** Where the table sits on the table screen (right hand, rails included), for the background previews. */
-function previewTable(length: number): PreviewTable {
-  const l = TABLE_LAYOUT;
-  const playHeight = UK_7FT_TABLE.playWidth * l.scale;
-  return { left: l.originX - l.railWidth, top: l.originY - l.railWidth, width: length * l.scale + 2 * l.railWidth, height: playHeight + 2 * l.railWidth };
 }

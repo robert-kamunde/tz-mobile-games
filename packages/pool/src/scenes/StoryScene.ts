@@ -3,14 +3,16 @@ import type { Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { DEFAULT_PICKS } from '../config/characters';
 import { COLORS, PANEL, STORY_MAP, TEXT_STYLE } from '../config/layout';
-import { STORY, STORY_CHAPTERS, STORY_STOPS, type StoryStop } from '../config/story';
+import { STORY, STORY_CHAPTERS, STORY_STOPS, type StoryReward, type StoryStop } from '../config/story';
 import { playerCharacter } from '../progress/characters';
 import type { PoolSlots } from '../progress/slots';
-import { MAX_STARS, chapterOf, characterById, earnedRewards, isNeedMet, isStopOpen, stopRival, titleFor, totalStars, type Played, type StoryProgress } from '../progress/story';
+import { MAX_STARS, chapterOf, characterById, earnedRewards, isNeedMet, isStopOpen, needProgress, stopRival, titleFor, totalStars, type Played, type StoryProgress } from '../progress/story';
 import { computerWins } from '../progress/progress';
 import { lockedCharacters, needText, twistText } from './storyText';
 import { drawCup } from './art/backgroundArt';
 import { canvasTexture } from './art/canvasArt';
+import { lookTexture } from './art/lookArt';
+import { badgeTexture, cardTexture } from './art/uiArt';
 import { menuBackgroundTexture } from './art/menuArt';
 import { loadPortraitFiles } from './art/portraitFiles';
 import { loadArtFiles } from './art/artFiles';
@@ -196,22 +198,67 @@ export class StoryScene extends Phaser.Scene {
   }
 
   /**
-   * This chapter's rewards and the star rewards along the bottom, earned or with what earns them.
-   * A look earned at a single stop shows on that stop's card instead.
+   * This chapter's rewards and the star rewards as cards along the bottom: picture, name, what earns
+   * it and how far along, with a tick once earned. A look earned at a single stop shows on that
+   * stop's card instead. Cards are `story-reward-<kind>-<id>` (data `earned`), their progress text
+   * `story-reward-<kind>-<id>-progress`.
    */
   private drawRewards(): void {
     const t = this.t;
     const played = this.played;
+    const r = M.rewards;
     const chapter = STORY_CHAPTERS[this.chapter]!.id;
-    const shown = STORY.rewards.filter((r) => r.need.chapter === chapter || (r.need.stars !== undefined && r.need.stop === undefined));
-    shown.forEach((r, i) => {
-      const x = M.title.x + (i - (shown.length - 1) / 2) * M.rewards.spacing;
-      const earned = isNeedMet(played, r.need);
-      this.add
-        .text(x, M.rewards.y, `${t.t(`menu.${r.kind}s`)}: ${t.t(`${r.kind}.${r.id}`)}\n${earned ? t.t('story.earned') : needText(t, r.need)}`, { ...textStyle(TEXT_STYLE.bodySize, earned ? COLORS.accent : COLORS.textDim), align: 'center' })
-        .setOrigin(0.5)
-        .setName(`story-reward-${r.kind}-${r.id}`);
+    const shown = STORY.rewards.filter((reward) => reward.need.chapter === chapter || (reward.need.stars !== undefined && reward.need.stop === undefined));
+    const room = r.right - r.left;
+    const w = Math.min(r.maxWidth, (room - (shown.length - 1) * r.gap) / shown.length);
+    const rowLeft = r.left + (room - (shown.length * w + (shown.length - 1) * r.gap)) / 2;
+    shown.forEach((reward, i) => {
+      const left = rowLeft + i * (w + r.gap);
+      const name = `story-reward-${reward.kind}-${reward.id}`;
+      const earned = isNeedMet(played, reward.need);
+      this.add.image(left + w / 2, r.top + r.height / 2, cardTexture(this, w, r.height, earned, true)).setName(name).setData('earned', earned);
+      const p = r.picture;
+      this.rewardPicture(reward.kind, reward.id, left + p.inset + p.width / 2, r.top + r.height / 2);
+      const textX = left + p.inset + p.width + r.textGap;
+      const textWidth = left + w - textX - r.tick.size - r.tick.inset;
+      let y = r.top + p.inset;
+      const title = this.add.text(textX, y, t.t(`${reward.kind}.${reward.id}`), { ...textStyle(TEXT_STYLE.labelSize), fontStyle: 'bold', fixedWidth: textWidth });
+      y += title.height + r.lineGap;
+      const need = this.add.text(textX, y, earned ? t.t('story.earned') : needText(t, reward.need).replace('\n', ' '), textStyle(TEXT_STYLE.labelSize, earned ? COLORS.accent : COLORS.textDim));
+      y += need.height + r.lineGap;
+      const progress = needProgress(played, reward.need);
+      if (!progress) return;
+      const label = this.add
+        .text(textX, y, t.t(`story.progress.${progress.unit}`, { have: progress.have, want: progress.want }), textStyle(TEXT_STYLE.labelSize, COLORS.textDim))
+        .setName(`${name}-progress`);
+      const barX = label.x + label.width + r.bar.gap;
+      const barY = label.y + label.height / 2 - r.bar.height / 2;
+      const barWidth = left + w - p.inset - barX;
+      const share = earned ? 1 : progress.have / progress.want;
+      const g = this.add.graphics().fillStyle(r.bar.track, 1).fillRoundedRect(barX, barY, barWidth, r.bar.height, r.bar.height / 2);
+      if (share * barWidth >= r.bar.height) g.fillStyle(earned ? r.bar.earned : r.bar.fill, 1).fillRoundedRect(barX, barY, share * barWidth, r.bar.height, r.bar.height / 2);
+      if (earned) this.add.image(left + w - r.tick.inset - r.tick.size / 2, r.top + r.tick.inset + r.tick.size / 2, badgeTexture(this, 'tick', r.tick.size)).setName(`${name}-tick`);
     });
+  }
+
+  /**
+   * A reward's picture in its box: a table whole, a cue from corner to corner, and scenery filling
+   * the box (its middle, cropped) so it reads at this size.
+   */
+  private rewardPicture(kind: StoryReward['kind'], id: string, x: number, y: number): void {
+    const p = M.rewards.picture;
+    const picture = this.add.image(x, y, lookTexture(this, kind, id, true));
+    const { width: w, height: h } = picture;
+    if (kind === 'cue') {
+      picture.setRotation(-Math.atan2(p.height, p.width)).setScale((Math.hypot(p.width, p.height) * p.cueLength) / w);
+    } else if (kind === 'background') {
+      const scale = Math.max(p.width / w, p.height / h);
+      const cropW = p.width / scale;
+      const cropH = p.height / scale;
+      picture.setCrop((w - cropW) / 2, (h - cropH) / 2, cropW, cropH).setScale(scale);
+    } else {
+      picture.setScale(Math.min(p.width / w, p.height / h));
+    }
   }
 
   private openCard(stop: StoryStop): void {

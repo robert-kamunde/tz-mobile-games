@@ -167,6 +167,25 @@ describe('progress', () => {
     expect(validateProgress({ ...p, cue: 'gold' })?.cue).toBe('classic');
   });
 
+  it('counts wins in a row against the computer; a loss ends the streak but keeps the best', () => {
+    const easy = { kind: 'computer', level: 'easy' } as const;
+    let p = defaultProgress();
+    for (const winner of [0, 0, 0, 1, 0] as const) p = recordGame(p, easy, winner);
+    expect(p.streak).toEqual({ current: 1, best: 3 });
+    // Two-player games leave the streak alone.
+    expect(recordGame(p, { kind: 'human' }, 1).streak).toEqual({ current: 1, best: 3 });
+    expect(validateProgress(viaJson(p))).toEqual(p);
+  });
+
+  it('an older save without a streak, or a broken one, starts the streak at zero and keeps the stats', () => {
+    const p = recordGame(defaultProgress(), { kind: 'computer', level: 'hard' }, 0);
+    const old = viaJson(p) as Record<string, unknown>;
+    delete old.streak;
+    expect(validateProgress(old)).toEqual({ ...p, streak: { current: 0, best: 0 } });
+    expect(validateProgress({ ...p, streak: { current: 4, best: 2 } })?.streak).toEqual({ current: 0, best: 0 });
+    expect(validateProgress({ ...p, streak: 'x' })?.vsComputer).toEqual(p.vsComputer);
+  });
+
   it('opponent validation accepts only known opponents', () => {
     expect(validateOpponent({ kind: 'human', extra: 1 })).toEqual({ kind: 'human' });
     expect(validateOpponent({ kind: 'computer', level: 'hard' })).toEqual({ kind: 'computer', level: 'hard' });

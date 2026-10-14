@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.34.0 (unreleased) - Clearer, richer menu screens
+- Robert chose "Build all five" (2026-10-14).
+- **Mapambo:** the Meza, Fimbo and Mandhari buttons no longer show counts. Each picker shows "Zimefunguliwa 4/9" (Unlocked) with a thin gold bar at the top left.
+- **Locked looks and characters:** the name stays on its own; what opens it is in a small gold tag with a padlock under the name (beside it for cues), so it no longer reads like part of the name.
+- **Cheza na nani? (who will you play?):** "Cheza na rafiki (simu moja)" replaces "Wachezaji wawili". Each computer player is a card with their face, name, strength as one to four gold dots, the level word and your record against them ("Umeshinda 3/7", or "Bado hamjacheza"). Over the menu the four cards sit in a row; over the table they sit two by two. The last choice has a thick gold edge.
+- **Takwimu (stats):** five big gold totals across the top: games against the computer, wins, win rate, best winning streak (with the current one) and journey stars. Below, a row per computer player with face, a green win bar, "won/played" and a gold crown once you have beaten them. Games with friends are counted at the bottom.
+- **Winning streak:** wins in a row against the computer (Quick game and journey) are counted from this version; a loss starts again from nought, the best is kept. Older saves start at nought with their other stats kept.
+- **Safari ya Bingwa:** the rewards along the bottom of the map are cards: a picture of the table, cue or scenery, its name, what earns it, and a progress bar ("Vituo 3/9" for a chapter, "Nyota 21/70" for stars). An earned reward gets a gold edge, "Umeipata!" and a green tick.
+
 ## 0.33.1 (unreleased) - Tube collar and leather pocket cups
 - Robert (2026-10-14): where the tube's pipe met the table looked like a black oval stuck on. The oval is gone: the pipe now goes under the rail through a metal collar, like the tube's caps, with a soft shadow on the rail. A ball comes out from under the collar dimly and brightens as it rolls along.
 - Robert (2026-10-14): wood showed in the table's corners outside the corner holes. Every pocket now has a leather cup over the rail, from the hole out to the table's edge, so the corner pockets fill their corners.

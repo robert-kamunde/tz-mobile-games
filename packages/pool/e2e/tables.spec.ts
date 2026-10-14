@@ -147,13 +147,20 @@ test('Mandhari: each background can be chosen and is drawn behind the table; the
   test.slow();
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
-  // Mapambo: the three look buttons in a column, none covering another, each with how many are open (two free at first).
+  // Mapambo: the three look buttons in a column, none covering another; no counts on them (0.34.0).
   await openMenuPage(page, 'looks');
   const column = await Promise.all(['menu-tables', 'menu-cues', 'menu-backgrounds', 'menu-back'].map((n) => page.evaluate(([s, m]) => window.__tzg!.boundsOf(s, m), [MENU_SCENE, n] as const)));
   for (let i = 1; i < column.length; i++) expect(column[i]!.top).toBeGreaterThan(column[i - 1]!.bottom);
-  expect(await textOf(page, 'menu-tables')).toBe(`Meza  2/${TABLE_IDS.length}`);
-  expect(await textOf(page, 'menu-cues')).toBe(`Fimbo  2/${CUE_IDS.length}`);
-  expect(await textOf(page, 'menu-backgrounds')).toBe(`Mandhari  2/${BACKGROUND_IDS.length}`);
+  expect(await textOf(page, 'menu-tables')).toBe('Meza');
+  expect(await textOf(page, 'menu-cues')).toBe('Fimbo');
+  expect(await textOf(page, 'menu-backgrounds')).toBe('Mandhari');
+  // How many are open shows inside each picker instead (two free at first).
+  for (const [kind, ids] of [['table', TABLE_IDS], ['cue', CUE_IDS], ['background', BACKGROUND_IDS]] as const) {
+    await tapMenu(page, `menu-${kind}s`);
+    await expect.poll(async () => (await menuState(page)).panel).toBe(`${kind}s`);
+    expect(await textOf(page, `${kind}-open`)).toBe(`Zimefunguliwa 2/${ids.length}`);
+    await tap(page, `${kind}-back`, MENU_SCENE);
+  }
 
   for (const id of FREE_BACKGROUNDS) {
     await tapMenu(page, 'menu-backgrounds');
@@ -221,7 +228,8 @@ test('only two of each look are free; the others show a padlock and what earns t
   await tapMenu(page, 'menu-cues');
   await expect.poll(async () => (await menuState(page)).panel).toBe('cues');
   expect(await menuState(page)).toMatchObject({ lookPage: 0, lookPages: 1 });
-  expect(await textOf(page, 'cue-kitenge-label')).toBe('Kitenge: Shinda Sinza au mechi 6');
+  expect(await textOf(page, 'cue-kitenge-label')).toBe('Kitenge');
+  expect(await textOf(page, 'cue-kitenge-lock')).toBe('Shinda Sinza au mechi 6');
   expect(errors).toEqual([]);
 });
 

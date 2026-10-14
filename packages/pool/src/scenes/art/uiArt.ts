@@ -1,5 +1,6 @@
 import type * as Phaser from 'phaser';
 import { UI_ART } from '../../config/art';
+import { OPPONENT_PICKER } from '../../config/layout';
 import { canvasTexture } from './canvasArt';
 
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
@@ -129,4 +130,99 @@ export function ribbonTexture(scene: Phaser.Scene, width: number, height: number
     ctx.stroke();
   });
   return { key, width: w, height: h };
+}
+
+/** A lock tag's pill, `width` × `height`, with a small padlock at the left (0.34.0). */
+export function lockTagTexture(scene: Phaser.Scene, width: number, height: number): string {
+  const t = UI_ART.panel.lockTag;
+  const w = Math.ceil(width);
+  const h = Math.ceil(height);
+  return canvasTexture(scene, `locktag-${w}x${h}`, w, h, (ctx) => {
+    roundedRect(ctx, 0.75, 0.75, w - 1.5, h - 1.5, t.radius);
+    ctx.fillStyle = t.fill;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = t.edge;
+    ctx.stroke();
+    // The padlock: a body and a shackle, centred in the icon space.
+    const cx = t.padX + t.iconWidth / 2 - 2;
+    const cy = h / 2 + 2;
+    const bw = 12;
+    const bh = 9;
+    ctx.fillStyle = t.icon;
+    roundedRect(ctx, cx - bw / 2, cy - bh / 2 + 1, bw, bh, 2);
+    ctx.fill();
+    ctx.strokeStyle = t.icon;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy - bh / 2 + 1, 4, Math.PI, 0);
+    ctx.stroke();
+  });
+}
+
+/**
+ * A card behind a choice, such as a computer player (0.34.0); `chosen` gives it a thick gold edge.
+ * `solid` fills it darkly, for a card straight on a busy picture rather than on a panel.
+ */
+export function cardTexture(scene: Phaser.Scene, width: number, height: number, chosen: boolean, solid = false): string {
+  const c = OPPONENT_PICKER.card;
+  const w = Math.ceil(width);
+  const h = Math.ceil(height);
+  return canvasTexture(scene, `card-${w}x${h}-${chosen ? 'on' : 'off'}${solid ? '-solid' : ''}`, w, h, (ctx) => {
+    const edge = chosen ? c.chosenWidth : c.edgeWidth;
+    roundedRect(ctx, edge / 2, edge / 2, w - edge, h - edge, c.radius);
+    ctx.fillStyle = solid ? c.solidFill : c.fill;
+    ctx.fill();
+    ctx.lineWidth = edge;
+    ctx.strokeStyle = chosen ? c.chosenEdge : c.edge;
+    ctx.stroke();
+  });
+}
+
+/** A small badge, `size` design pixels square: a gold crown, or a green circle with a white tick. */
+export function badgeTexture(scene: Phaser.Scene, kind: 'crown' | 'tick', size: number): string {
+  const s = Math.ceil(size);
+  return canvasTexture(scene, `badge-${kind}-${s}`, s, s, (ctx) => {
+    if (kind === 'tick') {
+      const t = UI_ART.panel.tick;
+      ctx.beginPath();
+      ctx.arc(s / 2, s / 2, s / 2 - 1.5, 0, Math.PI * 2);
+      ctx.fillStyle = t.fill;
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = t.edge;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(s * 0.28, s * 0.52);
+      ctx.lineTo(s * 0.44, s * 0.68);
+      ctx.lineTo(s * 0.73, s * 0.34);
+      ctx.lineWidth = s * 0.12;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = t.mark;
+      ctx.stroke();
+      return;
+    }
+    const c = UI_ART.panel.crown;
+    // Three points over a band, a jewel in the middle.
+    ctx.beginPath();
+    ctx.moveTo(s * 0.1, s * 0.8);
+    ctx.lineTo(s * 0.06, s * 0.3);
+    ctx.lineTo(s * 0.3, s * 0.52);
+    ctx.lineTo(s * 0.5, s * 0.16);
+    ctx.lineTo(s * 0.7, s * 0.52);
+    ctx.lineTo(s * 0.94, s * 0.3);
+    ctx.lineTo(s * 0.9, s * 0.8);
+    ctx.closePath();
+    ctx.fillStyle = c.fill;
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = c.edge;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s * 0.5, s * 0.64, s * 0.08, 0, Math.PI * 2);
+    ctx.fillStyle = c.jewel;
+    ctx.fill();
+  });
 }

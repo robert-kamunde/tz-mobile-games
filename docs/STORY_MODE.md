@@ -29,6 +29,7 @@ Differences from the plan below, found while building:
 - Starting a stop replaces a saved Quick game, as starting any new game does. (Changed in 0.27.0: a story game and a Quick game are saved apart, each with its own Continue on the menu.)
 - The trophy for a beaten stop is a small gold cup on the stop's face; Bingwa's is the same cup.
 - The rewards are named Dhahabu (table), Bingwa (cue) and Vikombe (background) in the pickers.
+- From 0.34.0 the map shows this chapter's rewards and the star reward as cards along the bottom: the look's picture, its name, what earns it and a progress bar (stops won in the chapter, or stars), with a green tick and "Umeipata!" once earned.
 
 ## What changes for the player
 

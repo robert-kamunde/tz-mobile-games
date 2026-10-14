@@ -107,13 +107,15 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `progress/characters.ts` | `CharacterPicks`, `seatCharacter`, `withDistinctPicks`, `validatePicks`. Pure. |
 | `progress/opponent.ts` | `Opponent` (two players or the computer at a level), its short id and validation. |
 | `progress/savedMatch.ts` | The saved game in progress (A17): `toSavedBalls`, `restoreBalls`, `validateSavedMatch`. |
-| `progress/progress.ts` | Stats and the last opponent: `recordGame`, `validateProgress`. |
+| `progress/progress.ts` | Stats, winning streak (0.34.0, optional in saves) and the last opponent: `recordGame`, `validateProgress`. |
 | `progress/tips.ts` | One-time help already shown (`howToPlaySeen`). |
 | `progress/slots.ts` | The save slots `pool.match`, `pool.storyMatch`, `pool.progress`, `pool.tips` and `pool.story`; `moveStoryGame` moves a story game saved before 0.27.0 out of `pool.match`. |
 | `config/story.ts`, `progress/story.ts` | Story mode (A33): the eight stops and their rivals, stand-ins, levels, tables and backgrounds; star rules, titles and rewards. `starsFor`, `recordStop` (keeps the best), `isStopOpen`, `nextStop`, `titleFor`, `earnedRewards`, the `is…Locked` checks, `characterNeed` and validation. Pure. |
 | `scenes/StoryScene.ts`, `scenes/storyText.ts` | The story map, one chapter per page: stops, stars, cups and padlocks, the stop card with its twist, the journey's character picker, the chapter's rewards, Back. `storyText` words a reward's need and a twist. |
 | `scenes/EndPanel.ts` | The end-of-game panel: title, stars (story), detail, note, and Endelea / Rudia / Menyu or Ramani, with the 10 s countdown that any touch stops. |
-| `scenes/MenuScene.ts` | Main menu (first scene). Three pages, each a scene restart with `MenuStart.page`: main (CHEZA, Mapambo, Stats, Rules, Settings, Exit), `play` (Continue, Quick game, journey) and `looks` (table, cue and scenery pickers with counts). Panels open over any page. |
+| `scenes/StatsPanel.ts` | Takwimu (0.34.0): totals, a row per computer player, games with friends. |
+| `scenes/art/lookArt.ts` | `lookTexture`: the picture of a table, cue or scenery, for the Mapambo pickers and the journey's reward cards. |
+| `scenes/MenuScene.ts` | Main menu (first scene). Three pages, each a scene restart with `MenuStart.page`: main (CHEZA, Mapambo, Stats, Rules, Settings, Exit), `play` (Continue, Quick game, journey) and `looks` (table, cue and scenery pickers). Panels open over any page. |
 | `scenes/TableScene.ts` | The match: starting a new game or resuming the saved one, input (aim, power, ball in hand), simulation loop, applying verdicts, saving, counting stats, starting computer turns, New game and Menu. |
 | `controls/spin.ts` | Spin control maths: a point on the cue-ball face to a tip offset (clamped to the physics' largest offset) and back. |
 | `controls/fineAim.ts` | `rotateAim`: turns the aim by a small angle (clockwise on screen for a positive angle). |

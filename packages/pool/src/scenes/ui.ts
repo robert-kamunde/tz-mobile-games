@@ -3,7 +3,7 @@ import { getServices } from '@tzg/shell';
 import { UI_ART } from '../config/art';
 import { BUTTON, COLORS, DESIGN, PANEL, TEXT_STYLE } from '../config/layout';
 import { SOUND_MIX } from '../config/sound';
-import { buttonTexture, panelTexture, ribbonTexture } from './art/uiArt';
+import { buttonTexture, lockTagTexture, panelTexture, ribbonTexture } from './art/uiArt';
 import { loadPoolSounds } from './poolSounds';
 
 export interface ButtonSpec {
@@ -119,6 +119,37 @@ export interface PanelSpec {
   readonly back?: ButtonSpec;
 }
 
+/** What earns a locked character or look: a gold-edged tag with a padlock, made by `addLockTag`. */
+export interface LockTag {
+  readonly objects: readonly (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[];
+  readonly width: number;
+  readonly height: number;
+  /** Puts the tag with its top centre at (x, top). */
+  place(x: number, top: number): void;
+}
+
+/** A lock tag for `text` (wrapped to `maxWidth`); its text is named `name`. */
+export function addLockTag(scene: Phaser.Scene, name: string, text: string, maxWidth: number): LockTag {
+  const t = UI_ART.panel.lockTag;
+  const label = scene.add
+    .text(0, 0, text, { ...textStyle(TEXT_STYLE.labelSize, t.text), align: 'center', wordWrap: { width: maxWidth - 2 * t.padX - t.iconWidth } })
+    .setOrigin(0, 0)
+    .setName(name);
+  const width = label.width + 2 * t.padX + t.iconWidth;
+  const height = label.height + 2 * t.padY;
+  const pill = scene.add.image(0, 0, lockTagTexture(scene, width, height)).setOrigin(0, 0);
+  scene.children.bringToTop(label);
+  return {
+    objects: [pill, label],
+    width,
+    height,
+    place(x, top) {
+      pill.setPosition(x - width / 2, top);
+      label.setPosition(x - width / 2 + t.padX + t.iconWidth, top + t.padY);
+    },
+  };
+}
+
 /**
  * A title on a red ribbon, its top at `y`: the ribbon image and the text, both centred on `x`.
  */
@@ -172,6 +203,7 @@ export class Panel {
     const box = scene.add.rectangle(x, y, width, height, COLORS.overlay, PANEL.hitAlpha).setName(spec.name).setInteractive();
     const look = scene.add.image(x, y, panelTexture(scene, width, height)).setAlpha(alpha);
     const [ribbon, title] = addRibbonTitle(scene, x, top + PANEL.titleTop, spec.title);
+    title.setName(`${spec.name}-title`);
     this.objects.push(dim, box, look, ribbon, title);
     let nextY = title.y + title.height + PANEL.gap;
     if (spec.body) {

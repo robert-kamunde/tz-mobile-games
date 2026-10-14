@@ -36,6 +36,15 @@ export function backgroundTexture(scene: Phaser.Scene, style: BackgroundStyle, p
   });
 }
 
+/** A small copy of the scenery alone, no table, for a reward card (0.34.0). */
+export function backgroundThumbTexture(scene: Phaser.Scene, style: BackgroundStyle): string {
+  const scale = BACKGROUND_ART.previewScale;
+  return canvasTexture(scene, `${KEY_PREFIX}${style.id}-thumb`, DESIGN.width * scale, DESIGN.height * scale, (ctx) => {
+    ctx.scale(scale, scale);
+    drawBackground(ctx, style);
+  });
+}
+
 const SCENE_PREFIX = 'pool-scene-';
 
 /**

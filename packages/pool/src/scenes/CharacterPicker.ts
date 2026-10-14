@@ -3,7 +3,7 @@ import { PLAYER_CHARACTERS } from '../config/characters';
 import { BUTTON, CHARACTER_PICKER, COLORS, PANEL, TEXT_STYLE } from '../config/layout';
 import { padlock } from './LookPicker';
 import { Face } from './Face';
-import { Panel, addButton, textStyle, type PanelSpec } from './ui';
+import { Panel, addButton, textStyle, type PanelSpec, addLockTag } from './ui';
 
 export interface CharacterChoice {
   readonly title: string;
@@ -69,12 +69,15 @@ export class CharacterPicker {
         .setVisible(false);
       const face = new Face(this.scene, fx, fy, c.faceRadius, `character-${character.id}`).show(character);
       const label = this.scene.add
-        .text(fx, fy + c.faceRadius + c.nameGap, need ? `${character.name}\n${need}` : character.name, { ...textStyle(TEXT_STYLE.bodySize, need ? COLORS.textDim : COLORS.text), align: 'center', wordWrap: { width: c.columnSpacing - c.labelGap } })
+        .text(fx, fy + c.faceRadius + c.nameGap, character.name, { ...textStyle(TEXT_STYLE.bodySize, need ? COLORS.textDim : COLORS.text), align: 'center', wordWrap: { width: c.columnSpacing - c.labelGap } })
         .setOrigin(0.5, 0)
         .setName(`character-${character.id}-label`);
       if (need) {
         face.setAlpha(c.takenAlpha);
-        this.objects.push(padlock(this.scene, fx, fy));
+        // What earns it, in its own tag under the name so it does not read as part of the name.
+        const tag = addLockTag(this.scene, `character-${character.id}-lock`, need.replace(/\n/g, ' '), c.columnSpacing - c.labelGap);
+        tag.place(fx, label.y + label.height + c.lockTagGap);
+        this.objects.push(padlock(this.scene, fx, fy), ...tag.objects);
       } else if (taken) {
         face.setAlpha(c.takenAlpha);
         label.setAlpha(c.takenAlpha);

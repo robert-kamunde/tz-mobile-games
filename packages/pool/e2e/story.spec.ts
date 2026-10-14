@@ -286,7 +286,8 @@ test('story rewards are locked in the pickers until earned, and can be chosen af
   await bootTo(page, MENU_SCENE);
   await tapMenu(page, 'menu-tables');
   await expect.poll(async () => (await menuState(page)).panel).toBe('tables');
-  expect(await textOf(page, MENU_SCENE, 'table-gold-label')).toBe('Dhahabu\nMshinde Bingwa');
+  expect(await textOf(page, MENU_SCENE, 'table-gold-label')).toBe('Dhahabu');
+  expect(await textOf(page, MENU_SCENE, 'table-gold-lock')).toBe('Mshinde Bingwa');
   await tap(page, 'table-gold-touch', MENU_SCENE);
   await page.waitForTimeout(200);
   expect((await menuState(page)).selectedTable).not.toBe('gold');

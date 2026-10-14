@@ -1,6 +1,6 @@
 import type * as Phaser from 'phaser';
 import { BUTTON, COLORS, LOOK_PICKER, PANEL, TEXT_STYLE } from '../config/layout';
-import { Panel, addButton, textStyle, type PanelSpec } from './ui';
+import { Panel, addButton, addLockTag, textStyle, type PanelSpec } from './ui';
 
 export interface LookItem {
   readonly id: string;
@@ -20,6 +20,8 @@ export interface LookChoice {
   readonly title: string;
   readonly items: readonly LookItem[];
   readonly layout: (typeof LOOK_PICKER)['table' | 'background' | 'cue'];
+  /** How many are open, shown at the top left with a bar: `label` reads like "Zimefunguliwa 4/9". */
+  readonly progress?: { readonly open: number; readonly total: number; readonly label: string };
   readonly selected: string;
   readonly confirmLabel: string;
   readonly backLabel: string;
@@ -86,6 +88,7 @@ export class LookPicker {
     const pages = this.pages;
     const title = pages > 1 ? `${choice.title}  ${page + 1}/${pages}` : choice.title;
     this.panel = new Panel(this.scene, { name: `${choice.prefix}Picker`, area: this.area, title });
+    if (choice.progress) this.objects.push(...this.progressBar(choice.prefix, choice.progress));
     const perPage = this.perPage(choice);
     for (const [i, item] of choice.items.slice(page * perPage, (page + 1) * perPage).entries()) {
       const col = i % c.columns;
@@ -100,12 +103,22 @@ export class LookPicker {
         .setStrokeStyle(c.selectedFrame.width, c.selectedFrame.color)
         .setVisible(false);
       const label = this.scene.add
-        .text(px, py + frame.height / 2 + c.nameGap, lookLabel(item, c.lockOnOneLine), { ...textStyle(TEXT_STYLE.bodySize, item.locked ? COLORS.textDim : COLORS.text), align: 'center' })
+        .text(px, py + frame.height / 2 + c.nameGap, item.label, { ...textStyle(TEXT_STYLE.bodySize, item.locked ? COLORS.textDim : COLORS.text), align: 'center' })
         .setOrigin(0.5, 0)
         .setName(`${choice.prefix}-${item.id}-label`);
       hit.setData('locked', Boolean(item.locked));
       this.objects.push(hit, frame, image, label);
       if (item.locked) {
+        // What earns it, in a tag: under the name, or beside it where rows are low (cues).
+        const tag = addLockTag(this.scene, `${choice.prefix}-${item.id}-lock`, item.locked.replace(/\n/g, ' '), c.columnSpacing - c.lockTagGap);
+        if (c.lockOnOneLine) {
+          const span = label.width + c.lockTagGap + tag.width;
+          label.setX(px - span / 2 + label.width / 2);
+          tag.place(px + span / 2 - tag.width / 2, label.y + (label.height - tag.height) / 2);
+        } else {
+          tag.place(px, label.y + label.height + c.lockTagGap);
+        }
+        this.objects.push(...tag.objects);
         image.setAlpha(LOOK_PICKER.locked.alpha);
         this.objects.push(padlock(this.scene, px, py));
         continue;
@@ -127,6 +140,18 @@ export class LookPicker {
     if (page < pages - 1) this.objects.push(addButton(this.scene, x + nav.arrowDx, buttonY, { name: `${choice.prefix}-nextPage`, label: '›', onTap: () => this.showPage(page + 1) }, { width: nav.arrowWidth }));
     for (const o of this.objects) (o as unknown as Phaser.GameObjects.Components.Depth).setDepth(PANEL.depth);
     if (this.selectedId) this.select(this.selectedId);
+  }
+
+  /** "Zimefunguliwa 4/9" and a thin gold bar, at the panel's top left beside the title. */
+  private progressBar(prefix: string, progress: NonNullable<LookChoice['progress']>): Phaser.GameObjects.GameObject[] {
+    const p = LOOK_PICKER.progress;
+    const left = this.area.x - this.area.width / 2 + p.left;
+    const top = this.area.y - this.area.height / 2 + p.top;
+    const label = this.scene.add.text(left, top, progress.label, textStyle(TEXT_STYLE.labelSize, COLORS.text)).setName(`${prefix}-open`);
+    const barY = top + label.height + p.gap;
+    const track = this.scene.add.rectangle(left, barY, p.width, p.height, p.track).setOrigin(0, 0);
+    const fill = this.scene.add.rectangle(left, barY, Math.max(p.height, (p.width * progress.open) / Math.max(1, progress.total)), p.height, p.fill).setOrigin(0, 0);
+    return [label, track, fill];
   }
 
   private select(id: string): void {
@@ -165,10 +190,4 @@ export function padlock(scene: Phaser.Scene, x: number, y: number): Phaser.GameO
   g.fillStyle(p.color, 1).fillRoundedRect(x - p.width / 2, y - p.height / 2, p.width, p.height, 3);
   g.fillStyle(COLORS.overlay, 1).fillCircle(x, y, 3);
   return g;
-}
-
-/** A look's name, and while locked what earns it: below the name, or after it on the same line. */
-function lookLabel(item: LookItem, oneLine: boolean): string {
-  if (!item.locked) return item.label;
-  return oneLine ? `${item.label}: ${item.locked.replace(/\n/g, ' ')}` : `${item.label}\n${item.locked}`;
 }

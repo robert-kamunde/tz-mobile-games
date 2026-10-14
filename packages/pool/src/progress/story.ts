@@ -103,6 +103,24 @@ export function isNeedMet(played: Played, need: StoryNeed): boolean {
   );
 }
 
+/** How far along a need is, for a progress bar: stops won in a chapter, stars, or wins. */
+export interface NeedProgress {
+  readonly unit: 'stops' | 'stars' | 'wins';
+  readonly have: number;
+  readonly want: number;
+}
+
+/** Progress towards a chapter, stars or wins need; a single-stop need has none (it is won or not). */
+export function needProgress(played: Played, need: StoryNeed): NeedProgress | undefined {
+  if (need.chapter !== undefined) {
+    const stops = STORY_CHAPTERS.find((c) => c.id === need.chapter)?.stops ?? [];
+    return { unit: 'stops', have: stops.filter((s) => (played.story.stars[s.id] ?? 0) > 0).length, want: stops.length };
+  }
+  if (need.stars !== undefined) return { unit: 'stars', have: Math.min(totalStars(played.story), need.stars), want: need.stars };
+  if (need.wins !== undefined && need.stop === undefined) return { unit: 'wins', have: Math.min(played.wins, need.wins), want: need.wins };
+  return undefined;
+}
+
 /** The title earned so far (an id under `story.title.*`), or null before the first one. Titles come from the journey alone. */
 export function titleFor(story: StoryProgress): string | null {
   return STORY.titles.find((t) => isNeedMet({ story, wins: 0 }, t.need))?.id ?? null;

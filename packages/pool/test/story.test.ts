@@ -15,6 +15,7 @@ import {
   isCueLocked,
   isStopOpen,
   isTableLocked,
+  needProgress,
   nextStop,
   recordStop,
   characterNeed,
@@ -39,6 +40,17 @@ const withStars = (stars: Record<string, number>): StoryProgress => ({ character
 const allStops = (n: number) => Object.fromEntries(STORY_STOPS.map((s) => [s.id, n]));
 
 describe('story mode', () => {
+  it('shows progress towards a reward: stops in its chapter, stars or wins, capped at the need', () => {
+    const dar = STORY_CHAPTERS[0]!;
+    let story = defaultStory();
+    for (const stop of dar.stops.slice(0, 2)) story = recordStop(story, stop.id, 3);
+    expect(needProgress({ story, wins: 0 }, { chapter: dar.id })).toEqual({ unit: 'stops', have: 2, want: dar.stops.length });
+    expect(needProgress({ story, wins: 0 }, { stars: 70 })).toEqual({ unit: 'stars', have: 6, want: 70 });
+    expect(needProgress({ story, wins: 0 }, { stars: 5 })).toEqual({ unit: 'stars', have: 5, want: 5 });
+    expect(needProgress({ story, wins: 4 }, { wins: 10 })).toEqual({ unit: 'wins', have: 4, want: 10 });
+    expect(needProgress({ story, wins: 4 }, { stop: 'kariakoo', wins: 3 })).toBeUndefined();
+  });
+
   it('has three chapters of nine stops with known rivals, stand-ins, levels and looks, rising to Bingwa', () => {
     expect(STORY_CHAPTERS.map((c) => c.stops.length)).toEqual([9, 9, 9]);
     expect(new Set(STORY_STOPS.map((s) => s.id)).size).toBe(27);

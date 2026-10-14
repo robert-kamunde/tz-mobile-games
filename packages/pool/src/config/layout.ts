@@ -155,6 +155,52 @@ export const PANEL = {
  * Character picker: a grid of faces in a panel, with Back and Next/Start side by side at the bottom.
  * Offsets are from the panel's top edge and centre, so it fits both the table and the menu panel.
  */
+/**
+ * "Cheza na nani?" (0.34.0, Robert asked for a better look): a wide button to play a friend, then
+ * a card per computer player with their face, strength as 1-4 filled dots and the level's name, and
+ * the person's record against them. Four in a row over the menu; two by two in the smaller panel
+ * over the table, with the face beside the text. Offsets are from the panel's top edge.
+ */
+export const OPPONENT_PICKER = {
+  gap: 14,
+  /** Over the menu: tall cards, face on top. */
+  wide: { minAreaWidth: 900, columns: 4, friendFromTop: 160, cardsFromTop: 222, sideMargin: 40, cardHeight: 330, faceRadius: 60, faceFromTop: 82 },
+  /** Over the table: short cards, face at the left, all above Back. */
+  compact: { columns: 2, friendFromTop: 150, cardsFromTop: 186, sideMargin: 24, cardHeight: 130, faceRadius: 30, faceInset: 12, textGap: 10 },
+  strength: { radius: 7, gap: 6, on: 0xf2c94c, off: 0x3a4440 },
+  /** Spacing of a card's lines: inside its top edge (compact), under the face (wide), and between lines. */
+  lines: { top: 10, underFace: 10, afterName: 6, afterDots: 4, beforeRecord: { wide: 10, compact: 2 } },
+  card: { fill: 'rgba(255, 255, 255, 0.05)', solidFill: 'rgba(14, 20, 19, 0.92)', edge: 'rgba(226, 181, 74, 0.55)', edgeWidth: 1.5, chosenEdge: '#f2c94c', chosenWidth: 4, radius: 14 },
+} as const;
+
+/**
+ * Takwimu (0.34.0): five big totals across the top, a row per computer player with a win bar and a
+ * crown once beaten, and games with friends at the bottom. Over the menu (PANEL.overMenu).
+ */
+export const STATS_PANEL = {
+  sideMargin: 50,
+  totals: { fromTop: 94, height: 124, gap: 14, numberSize: '44px', numberColor: '#f2c94c', numberTop: 10, labelGap: 0, labelPad: 8 },
+  rows: {
+    fromTop: 236,
+    height: 64,
+    gap: 8,
+    faceRadius: 25,
+    faceInset: 12,
+    nameGap: 14,
+    /** The win bar starts this far from the row's left edge and stops `barRight` short of its right edge. */
+    barLeft: 340,
+    barRight: 190,
+    barHeight: 16,
+    track: 0x26302d,
+    fill: 0x3fae6a,
+    recordGap: 16,
+    crownSize: 34,
+    crownInset: 22,
+  },
+  /** Games with friends, under the rows. */
+  friendsGap: 14,
+} as const;
+
 export const CHARACTER_PICKER = {
   columns: 4,
   faceRadius: 38,
@@ -162,8 +208,9 @@ export const CHARACTER_PICKER = {
   /** Room under each face for its name and, while locked, what earns it (wrapped to the column). */
   rowSpacing: 150,
   firstRowFromTop: 175,
-  /** Between a face and its name. */
+  /** Between a face and its name, and a name and a locked character's tag. */
   nameGap: 8,
+  lockTagGap: 4,
   /** A name and its lock text wrap to the column, less this gap between neighbours. */
   labelGap: 8,
   selectedRing: { width: 5, color: 0xf2c94c },
@@ -176,8 +223,9 @@ export const CHARACTER_PICKER = {
 
 /** Pickers for tables and cues: a picture of each choice in a grid, names below, Back and Choose at the bottom. */
 const LOOK_PICKER_COMMON = {
-  /** Between a picture's frame and its name. */
+  /** Between a picture's frame and its name, and a name and a locked look's tag. */
   nameGap: 4,
+  lockTagGap: 6,
   selectedFrame: { width: 5, gap: 5, color: 0xf2c94c },
   /** Thin pictures (cues) still get at least this much height to tap. */
   minTouchHeight: 44,
@@ -197,6 +245,8 @@ export const LOOK_PICKER = {
   background: { ...LOOK_PICKER_COMMON, columns: 4, rows: 2, lockOnOneLine: false, columnSpacing: 262, rowSpacing: 235, firstRowFromTop: 178 },
   /** Cues at CUE_ART.previewScale, 2 by 4 a page; rows are low, so a locked cue's name and what earns it share one line. */
   cue: { ...LOOK_PICKER_COMMON, columns: 2, rows: 4, lockOnOneLine: true, columnSpacing: 500, rowSpacing: 108, firstRowFromTop: 140 },
+  /** How many are open (0.34.0): at the panel's top left, beside the title ribbon. */
+  progress: { left: 50, top: 46, gap: 6, width: 200, height: 8, track: 0x2a3330, fill: 0xf2c94c },
   /** A look story mode has not earned yet: faded, with a padlock and what earns it. */
   locked: { alpha: 0.35, padlock: { width: 26, height: 20, shackle: 9, color: 0xd0d6d3 } },
 } as const;
@@ -375,7 +425,25 @@ export const STORY_MAP = {
   star: { radius: 9, inner: 4, spacing: 22, lit: 0xf2c94c, unlit: 0x3a4248 },
   cup: { size: 30, dx: 36, dy: -34 },
   padlock: { width: 22, height: 18, shackle: 8, color: 0xd0d6d3 },
-  rewards: { y: 636, spacing: 300, iconRadius: 22 },
+  /**
+   * Reward cards along the bottom (0.34.0): a picture, the name, what earns it and a progress bar,
+   * a green tick once earned. They sit right of Back and share the row, up to `maxWidth` each.
+   */
+  rewards: {
+    top: 604,
+    height: 104,
+    left: 150,
+    right: DESIGN.width - 20,
+    gap: 12,
+    maxWidth: 320,
+    /** A cue lies corner to corner, this share of the diagonal long. */
+    picture: { inset: 10, width: 76, height: 60, cueLength: 0.95 },
+    textGap: 10,
+    lineGap: 2,
+    /** Right of the progress text, to the card's right edge. */
+    bar: { height: 8, gap: 10, track: 0x34403c, fill: 0xf2c94c, earned: 0x3fae6a },
+    tick: { size: 28, inset: 6 },
+  },
   back: { left: 24, y: DESIGN.height - 30 },
   /** The stop card over the map. */
   card: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 700, height: 520, alpha: 1 },

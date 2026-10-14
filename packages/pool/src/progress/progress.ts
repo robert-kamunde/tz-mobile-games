@@ -13,6 +13,12 @@ export interface LevelRecord {
   readonly won: number;
 }
 
+/** Wins in a row against the computer: now, and the most ever. */
+export interface WinStreak {
+  readonly current: number;
+  readonly best: number;
+}
+
 export interface PoolProgress {
   /** Games finished against each computer level, and how many the player won. */
   readonly vsComputer: Readonly<Record<AiLevel, LevelRecord>>;
@@ -30,6 +36,8 @@ export interface PoolProgress {
   readonly hand: Hand;
   /** Behind the table (Mandhari on the menu). Saves from before 0.15 have none: Klasiki. */
   readonly background: BackgroundId;
+  /** Wins in a row against the computer (Takwimu). Saves from before 0.34 have none: counting starts at 0. */
+  readonly streak: WinStreak;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -39,7 +47,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND, streak: { current: 0, best: 0 } };
 }
 
 /** Games won against the computer at every level, story games included. */
@@ -51,8 +59,11 @@ export function computerWins(progress: PoolProgress): number {
 export function recordGame(progress: PoolProgress, opponent: Opponent, winner: PlayerId): PoolProgress {
   if (opponent.kind === 'human') return { ...progress, twoPlayerGames: progress.twoPlayerGames + 1 };
   const before = progress.vsComputer[opponent.level];
-  const after = { played: before.played + 1, won: before.won + (winner === PERSON ? 1 : 0) };
-  return { ...progress, vsComputer: { ...progress.vsComputer, [opponent.level]: after } };
+  const won = winner === PERSON;
+  const after = { played: before.played + 1, won: before.won + (won ? 1 : 0) };
+  const current = won ? progress.streak.current + 1 : 0;
+  const streak = { current, best: Math.max(progress.streak.best, current) };
+  return { ...progress, vsComputer: { ...progress.vsComputer, [opponent.level]: after }, streak };
 }
 
 const isCount = (v: unknown): v is number => Number.isInteger(v) && (v as number) >= 0;
@@ -85,5 +96,13 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   const cue = isCueId(r.cue) ? r.cue : DEFAULT_CUE;
   const hand = isHand(r.hand) ? r.hand : DEFAULT_HAND;
   const background = isBackgroundId(r.background) ? r.background : DEFAULT_BACKGROUND;
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand, background };
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand, background, streak: validateStreak(r.streak) };
+}
+
+/** A missing (older save) or broken streak starts again from nothing; the other stats stay. */
+function validateStreak(raw: unknown): WinStreak {
+  if (typeof raw !== 'object' || raw === null) return { current: 0, best: 0 };
+  const { current, best } = raw as Record<string, unknown>;
+  if (!isCount(current) || !isCount(best) || current > best) return { current: 0, best: 0 };
+  return { current, best };
 }

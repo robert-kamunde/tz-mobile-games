@@ -2,7 +2,9 @@ import type * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
 import { DEFAULT_PICKS } from '../config/characters';
 import { withDistinctPicks, type CharacterPicks } from '../progress/characters';
+import type { AiLevel } from '../config/ai';
 import type { Opponent } from '../progress/opponent';
+import type { LevelRecord } from '../progress/progress';
 import { CharacterPicker } from './CharacterPicker';
 import { OpponentPicker } from './OpponentPicker';
 import type { PanelSpec } from './ui';
@@ -37,11 +39,19 @@ export class MatchSetup {
     private readonly onDone: (choice: MatchChoice) => void,
     /** Characters not earned yet, with what earns them. */
     private readonly lockedCharacters: () => ReadonlyMap<string, string>,
+    /** The person's games against each computer level, shown on the opponent cards. */
+    records: () => Readonly<Record<AiLevel, LevelRecord>>,
   ) {
-    this.opponents = new OpponentPicker(scene, t, area, (opponent) => {
-      if (opponent.kind === 'human') this.chooseSecondCharacter(opponent);
-      else this.finish({ opponent, picks: this.picks });
-    });
+    this.opponents = new OpponentPicker(
+      scene,
+      t,
+      area,
+      (opponent) => {
+        if (opponent.kind === 'human') this.chooseSecondCharacter(opponent);
+        else this.finish({ opponent, picks: this.picks });
+      },
+      records,
+    );
     this.characters = new CharacterPicker(scene, area);
   }
 

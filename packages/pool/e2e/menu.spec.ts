@@ -133,10 +133,15 @@ test('a finished game leaves no Continue, and a win against the computer is coun
   expect((await menuState(page)).continueShown).toBe(false);
   await tap(page, 'menu-stats', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBe('stats');
-  const stats = await textOf(page, MENU_SCENE, 'statsPanel-body');
-  expect(stats).toContain('Dogo Mbishi (Rahisi): umeshinda 1 kati ya 1');
-  expect(stats).toContain('Mzee Kobe (Ngumu): umeshinda 0 kati ya 0');
-  expect(stats).toContain('Wachezaji wawili: michezo 0');
+  expect(await textOf(page, MENU_SCENE, 'stats-easy-record')).toBe('1/1');
+  expect(await textOf(page, MENU_SCENE, 'stats-hard-record')).toBe('0/0');
+  expect(await textOf(page, MENU_SCENE, 'stats-total-games')).toBe('1');
+  expect(await textOf(page, MENU_SCENE, 'stats-total-rate')).toBe('100%');
+  expect(await textOf(page, MENU_SCENE, 'stats-total-streak')).toBe('1');
+  expect(await textOf(page, MENU_SCENE, 'stats-friends')).toBe('Michezo na marafiki (simu moja): 0');
+  // A crown on the beaten computer player only.
+  expect(await page.evaluate(() => window.__tzg!.boundsOf('Menu', 'stats-easy-crown'))).not.toBeNull();
+  expect(await page.evaluate(() => window.__tzg!.boundsOf('Menu', 'stats-hard-crown'))).toBeNull();
 
   // The picker marks the last opponent.
   await tap(page, 'stats-back', MENU_SCENE);
@@ -145,6 +150,9 @@ test('a finished game leaves no Continue, and a win against the computer is coun
   await expect.poll(async () => (await menuState(page)).panel).toBe('picker');
   expect(await highlighted(page, MENU_SCENE, 'opponent-easy')).toBe(true);
   expect(await highlighted(page, MENU_SCENE, 'opponent-hard')).toBe(false);
+  // Each computer player's card shows the record against them.
+  expect(await textOf(page, MENU_SCENE, 'opponent-easy-record')).toBe('Umeshinda 1/1');
+  expect(await textOf(page, MENU_SCENE, 'opponent-hard-record')).toBe('Bado hamjacheza');
   expect(errors).toEqual([]);
 });
 
@@ -184,7 +192,8 @@ test('a damaged saved game is set aside: the menu opens normally with no Continu
   expect((await menuState(page)).continueShown).toBe(false);
   expect(await storage(page, 'pool.match.backup')).toContain('broken');
   await tap(page, 'menu-stats', MENU_SCENE);
-  expect(await textOf(page, MENU_SCENE, 'statsPanel-body')).toContain('umeshinda 0 kati ya 0');
+  expect(await textOf(page, MENU_SCENE, 'stats-easy-record')).toBe('0/0');
+  expect(await textOf(page, MENU_SCENE, 'stats-total-rate')).toBe('–');
   expect(await storage(page, 'pool.progress.backup')).toBe('not json at all');
 
   // A new game still starts and is saved over the damaged one.
@@ -269,11 +278,19 @@ test('Exit during a game asks first, says the game is saved, and the game contin
   expect(errors).toEqual([]);
 });
 
-test('the opponent picker fits all five choices and Back without overlapping, on the menu and on the table', async ({ page }) => {
+test('the opponent picker fits the friend button, four cards and Back without overlapping, on the menu and on the table', async ({ page }) => {
+  type Box = { left: number; top: number; right: number; bottom: number };
   const boxes = async (scene: string) =>
-    Promise.all(['two', 'easy', 'medium', 'hard', 'impossible', 'back'].map((id) => page.evaluate(([s, n]) => window.__tzg!.boundsOf(s, n), [scene, `opponent-${id}`] as const)));
-  const expectApart = (list: ({ top: number; bottom: number } | null)[]) => {
-    for (let i = 1; i < list.length; i++) expect(list[i]!.top, `button ${i}`).toBeGreaterThan(list[i - 1]!.bottom);
+    (await Promise.all(['two', 'easy', 'medium', 'hard', 'impossible', 'back'].map((id) => page.evaluate(([s, n]) => window.__tzg!.boundsOf(s, n), [scene, `opponent-${id}`] as const)))) as Box[];
+  const apart = (a: Box, b: Box) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+  // The friend button above every card, Back below every card, no two cards overlapping (four in a row on the menu, two by two on the table).
+  const expectApart = ([friend, ...rest]: Box[]) => {
+    const back = rest.pop()!;
+    rest.forEach((card, i) => {
+      expect(card.top, `card ${i} below the friend button`).toBeGreaterThan(friend!.bottom);
+      expect(card.bottom, `card ${i} above Back`).toBeLessThan(back.top);
+      rest.slice(i + 1).forEach((other, j) => expect(apart(card, other), `cards ${i} and ${i + j + 1}`).toBe(true));
+    });
   };
   await bootTo(page, MENU_SCENE);
   await tapMenu(page, 'menu-play');

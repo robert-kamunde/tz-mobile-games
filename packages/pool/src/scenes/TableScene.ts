@@ -198,7 +198,7 @@ export class TableScene extends Phaser.Scene {
       leave: () => (this.story ? this.openStoryMap() : this.goToMenu()),
     });
     this.sides = sides;
-    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played));
+    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played), () => this.slots.progress.load().data.vsComputer);
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
     addButton(this, sides.controlX(HUD.menu.left), HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: sides.controlOriginX(0) }).setDepth(HUD.depth);
