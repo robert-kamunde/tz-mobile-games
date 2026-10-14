@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { BALL_ART } from '../config/art';
+import { BALL_ART, TABLE_ART } from '../config/art';
 import { TABLE_DEPTH, TABLE_LAYOUT, type ScreenSides } from '../config/layout';
 import type { TableConfig } from '../config/table';
 import type { TableTheme } from '../config/tables';
@@ -16,6 +16,8 @@ interface BallSprites {
   ball: Phaser.GameObjects.Image;
   shadow: Phaser.GameObjects.Image;
   spot?: { image: Phaser.GameObjects.Image; shade: Phaser.GameObjects.Image; rolling: RollingSpot; radius: number };
+  /** Sinking into a pocket (0.33.0): the ball is shown shrinking into the hole until this ends. */
+  sink?: Phaser.Tweens.Tween;
 }
 
 /**
@@ -130,10 +132,64 @@ export class TableView {
         this.ballSprites.set(ball.id, sprites);
       }
       const p = this.toDesign(ball.x, ball.y);
+      if (ball.pocketed && options.live === true && sprites.ball.visible && !sprites.sink) this.sink(sprites, p);
+      if (sprites.sink && !ball.pocketed) this.endSink(sprites);
+      if (sprites.sink) continue;
       sprites.ball.setPosition(p.x, p.y).setVisible(!ball.pocketed);
       sprites.shadow.setPosition(p.x + s.offsetX, p.y + s.offsetY).setVisible(!ball.pocketed);
       if (sprites.spot) this.placeSpot(sprites.spot, ball, p, options.live === true);
     }
+  }
+
+  /**
+   * A ball just potted sinks into its pocket: from where it was drawn to the pocket's centre, smaller
+   * and darker, fading at the end. Looks only; the rules already count it potted.
+   */
+  private sink(sprites: BallSprites, to: Vec2): void {
+    const k = TABLE_ART.sink;
+    const from = { x: sprites.ball.x, y: sprites.ball.y };
+    const spotFrom = sprites.spot ? { x: sprites.spot.image.x - from.x, y: sprites.spot.image.y - from.y, scaleX: sprites.spot.image.scaleX } : null;
+    sprites.shadow.setVisible(false);
+    const grey = k.tint & 0xff;
+    sprites.sink = this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: k.ms,
+      ease: 'Quad.In',
+      onUpdate: (tween) => {
+        const t = tween.getValue() ?? 1;
+        const x = from.x + (to.x - from.x) * t;
+        const y = from.y + (to.y - from.y) * t;
+        const scale = 1 - (1 - k.scale) * t;
+        const v = Math.round(255 + (grey - 255) * t);
+        const tint = (v << 16) | (v << 8) | v;
+        const alpha = Math.min(1, 2 * (1 - t));
+        const layers = [sprites.ball, ...(sprites.spot ? [sprites.spot.shade] : [])];
+        for (const image of layers) image.setPosition(x, y).setScale(scale).setTint(tint).setAlpha(alpha);
+        if (sprites.spot && spotFrom) {
+          sprites.spot.image
+            .setPosition(x + spotFrom.x * scale, y + spotFrom.y * scale)
+            .setScale(spotFrom.scaleX * scale, scale)
+            .setTint(tint)
+            .setAlpha(Math.min(sprites.spot.image.alpha, alpha));
+        }
+      },
+      onComplete: () => this.endSink(sprites),
+    });
+  }
+
+  /** Ends a sink (finished, or the ball is back on the table): hidden and back to normal size. */
+  private endSink(sprites: BallSprites): void {
+    sprites.sink?.stop();
+    delete sprites.sink;
+    const layers = [sprites.ball, ...(sprites.spot ? [sprites.spot.image, sprites.spot.shade] : [])];
+    for (const image of layers) image.setScale(1).clearTint().setAlpha(1).setVisible(false);
+    if (sprites.spot) sprites.spot.rolling.reset();
+  }
+
+  /** Ids of balls sinking into a pocket right now (browser tests). */
+  get sinkingIds(): number[] {
+    return [...this.ballSprites.entries()].filter(([, s]) => s.sink).map(([id]) => id);
   }
 
   /**

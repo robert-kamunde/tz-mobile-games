@@ -14,14 +14,50 @@ export const TABLE_ART = {
     bevelDark: 'rgba(0, 0, 0, 0.45)',
     grainLines: 90,
     seed: 7,
+    /**
+     * Rounded top (0.33.0, Robert's "whole table" depth): across each rail, darker at both edges and
+     * lit along a crown `crownAt` of the way in from the outside.
+     */
+    crown: { edge: 'rgba(0, 0, 0, 0.24)', light: 'rgba(255, 240, 210, 0.16)', crownAt: 0.35 },
   },
   /** Sight marks on the rails: 3 between each pair of pockets on the long rails, 3 on each short rail. */
   diamond: { perGap: 3, outline: 'rgba(0, 0, 0, 0.55)', outlineWidth: 1 },
   /** Rubber cushion strip between the cloth and the rail, and the pocket jaws (colour per table). */
-  cushion: { width: 12, nose: 'rgba(255, 255, 255, 0.16)', noseWidth: 1.5, jawWidth: 4 },
+  cushion: {
+    width: 12,
+    nose: 'rgba(255, 255, 255, 0.16)',
+    noseWidth: 1.5,
+    jawWidth: 4,
+    /** Rounded rubber (0.33.0): shaded where it meets the rail, lit along the nose. */
+    shade: { rail: 'rgba(0, 0, 0, 0.38)', nose: 'rgba(255, 255, 255, 0.2)' },
+    /** The soft shadow the cushions throw on the cloth along every edge. */
+    clothShadow: { width: 9, color: 'rgba(0, 0, 0, 0.3)' },
+  },
   /** Faint speckle on the felt so it does not look flat (colours per table). */
-  cloth: { speckles: 1800, speckleAlpha: 0.06, seed: 11 },
-  pocket: { inner: '#000000', outer: '#1b1b1b', rim: '#1e120a', rimWidth: 4 },
+  cloth: {
+    speckles: 1800,
+    speckleAlpha: 0.06,
+    seed: 11,
+    /** Lamp light (0.33.0): a warm pool in the middle, `radius` of the half-diagonal, and darker corners. */
+    lamp: { glow: 'rgba(255, 246, 220, 0.12)', radius: 0.55, corners: 'rgba(0, 0, 0, 0.22)' },
+  },
+  /**
+   * Pockets (0.33.0): looking down into a hole, the bottom is black and sits towards the table's
+   * middle (`bottomShift` of the radius), so the inside wall shows on the far side, lit by the lamp.
+   * A leather rim catches the light on the side towards it.
+   */
+  pocket: {
+    inner: '#000000',
+    wall: '#3a3129',
+    wallLit: '#806a55',
+    bottomShift: 0.4,
+    bottomEnd: 0.42,
+    rim: '#1e120a',
+    rimLight: 'rgba(255, 222, 170, 0.45)',
+    rimWidth: 4,
+  },
+  /** A potted ball sinks into the hole: it shrinks, darkens and fades over `ms`. */
+  sink: { ms: 220, scale: 0.55, tint: 0x2a2a2a },
   baulk: { color: 'rgba(255, 255, 255, 0.32)', width: 1.5 },
   /** Small pictures of each table on the table picker: this fraction of the real size. */
   previewScale: 0.22,

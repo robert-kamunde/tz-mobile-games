@@ -38,28 +38,18 @@ export function drawTable(ctx: CanvasRenderingContext2D, frame: TableFrame, geom
   ctx.restore();
   drawRails(ctx, frame, theme);
 
-  // Cushion strip, then the cloth inside it.
+  // Cushion strip, rounded by shading, then the cloth inside it with the cushions' shadow.
   const cw = a.cushion.width;
   ctx.fillStyle = theme.cushion;
   ctx.fillRect(play.x - cw, play.y - cw, play.width + 2 * cw, play.height + 2 * cw);
+  edgeBands(ctx, play, -cw, a.cushion.shade.rail, a.cushion.shade.nose);
   drawCloth(ctx, play, theme.cloth);
+  edgeBands(ctx, play, a.cushion.clothShadow.width, a.cushion.clothShadow.color, 'rgba(0, 0, 0, 0)');
 
-  // Pockets: a dark hole with depth and a rim on the rail.
+  // Pockets: a hole with an inside wall and a leather rim on the rail.
   const pocketRadius = px(Math.max(config.cornerMouth, config.middleMouth) / 2 + config.dropRadius / 2);
-  for (const pocket of geometry.pockets) {
-    const c = at(pocket.center.x, pocket.center.y);
-    const hole = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, pocketRadius);
-    hole.addColorStop(0, a.pocket.inner);
-    hole.addColorStop(0.7, a.pocket.inner);
-    hole.addColorStop(1, a.pocket.outer);
-    ctx.fillStyle = hole;
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, pocketRadius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = a.pocket.rim;
-    ctx.lineWidth = a.pocket.rimWidth;
-    ctx.stroke();
-  }
+  const middle = { x: play.x + play.width / 2, y: play.y + play.height / 2 };
+  for (const pocket of geometry.pockets) drawPocket(ctx, at(pocket.center.x, pocket.center.y), pocketRadius, middle);
 
   // Jaws and cushion noses, as the physics sees them.
   ctx.lineCap = 'round';
@@ -76,6 +66,60 @@ export function drawTable(ctx: CanvasRenderingContext2D, frame: TableFrame, geom
   line(ctx, at(config.baulkLine, 0), at(config.baulkLine, geometry.width));
 
   drawMarkers(ctx, frame, geometry, theme.marker);
+}
+
+// ---- Pockets and cushions ---------------------------------------------------------------------
+
+/** A pocket seen from above: a black bottom towards the table's middle, the far wall lit, a rim. */
+function drawPocket(ctx: CanvasRenderingContext2D, c: Vec2, radius: number, middle: Vec2): void {
+  const p = TABLE_ART.pocket;
+  const toMiddle = Math.hypot(middle.x - c.x, middle.y - c.y) || 1;
+  const shift = { x: ((middle.x - c.x) / toMiddle) * radius * p.bottomShift, y: ((middle.y - c.y) / toMiddle) * radius * p.bottomShift };
+  const hole = ctx.createRadialGradient(c.x + shift.x, c.y + shift.y, 0, c.x, c.y, radius);
+  hole.addColorStop(0, p.inner);
+  hole.addColorStop(p.bottomEnd, p.inner);
+  hole.addColorStop(0.85, p.wall);
+  hole.addColorStop(1, p.wallLit);
+  ctx.fillStyle = hole;
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = p.rim;
+  ctx.lineWidth = p.rimWidth;
+  ctx.stroke();
+  // The rim's edge facing the lamp over the table's middle catches the light.
+  const lit = ctx.createLinearGradient(c.x - shift.x * 3, c.y - shift.y * 3, c.x + shift.x * 3, c.y + shift.y * 3);
+  lit.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  lit.addColorStop(1, p.rimLight);
+  ctx.strokeStyle = lit;
+  ctx.lineWidth = p.rimWidth / 2;
+  ctx.beginPath();
+  ctx.arc(c.x, c.y, radius + p.rimWidth / 4, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+/**
+ * Shading bands along the four edges of the playing area, `width` pixels deep: `outside` at the
+ * edge, fading to `inside`. A negative width puts the bands outside the edge (on the cushions),
+ * from `outside` at the rail to `inside` at the nose.
+ */
+function edgeBands(ctx: CanvasRenderingContext2D, play: Box, width: number, outside: string, inside: string): void {
+  const w = Math.abs(width);
+  const out = width < 0;
+  const { x, y, width: pw, height: ph } = play;
+  const bands = [
+    { from: { x: 0, y: out ? y - w : y }, to: { x: 0, y: out ? y : y + w }, rect: [x - (out ? w : 0), out ? y - w : y, pw + (out ? 2 * w : 0), w] },
+    { from: { x: 0, y: out ? y + ph + w : y + ph }, to: { x: 0, y: out ? y + ph : y + ph - w }, rect: [x - (out ? w : 0), out ? y + ph : y + ph - w, pw + (out ? 2 * w : 0), w] },
+    { from: { x: out ? x - w : x, y: 0 }, to: { x: out ? x : x + w, y: 0 }, rect: [out ? x - w : x, y, w, ph] },
+    { from: { x: out ? x + pw + w : x + pw, y: 0 }, to: { x: out ? x + pw : x + pw - w, y: 0 }, rect: [out ? x + pw : x + pw - w, y, w, ph] },
+  ] as const;
+  for (const b of bands) {
+    const g = ctx.createLinearGradient(b.from.x, b.from.y, b.to.x, b.to.y);
+    g.addColorStop(0, outside);
+    g.addColorStop(1, inside);
+    ctx.fillStyle = g;
+    ctx.fillRect(b.rect[0], b.rect[1], b.rect[2], b.rect[3]);
+  }
 }
 
 // ---- Rails ------------------------------------------------------------------------------------
@@ -116,6 +160,16 @@ function drawRails(ctx: CanvasRenderingContext2D, frame: TableFrame, theme: Tabl
       break;
     }
   }
+  // A rounded top: dark at both edges, lit along a crown near the outside.
+  const crown = r.crown;
+  eachRail(ctx, outer, thickness, (length) => {
+    const g = ctx.createLinearGradient(0, 0, 0, thickness);
+    g.addColorStop(0, crown.edge);
+    g.addColorStop(crown.crownAt, crown.light);
+    g.addColorStop(1, crown.edge);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, length, thickness);
+  });
   ctx.restore();
   // Bevel: light on the outer top edge, dark on the inner edge next to the cushion.
   ctx.lineWidth = r.bevelWidth;
@@ -307,6 +361,15 @@ function drawCloth(ctx: CanvasRenderingContext2D, play: { x: number; y: number; 
     ctx.fillStyle = random.next() < 0.5 ? `rgba(255, 255, 255, ${c.speckleAlpha})` : `rgba(0, 0, 0, ${c.speckleAlpha})`;
     ctx.fillRect(play.x + random.next() * play.width, play.y + random.next() * play.height, 1, 1);
   }
+  // The lamp over the table: a warm pool of light in the middle, darker into the corners.
+  const lamp = c.lamp;
+  const half = Math.hypot(play.width, play.height) / 2;
+  const light = ctx.createRadialGradient(cx, cy, 0, cx, cy, half);
+  light.addColorStop(0, lamp.glow);
+  light.addColorStop(lamp.radius, 'rgba(0, 0, 0, 0)');
+  light.addColorStop(1, lamp.corners);
+  ctx.fillStyle = light;
+  ctx.fillRect(play.x, play.y, play.width, play.height);
 }
 
 /** Sights on the rail, centred across it, evenly between the pockets. */

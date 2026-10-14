@@ -27,6 +27,8 @@ export interface PoolState {
   tubeDelays: number[];
   /** Red balls' white dot: where it sits on the ball (fractions of the radius) and whether it is on top. */
   spots: { id: number; dx: number; dy: number; visible: boolean }[];
+  /** Potted balls still shown sinking into their pocket. */
+  sinking: number[];
   events: string[];
   match: MatchState;
   verdict: ShotVerdict | null;

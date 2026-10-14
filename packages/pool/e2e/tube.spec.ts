@@ -60,6 +60,9 @@ test('a ball potted in the far corner rolls under the table, rumbling, before it
   await dragOnTable(page, { x: L - 0.9, y: W - 0.6 }, { x: L, y: W });
   await pullPower(page, 0.3);
 
+  // It sinks into the pocket first, shown shrinking into the hole, then is gone from the table.
+  await expect.poll(async () => (await state(page)).sinking, { intervals: [20] }).toEqual([black]);
+  await expect.poll(async () => (await state(page)).sinking).toEqual([]);
   // First under the table and not yet in the tube, then in the tube on top of the reds.
   await expect.poll(async () => (await state(page)).tubeWaiting, { intervals: [20] }).toEqual([black]);
   expect((await state(page)).tube).not.toContain(black);

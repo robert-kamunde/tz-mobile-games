@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.33.0 (unreleased) - Tables with depth
+- Robert chose "Whole table" (2026-10-14): the tables looked flat, mostly because the pockets were plain black circles.
+- **Pockets:** you can now see into each hole. The bottom is black, the inside wall shows on the far side, lit by the lamp over the table, and a leather rim catches the light.
+- **Potted balls sink into the hole:** they shrink, darken and fade into the pocket over about a fifth of a second instead of vanishing. The rules count them potted as before.
+- **Cushions** are shaded so they look rounded, and they cast a soft shadow on the cloth. **Rails** have a rounded, lit top. **Lamp light:** a warm pool of light in the middle of the cloth, darker into the corners.
+- Looks only, on every table; physics, aiming and saves are unchanged.
+
 ## 0.32.0 (unreleased) - A quieter rumble, rolling dots and premium buttons
 - Robert chose "Build all four" (2026-10-14).
 - **Rumble:** the sound of a ball rolling under the table is about a third as loud as before, and deeper and softer.
