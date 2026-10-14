@@ -88,7 +88,10 @@ export class EndPanel {
 
   /** Seconds before the panel leaves on its own, or null when it will not (tests). */
   get leaveSeconds(): number | null {
-    return this.leaveAt === null ? null : Math.max(0, Math.ceil((this.leaveAt - this.scene.time.now) / 1000));
+    if (this.leaveAt === null) return null;
+    // The scene clock can step back slightly between frames on a slow phone; never show more than the full count.
+    const left = Math.ceil((this.leaveAt - this.scene.time.now) / 1000);
+    return Math.min(Math.ceil(HUD.gameOver.autoMenuMs / 1000), Math.max(0, left));
   }
 
   show(spec: EndSpec): void {
