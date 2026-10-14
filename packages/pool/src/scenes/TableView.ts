@@ -80,11 +80,24 @@ export class TableView {
     return this.tube?.ids ?? [];
   }
 
-  /** Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden and shown in the tube. */
-  syncBalls(balls: readonly Ball[]): void {
+  /** Potted balls still rolling under the table to the tube. */
+  get tubeWaitingIds(): number[] {
+    return this.tube?.waitingIds ?? [];
+  }
+
+  /** How long a ball from this pocket rolls under the table (browser tests). */
+  tubeDelayMs(pocket: Vec2): number {
+    return this.tube?.underTableMs(this.toDesign(pocket.x, pocket.y)) ?? 0;
+  }
+
+  /**
+   * Creates or refreshes ball sprites and their shadows. Pocketed balls are hidden and shown in the
+   * tube; `live` (balls rolling in a shot) sends newly potted ones the long way round to it.
+   */
+  syncBalls(balls: readonly Ball[], options: { live?: boolean } = {}): void {
     const s = BALL_ART.shadow;
-    this.tube ??= new PottedTube(this.scene, this.sides, this.px(this.config.objectBallRadius));
-    this.tube.sync(balls);
+    this.tube ??= new PottedTube(this.scene, this.sides, this.px(this.config.objectBallRadius), (x, y) => this.toDesign(x, y));
+    this.tube.sync(balls, options.live === true);
     for (const ball of balls) {
       let sprites = this.ballSprites.get(ball.id);
       if (!sprites) {

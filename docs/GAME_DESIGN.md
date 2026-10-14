@@ -67,7 +67,8 @@ Decided by Robert: R1 ball in hand anywhere after a foul. Defaults (R2-R4 and th
 - Fine aim (Milestone 5): a strip under the table. Dragging along it turns the aim slowly, about 0.03 degrees per design pixel (the whole strip is about 17 degrees); right turns clockwise. Tick marks slide with the finger.
 - First game (Milestone 7): a "how to play" panel explains aiming, power, spin and fine aim, and closes with "Sawa, tucheze". It shows once per install.
 - Android back button (Milestone 7): closes the help, the picker or a menu panel; on the table it goes to the menu like the Menu button (not while balls roll); on the main menu it sends the app to the background.
-- Sound (Milestone 6): the cue strike, ball clicks, cushion hits and pocket drops, louder for harder hits. Sound starts after the first touch and stops while the app is in the background. Settings: Sauti Washa / Zima. Placeholder sounds until recorded ones exist. No music yet.
+- Potted-ball tube (0.18.0; timing 0.30.0, Robert 2026-10-14): a potted ball rolls unseen under the table for a time that grows with its pocket's distance from the tube (`TUBE.underTable`: near corner at once, far corners about 1.4 s), then along the pipe and into the tube, in the order balls arrive. Looks and sound only; play goes on meanwhile.
+- Sound (Milestone 6): the cue strike, ball clicks, cushion hits and pocket drops, louder for harder hits; from 0.30.0 also the rumble of a ball rolling to the tube, its roll along the pipe and its landing click. Sound starts after the first touch and stops while the app is in the background. Settings: Sauti Washa / Zima. Placeholder sounds until recorded ones exist. No music yet.
 
 ### Characters as built (Milestone 8)
 - Asked for by Robert (2026-10-11): looks only, Tanzanian context, about 75% men and 25% women, fun street nicknames with nothing vulgar.

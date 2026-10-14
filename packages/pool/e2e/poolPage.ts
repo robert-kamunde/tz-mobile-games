@@ -22,6 +22,9 @@ export interface PoolState {
   power: number;
   balls: BallState[];
   tube: number[];
+  /** Potted balls still rolling under the table, and each pocket's time to the tube (ms, pocket ids 0-5). */
+  tubeWaiting: number[];
+  tubeDelays: number[];
   events: string[];
   match: MatchState;
   verdict: ShotVerdict | null;

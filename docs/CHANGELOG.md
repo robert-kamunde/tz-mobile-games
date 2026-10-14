@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.30.0 (unreleased) - Balls take the long way to the tube
+- Robert chose "Build it" (2026-10-14): a potted ball used to reach the tube at once from any pocket, which only looked right for the corner next to the tube. Now it rolls unseen under the table first, for longer the farther its pocket is from the tube: about 0.03 s from the corner by the tube, 0.6 s from the bottom corner on that side and the near middle pocket, 0.9 s from the far middle pocket, and 1.3 to 1.4 s from the two far corners (then the short roll along the pipe as before). For left-handed players the tube is on the other side, so the near and far pockets swap.
+- New sounds: a soft rumble while a ball is under the table (longer for far pockets), a roll along the pipe, and the click as it lands in the tube. The pocket sound is now just the knock into the pocket.
+- Balls potted in one shot take their place in the tube in the order they arrive. Nothing waits for them: the next shot can be played while a ball is still on its way. Rules are unchanged.
+
 ## 0.29.0 (unreleased) - A shorter main menu: CHEZA and Mapambo
 - Robert chose "Build both" (2026-10-13): the main menu had grown to seven rows. It now has four: a big **CHEZA** (PLAY), then **Mapambo** (Customise) beside Takwimu, Sheria beside Mipangilio, and Toka (Android app only).
 - **CHEZA** opens a page with Endelea na mchezo / Endelea na safari (when a game is waiting), Mchezo wa haraka, Safari ya Bingwa and Rudi. An orange dot on CHEZA says a game or journey game is waiting inside.

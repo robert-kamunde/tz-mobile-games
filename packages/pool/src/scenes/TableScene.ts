@@ -271,7 +271,7 @@ export class TableScene extends Phaser.Scene {
     if (!this.sim.isMoving) return;
     this.stepper.advance(deltaMs, () => this.sim.step());
     this.playShotSounds();
-    this.view.syncBalls(this.sim.balls);
+    this.view.syncBalls(this.sim.balls, { live: true });
     if (!this.sim.isMoving) this.onShotSettled();
   }
 
@@ -826,6 +826,8 @@ export class TableScene extends Phaser.Scene {
       power: this.powerBar.power,
       balls: this.sim.balls.map((b) => ({ id: b.id, kind: b.kind, x: b.x, y: b.y, r: b.radius, pocketed: b.pocketed })),
       tube: this.view.tubeIds,
+      tubeWaiting: this.view.tubeWaitingIds,
+      tubeDelays: this.geometry.pockets.map((p) => Math.round(this.view.tubeDelayMs(p.center))),
       events: this.sim.shotEvents().map((e) => e.type),
       match: this.match,
       verdict: this.lastResult?.verdict ?? null,

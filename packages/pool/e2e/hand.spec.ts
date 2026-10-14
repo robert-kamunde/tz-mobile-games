@@ -84,6 +84,9 @@ test('left-handed: the controls move to the left, the table to the right, and ev
   expect(s.hand).toBe('left');
   expect(s.controls.spin.x).toBeLessThan(DESIGN.width / 4);
   expect(s.controls.tableLeft).toBeGreaterThan(TABLE_LAYOUT.originX);
+  // The tube is on the right now: the top-right pocket is nearest it, the bottom-left farthest.
+  expect(Math.min(...s.tubeDelays)).toBe(s.tubeDelays[2]);
+  expect(Math.max(...s.tubeDelays)).toBe(s.tubeDelays[5]);
   expect((await boundsOf(page, 'menuButton')).left).toBeGreaterThan(DESIGN.width / 2);
   expect((await boundsOf(page, 'newGameButton')).right).toBeLessThan(DESIGN.width / 2);
   await expectClearLayout(page);

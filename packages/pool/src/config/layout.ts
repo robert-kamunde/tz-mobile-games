@@ -248,6 +248,13 @@ export const TUBE = {
   maxFallMs: 650,
   /** Time to roll along the pipe into the tube. */
   pipeMs: 140,
+  /**
+   * The roll under the table before the pipe (Robert, 2026-10-14): a ball takes longer from a far
+   * pocket. Its wait is the straight-line distance on screen from its pocket to the pipe's mouth at
+   * this speed (design pixels per second), at most `maxMs`. The corner by the tube is almost instant;
+   * the far corners take about 1.4 s.
+   */
+  underTable: { speed: 800, maxMs: 1600 },
 } as const;
 
 export const BALL_IN_HAND = {

@@ -162,6 +162,10 @@ Sounds are read through the `sound()` test hook (sound state and the sounds actu
 - In English the computer is "Dogo Mbishi (Easy)" and the picker says "Player 1" and "Next".
 - A saved game with its characters removed (as an older version wrote it) continues with the default characters.
 
+#### Potted-ball tube (2 scenarios, `tube.spec.ts`)
+- Balls potted by a test layout show in the tube at once; a newly potted black rolls in and rests on top of the reds; balls put back on the table leave the tube.
+- Each pocket's time to the tube: under 0.15 s from the corner by the tube, longest (over 1.2 s, at most `TUBE.underTable.maxMs`) from the far corner. A black potted in the far corner is first under the table and not in the tube, then lands on top of the reds; the pocket, under-table rumble, pipe roll and landing sounds are all played. Left-handed (`hand.spec.ts`): the top-right pocket is nearest and the bottom-left farthest.
+
 #### Left-handed mode (2 scenarios, `hand.spec.ts`)
 - Kushoto in Settings is highlighted and saved; on the table the spin control is on the left quarter, the table moved right, Menu at the right and New game at the left. Controls never overlap the rails, buttons never overlap the fine-aim strip, everything is on screen, also with New game's confirm label. Ball in hand, aiming, fine aim, spin and the power bar all work where they now are, and the shot carries the spin.
 - In English the layout holds too; switching back to Kulia puts everything back where it was.

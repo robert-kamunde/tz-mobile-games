@@ -11,8 +11,8 @@ const cushion = (step: number, speed: number): ShotEvent => ({ type: 'cushion', 
 describe('sound effects', () => {
   it.each(Object.keys(SOUND_RECIPES) as PoolSound[])('%s is short, audible, never clips and is the same every time', (name) => {
     const s = renderSound(SOUND_RECIPES[name], 44_100, SOUND_SEED);
-    // Short, so the sounds take little memory (the pocket sound holds the roll into the tube).
-    expect(s.length / 44_100).toBeLessThanOrEqual(name === 'pocket' ? 0.5 : 0.15);
+    // Short, so the sounds take little memory (the pocket knock and the under-table rumble are the longest).
+    expect(s.length / 44_100).toBeLessThanOrEqual(name === 'pocket' || name === 'underRoll' ? 0.3 : 0.15);
     const peak = s.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
     expect(peak).toBeGreaterThan(0.5);
     expect(peak).toBeLessThanOrEqual(1);

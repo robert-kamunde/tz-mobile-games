@@ -1,9 +1,14 @@
 import * as Phaser from 'phaser';
+import { getServices } from '@tzg/shell';
 import { TUBE_ART } from '../config/art';
 import { TABLE_DEPTH, TABLE_LAYOUT, TUBE, type ScreenSides } from '../config/layout';
-import type { Ball, BallKind } from '../physics/types';
+import { SOUND_MIX } from '../config/sound';
+import type { Ball, Vec2 } from '../physics/types';
 import { ballTexture } from './art/ballArt';
 import { canvasTexture } from './art/canvasArt';
+
+/** Where Bounce.Out first reaches the bottom (1 / 2.75 of the way). */
+const FIRST_BOUNCE = 1 / 2.75;
 
 /** Above the balls on the table's edge, below the aim guide: the glass front sits over the tube's balls. */
 const DEPTH = { back: TABLE_DEPTH.shadows, balls: TABLE_DEPTH.balls, front: TABLE_DEPTH.balls + 0.5 };
@@ -13,12 +18,16 @@ const DEPTH = { back: TABLE_DEPTH.shadows, balls: TABLE_DEPTH.balls, front: TABL
  * balls' `pocketed` flags, so it is right after a new game, a saved game or a test layout. A ball
  * potted during play rolls in along the pipe and drops onto the stack; balls already potted when
  * the table opens are simply shown, in ball-number order (the save does not keep the potting order).
+ * Before the pipe, a potted ball rolls unseen under the table for longer the farther its pocket is
+ * from the tube (0.30.0), so balls take their place in the order they arrive.
  */
 export class PottedTube {
   private readonly order: { id: number; image: Phaser.GameObjects.Image }[] = [];
-  /** Balls rolling in: when they started and how long the fall takes. */
-  private readonly rolling = new Map<Phaser.GameObjects.Image, { n: number; start: number; fallMs: number }>();
-  private seen = false;
+  /** Balls rolling in: when they started, how long the fall takes, and whether the landing click played. */
+  private readonly rolling = new Map<Phaser.GameObjects.Image, { n: number; start: number; fallMs: number; landed: boolean }>();
+  /** Balls still under the table, hidden: when each reaches the pipe. */
+  private readonly underTable: { id: number; image: Phaser.GameObjects.Image; at: number }[] = [];
+  private nextRumble = 0;
   /** Design-pixel geometry, for the right hand; `x()` mirrors it for the left. */
   private readonly half: number;
   private readonly pipeEnd: number;
@@ -27,6 +36,8 @@ export class PottedTube {
     private readonly scene: Phaser.Scene,
     private readonly sides: ScreenSides,
     private readonly ballRadius: number,
+    /** Table metres to design pixels: a potted ball rests at its pocket's centre. */
+    private readonly toDesign: (x: number, y: number) => Vec2,
   ) {
     const inner = ballRadius + TUBE.clearance;
     this.half = inner + TUBE.wall;
@@ -51,19 +62,61 @@ export class PottedTube {
 
   private roll(): void {
     const now = this.scene.time.now;
+    this.reachPipe(now);
     for (const [image, r] of this.rolling) {
       const t = now - r.start;
       const along = Math.min(1, t / TUBE.pipeMs);
       image.x = this.x(this.pipeEnd + (TUBE.x - this.pipeEnd) * along);
       const fall = Math.min(1, Math.max(0, (t - TUBE.pipeMs) / r.fallMs));
       image.y = TUBE.entryY + (this.restY(r.n) - TUBE.entryY) * Phaser.Math.Easing.Bounce.Out(fall);
+      // The first touch down of the bounce.
+      if (!r.landed && fall >= FIRST_BOUNCE) {
+        r.landed = true;
+        this.play('tubeLand');
+      }
       if (fall >= 1) this.rolling.delete(image);
     }
   }
 
-  /** Ids in the tube, bottom first. */
+  /** Balls whose time under the table is up enter the pipe and take the next place; the rest rumble on. */
+  private reachPipe(now: number): void {
+    if (this.underTable.length === 0) return;
+    this.underTable.sort((a, b) => a.at - b.at);
+    while (this.underTable.length > 0 && this.underTable[0]!.at <= now) {
+      const { id, image, at } = this.underTable.shift()!;
+      const n = this.order.length;
+      this.order.push({ id, image });
+      image.setPosition(this.x(this.pipeEnd), TUBE.entryY).setVisible(true);
+      const fall = this.restY(n) - TUBE.entryY;
+      const fallMs = Math.min(TUBE.maxFallMs, Math.sqrt((2 * fall) / TUBE.gravity) * 1000);
+      // Timed from when it was due, so a slow frame cannot stretch the roll.
+      this.rolling.set(image, { n, start: at, fallMs, landed: false });
+      this.play('tubeRoll');
+    }
+    if (this.underTable.length > 0 && now >= this.nextRumble) {
+      this.play('underRoll');
+      this.nextRumble = now + SOUND_MIX.underRollEveryMs;
+    }
+  }
+
+  private play(name: 'underRoll' | 'tubeRoll' | 'tubeLand'): void {
+    getServices(this.scene).sound.play(name, SOUND_MIX[name]);
+  }
+
+  /** Ids in the tube, bottom first (balls still under the table are not in it yet). */
   get ids(): number[] {
     return this.order.map((o) => o.id);
+  }
+
+  /** Ids still rolling under the table (browser tests). */
+  get waitingIds(): number[] {
+    return this.underTable.map((u) => u.id);
+  }
+
+  /** How long a ball potted in the pocket at this design point rolls under the table, in ms. */
+  underTableMs(pocket: Vec2): number {
+    const d = Math.hypot(pocket.x - this.x(this.pipeEnd), pocket.y - TUBE.entryY);
+    return Math.min(TUBE.underTable.maxMs, (d / TUBE.underTable.speed) * 1000);
   }
 
   /** Mirrors a right-hand x for the player's hand. */
@@ -77,34 +130,40 @@ export class PottedTube {
     return TUBE.bottom - TUBE_ART.cap.height - this.ballRadius - n * step;
   }
 
-  /** Brings the tube in line with the balls: potted object balls in, any back on the table out. */
-  sync(balls: readonly Ball[]): void {
+  /**
+   * Brings the tube in line with the balls: potted object balls in, any back on the table out. Only
+   * a ball potted during a shot (`live`) rolls in; others (a new game, a saved game, a test layout)
+   * are simply shown.
+   */
+  sync(balls: readonly Ball[], live: boolean): void {
     const potted = balls.filter((b) => b.kind !== 'cue' && b.pocketed);
     const pottedIds = new Set(potted.map((b) => b.id));
-    if (this.order.some((o) => !pottedIds.has(o.id))) {
+    if ([...this.order, ...this.underTable].some((o) => !pottedIds.has(o.id))) {
       // A new game or a test layout: start again and show what is potted without rolling it in.
-      for (const o of this.order) {
+      for (const o of [...this.order, ...this.underTable]) {
         this.rolling.delete(o.image);
         o.image.destroy();
       }
       this.order.length = 0;
-      this.seen = false;
+      this.underTable.length = 0;
     }
-    const animate = this.seen;
-    this.seen = true;
-    const inTube = new Set(this.ids);
-    for (const ball of potted) if (!inTube.has(ball.id)) this.add(ball.id, ball.kind, animate);
+    const animate = live;
+    const inTube = new Set([...this.ids, ...this.waitingIds]);
+    for (const ball of potted) if (!inTube.has(ball.id)) this.add(ball, animate);
   }
 
-  private add(id: number, kind: BallKind, animate: boolean): void {
-    const n = this.order.length;
-    const image = this.scene.add.image(this.x(TUBE.x), this.restY(n), ballTexture(this.scene, kind, this.ballRadius)).setDepth(DEPTH.balls).setName(`tube-${id}`);
-    this.order.push({ id, image });
-    if (!animate) return;
-    image.setPosition(this.x(this.pipeEnd), TUBE.entryY);
-    const fall = this.restY(n) - TUBE.entryY;
-    const fallMs = Math.min(TUBE.maxFallMs, Math.sqrt((2 * fall) / TUBE.gravity) * 1000);
-    this.rolling.set(image, { n, start: this.scene.time.now, fallMs });
+  private add(ball: Ball, animate: boolean): void {
+    const image = this.scene.add.image(0, 0, ballTexture(this.scene, ball.kind, this.ballRadius)).setDepth(DEPTH.balls).setName(`tube-${ball.id}`);
+    if (!animate) {
+      image.setPosition(this.x(TUBE.x), this.restY(this.order.length));
+      this.order.push({ id: ball.id, image });
+      return;
+    }
+    // Hidden until it reaches the pipe; the rumble starts at once.
+    image.setVisible(false);
+    const now = this.scene.time.now;
+    if (this.underTable.length === 0) this.nextRumble = now;
+    this.underTable.push({ id: ball.id, image, at: now + this.underTableMs(this.toDesign(ball.x, ball.y)) });
   }
 
   /** The tube's glass, pipe and caps, drawn once: the back (inside) and the front (glass over the balls). */
