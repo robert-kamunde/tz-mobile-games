@@ -11,12 +11,12 @@ import { Panel, textStyle, type PanelSpec } from './ui';
 
 type Shown = Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Depth;
 
-/** The five totals across the top, in order. Each is shown as `stats-total-<id>`. */
-const TOTALS = ['games', 'wins', 'rate', 'streak', 'stars'] as const;
+/** The six totals across the top, in order. Each is shown as `stats-total-<id>`. */
+const TOTALS = ['games', 'wins', 'rate', 'streak', 'kimbunga', 'stars'] as const;
 
 /**
- * Takwimu (0.34.0): big totals (games and wins against the computer, win rate, best streak, journey
- * stars), then a row per computer player with face, win bar, `won/played` and a crown once beaten,
+ * Takwimu (0.34.0): big totals (games and wins against the computer, win rate, best streak, Kimbunga
+ * wins (0.36.0), journey stars), then a row per computer player with face, win bar, `won/played` and a crown once beaten,
  * then games with friends. Rows are `stats-<level>`, their record `stats-<level>-record` and crown
  * `stats-<level>-crown`; the friends line is `stats-friends`; Back is `stats-back`.
  */
@@ -57,6 +57,7 @@ export class StatsPanel {
       // No games yet: a dash, not 0%.
       rate: played > 0 ? `${Math.round((100 * wins) / played)}%` : '–',
       streak: String(progress.streak.best),
+      kimbunga: String(progress.kimbunga),
       stars: `${totalStars(story)}/${MAX_STARS}`,
     };
     const w = (inner - (TOTALS.length - 1) * c.gap) / TOTALS.length;

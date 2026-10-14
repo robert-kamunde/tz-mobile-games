@@ -50,7 +50,7 @@ export const QUIP_LINES: Readonly<Record<string, CharacterLines>> = {
     win: [['Bonge la ushindi!', 'A massive win!']],
   },
   shangazi: {
-    pot: [['Shangazi bado yupo!', "Auntie's still got it!"], ['Jifunze kwa shangazi.', 'Learn from Auntie.']],
+    pot: [['Shangazi bado yupo!', "Auntie's still got it!"], ['Jifunze kwa Shangazi.', 'Learn from Auntie.']],
     foul: [['Pole sana, mwanangu.', 'Oh dear, my child.']],
     win: [['Shangazi ameshinda, kaa chini!', 'Auntie wins, sit down!']],
   },
@@ -105,7 +105,7 @@ export const QUIP_LINES: Readonly<Record<string, CharacterLines>> = {
     win: [['Kikombe ni changu!', 'The cup is mine!']],
   },
   'mzee-simba': {
-    pot: [['Simba ananguruma!', 'The lion roars!'], ['Mfalme wa kaskazini.', 'King of the north.']],
+    pot: [['Simba ananguruma!', 'The lion roars!'], ['Mfalme wa Kaskazini.', 'King of the North.']],
     foul: [['Umemwamsha simba.', 'You woke the lion.']],
     win: [['Simba hashindwi nyumbani!', 'A lion never loses at home!']],
   },

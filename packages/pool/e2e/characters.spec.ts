@@ -6,7 +6,6 @@ import {
   boot,
   dismissHowToPlay,
   menuState,
-  pickOpponent,
   playFromMenu,
   reopen,
   seedWins,
@@ -122,27 +121,6 @@ test('Back and the phone back button step back through player 2, the opponents a
   await tap(page, 'character-back', MENU_SCENE);
   await expect.poll(async () => (await menuState(page)).panel).toBeNull();
   expect(await page.evaluate(() => window.__tzg!.backLeaves())).toBe(0);
-  expect(errors).toEqual([]);
-});
-
-test('New game on the table: Back from the opponents returns to your character, then to the game', async ({ page }) => {
-  const errors = trackErrors(page);
-  await boot(page);
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
-  await tap(page, 'character-confirm');
-  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
-  await back(page);
-  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
-  await back(page);
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
-  expect((await state(page)).opponent).toEqual({ kind: 'human' });
-
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await pickOpponent(page, 'medium', ['shangazi']);
-  expect((await state(page)).players).toEqual(['Shangazi', 'Mama Ntilie']);
   expect(errors).toEqual([]);
 });
 

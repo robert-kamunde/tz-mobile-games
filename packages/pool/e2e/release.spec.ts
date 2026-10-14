@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { bootTo, trackErrors } from '../../../tooling/e2eHelpers';
-import { MENU_SCENE, SCENE, boot, chooseMatch, menuState, pullPower, reopen, state, tap, tapMenu, waitForScene, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, SCENE, boot, chooseMatch, menuState, pullPower, quitGame, reopen, state, tap, tapMenu, waitForScene, waitUntilSettled } from './poolPage';
 
 /** Presses Android's back button (the app routes the real one to the same place). */
 const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
@@ -31,9 +31,9 @@ test('the first game explains the controls once, and the table waits until it is
   expect((await waitUntilSettled(page)).shots).toBe(1);
 
   // Not again: neither on a new game nor after reopening the app.
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await chooseMatch(page, SCENE, 'two');
+  await quitGame(page);
+  await tap(page, 'gameOver-rematch');
+  await expect.poll(async () => (await state(page)).match.phase).toBe('break');
   expect((await state(page)).howToPlayShown).toBe(false);
   await reopen(page);
   await startFirstGame(page);
@@ -66,7 +66,7 @@ test('back on the menu closes a panel or the picker first, then leaves the app',
   expect(errors).toEqual([]);
 });
 
-test('back on the table closes the help or the picker, waits while balls roll, then goes to the menu with the game kept', async ({ page }) => {
+test('back on the table closes the help or Acha mchezo?, waits while balls roll, then goes to the menu with the game kept', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   await startFirstGame(page);
@@ -80,11 +80,10 @@ test('back on the table closes the help or the picker, waits while balls roll, t
   expect(await page.evaluate(() => window.__tzg!.activeScenes())).toEqual([SCENE]);
   const settled = await waitUntilSettled(page);
 
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(true);
+  await tap(page, 'quitButton');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(true);
   await back(page);
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
+  await expect.poll(async () => (await state(page)).quitShown).toBe(false);
   expect((await state(page)).shots).toBe(settled.shots);
 
   await back(page);

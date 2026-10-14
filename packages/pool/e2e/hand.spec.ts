@@ -49,7 +49,7 @@ async function expectClearLayout(page: Page): Promise<void> {
     top: s.controls.fineAim.y - FINE_AIM.height / 2,
     bottom: s.controls.fineAim.y + FINE_AIM.height / 2,
   };
-  const buttons = [await boundsOf(page, 'menuButton'), await boundsOf(page, 'newGameButton')];
+  const buttons = [await boundsOf(page, 'menuButton'), await boundsOf(page, 'quitButton')];
   // The rails, not the shadow margin, are what must stay clear (the controls column is beside the table).
   const rails = { left: playLeft - rail, right: s.controls.tableRight + rail };
   for (const c of controls) {
@@ -88,10 +88,7 @@ test('left-handed: the controls move to the left, the table to the right, and ev
   expect(Math.min(...s.tubeDelays)).toBe(s.tubeDelays[2]);
   expect(Math.max(...s.tubeDelays)).toBe(s.tubeDelays[5]);
   expect((await boundsOf(page, 'menuButton')).left).toBeGreaterThan(DESIGN.width / 2);
-  expect((await boundsOf(page, 'newGameButton')).right).toBeLessThan(DESIGN.width / 2);
-  await expectClearLayout(page);
-  // New game's confirm label is the widest it gets.
-  await tap(page, 'newGameButton');
+  expect((await boundsOf(page, 'quitButton')).right).toBeLessThan(DESIGN.width / 2);
   await expectClearLayout(page);
 
   // Ball in hand, aim, fine aim and spin all respond where they now are, then a shot is played.
@@ -115,7 +112,6 @@ test('left-handed in English, with a catchphrase showing; switching back to righ
   const errors = trackErrors(page);
   await chooseHand(page, 'left', 'en');
   await playFromMenu(page, 'two');
-  await tap(page, 'newGameButton');
   await expectClearLayout(page);
   // A foul by player 1 may get player 2's tease; either way the layout holds.
   await layout(page, [], { phase: 'play', ballInHand: null });

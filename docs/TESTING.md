@@ -90,7 +90,7 @@ Runs production-like builds (`--mode e2e`) in Chromium with touch and mobile emu
 | Break placement | Player 1 breaks; dragging the cue ball past the baulk line keeps it behind the line. |
 | Foul and ball in hand | A break into a pocket without contact is a "no ball hit" foul; player 2 gets ball in hand; the cue ball is back on the table and can be dragged to a new spot; the status line shows the foul. |
 | Blocked placement | The cue ball cannot be dropped onto another ball. |
-| Winning | Set up on the black (test-only layout), aim and shoot by touch: the black drops, player 1 wins, the game-over panel shows, shooting is disabled, New game starts a match with player 2 breaking. |
+| Winning | Set up on the black (test-only layout), aim and shoot by touch: the black drops, player 1 wins, the game-over panel shows, shooting is disabled, Acha mchezo does nothing, Rudia starts a match with player 2 breaking. |
 | New game confirm | One tap mid-match changes nothing; a second tap restarts. |
 | Potted-ball trays | No trays while the table is open; once colours are set, each player's tray shows 7 slots with their potted balls filled (checked with 1 and 3 potted). |
 | First pot fills the tray | On an open table, a real shot that pots one red gives the shooter reds and their tray shows 1 of 7 at once. |

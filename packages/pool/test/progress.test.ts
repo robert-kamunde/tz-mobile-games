@@ -56,6 +56,19 @@ describe('saved game', () => {
     }
   });
 
+  it('keeps the shots by each player for Kimbunga; a missing or broken count only drops it', () => {
+    const saved = { ...savedAfterBreak(), shotsBy: [1, 0] as const };
+    expect(validateSavedMatch(viaJson(saved), TABLE)?.shotsBy).toEqual([1, 0]);
+    for (const shotsBy of [undefined, [1], [1, -1], 'x']) {
+      const raw = viaJson(saved) as Record<string, unknown>;
+      if (shotsBy === undefined) delete raw.shotsBy;
+      else raw.shotsBy = shotsBy;
+      const loaded = validateSavedMatch(raw, TABLE);
+      expect(loaded).not.toBeNull();
+      expect(loaded!.shotsBy).toBeUndefined();
+    }
+  });
+
   it('a game saved before characters existed, or with bad characters, loads with the default ones', () => {
     for (const picks of [undefined, ['fundi', 'fundi'], ['nobody', 'fundi'], 'fundi']) {
       const raw = viaJson(savedAfterBreak()) as Record<string, unknown>;

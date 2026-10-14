@@ -38,6 +38,8 @@ export interface PoolProgress {
   readonly background: BackgroundId;
   /** Wins in a row against the computer (Takwimu). Saves from before 0.34 have none: counting starts at 0. */
   readonly streak: WinStreak;
+  /** Games won from the break before the other player took a shot (Takwimu). Saves from before 0.36 have none: 0. */
+  readonly kimbunga: number;
 }
 
 export const PROGRESS_VERSION = 1;
@@ -47,7 +49,7 @@ const PERSON: PlayerId = 0;
 
 export function defaultProgress(): PoolProgress {
   const vsComputer = Object.fromEntries(AI_LEVEL_IDS.map((level) => [level, { played: 0, won: 0 }])) as Record<AiLevel, LevelRecord>;
-  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND, streak: { current: 0, best: 0 } };
+  return { vsComputer, twoPlayerGames: 0, lastOpponent: null, lastPicks: null, table: DEFAULT_TABLE, cue: DEFAULT_CUE, hand: DEFAULT_HAND, background: DEFAULT_BACKGROUND, streak: { current: 0, best: 0 }, kimbunga: 0 };
 }
 
 /** Games won against the computer at every level, story games included. */
@@ -55,8 +57,13 @@ export function computerWins(progress: PoolProgress): number {
   return AI_LEVEL_IDS.reduce((sum, level) => sum + progress.vsComputer[level].won, 0);
 }
 
-/** Counts a finished game. */
-export function recordGame(progress: PoolProgress, opponent: Opponent, winner: PlayerId): PoolProgress {
+/** Counts a finished game; `kimbunga` when it was won from the break (see rules/kimbunga.ts). */
+export function recordGame(progress: PoolProgress, opponent: Opponent, winner: PlayerId, kimbunga = false): PoolProgress {
+  const counted = kimbunga ? { ...progress, kimbunga: progress.kimbunga + 1 } : progress;
+  return countGame(counted, opponent, winner);
+}
+
+function countGame(progress: PoolProgress, opponent: Opponent, winner: PlayerId): PoolProgress {
   if (opponent.kind === 'human') return { ...progress, twoPlayerGames: progress.twoPlayerGames + 1 };
   const before = progress.vsComputer[opponent.level];
   const won = winner === PERSON;
@@ -96,7 +103,7 @@ export function validateProgress(raw: unknown): PoolProgress | null {
   const cue = isCueId(r.cue) ? r.cue : DEFAULT_CUE;
   const hand = isHand(r.hand) ? r.hand : DEFAULT_HAND;
   const background = isBackgroundId(r.background) ? r.background : DEFAULT_BACKGROUND;
-  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand, background, streak: validateStreak(r.streak) };
+  return { vsComputer, twoPlayerGames: r.twoPlayerGames, lastOpponent: last, lastPicks, table, cue, hand, background, streak: validateStreak(r.streak), kimbunga: isCount(r.kimbunga) ? r.kimbunga : 0 };
 }
 
 /** A missing (older save) or broken streak starts again from nothing; the other stats stay. */

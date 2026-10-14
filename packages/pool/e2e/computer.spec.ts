@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { trackErrors } from '../../../tooling/e2eHelpers';
 import { AI_TURN } from '../src/config/ai';
-import { boot, layout, overlaps, pickOpponent, pullPower, state, tap, waitUntilSettled } from './poolPage';
+import { boot, layout, overlaps, pullPower, state, tap, waitUntilSettled } from './poolPage';
 
 test('Play on the menu opens the opponent picker, and the person breaks the first game against the computer', async ({ page }) => {
   const errors = trackErrors(page);
@@ -53,22 +53,28 @@ test('with ball in hand the computer places the cue ball legally and shoots', as
   expect(errors).toEqual([]);
 });
 
-test('New game mid-match stops the computer and opens the picker, and the table ignores touches until a choice is made', async ({ page }) => {
+test("Acha mchezo on the computer's turn stops it while asking; quitting is the person's loss", async ({ page }) => {
   await boot(page, 'hard');
   await layout(page, [], { phase: 'play', current: 1, ballInHand: null });
   await expect.poll(async () => (await state(page)).computer).toBe('thinking');
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(true);
-  const s = await state(page);
-  expect(s.computer).toBeNull();
-  expect(s.shots).toBe(0);
-  await pullPower(page, 0.8);
-  await page.waitForTimeout(200);
+  await tap(page, 'quitButton');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(true);
+  expect((await state(page)).computer).toBeNull();
+  await page.waitForTimeout(500);
   expect((await state(page)).shots).toBe(0);
-  await pickOpponent(page, 'two');
-  expect((await state(page)).opponent).toEqual({ kind: 'human' });
-  expect((await state(page)).status).toContain('Fundi');
+  // Endelea kucheza: the computer takes its turn after all.
+  await tap(page, 'quit-keep');
+  await expect.poll(async () => (await state(page)).computer).not.toBeNull();
+  await expect.poll(async () => (await state(page)).shots, { timeout: 15_000 }).toBe(1);
+  await waitUntilSettled(page);
+  await layout(page, [], { phase: 'play', current: 0, ballInHand: null });
+  await tap(page, 'quitButton');
+  await tap(page, 'quit-confirm');
+  await expect.poll(async () => (await state(page)).gameOverShown).toBe(true);
+  expect((await state(page)).match).toMatchObject({ phase: 'over', winner: 1 });
+  const progress = JSON.parse((await page.evaluate(() => localStorage.getItem('pool.progress')))!) as { data: { vsComputer: { hard: { played: number; won: number } }; streak: { current: number } } };
+  expect(progress.data.vsComputer.hard).toEqual({ played: 1, won: 0 });
+  expect(progress.data.streak.current).toBe(0);
 });
 
 /**

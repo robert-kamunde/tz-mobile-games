@@ -88,8 +88,8 @@ export const HUD = {
   menu: { left: 12, y: DESIGN.height - 30 },
   /** Between the bottom rail (ends at y 631) and the fine-aim strip. */
   hint: { x: 590, y: 668 },
-  /** Anchored by its right edge so a longer label grows leftwards, never off screen. */
-  newGame: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
+  /** Acha mchezo, anchored by its right edge so a longer label grows leftwards, never off screen. */
+  quit: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
   /**
    * End-of-game panel over the middle of the table (scenes/EndPanel.ts): who won and why, stars in
    * story mode, then Endelea (story: next stop), Rudia (a rematch) and Menyu (story: Ramani, the map).
@@ -111,8 +111,6 @@ export const HUD = {
     autoMenuMs: 10_000,
     tickMs: 250,
   },
-  /** A second tap on New game within this time confirms it mid-match. */
-  confirmMs: 3000,
   /**
    * Catchphrase bubble under the speaker's panel, over the top rail and the edge of the felt; it
    * points up at their face and goes after `QUIPS.showMs`.
@@ -219,6 +217,32 @@ export const UNLOCK_POPUP = {
   /** Above every other panel, including the end-of-game panel. */
   depth: 30,
 } as const;
+
+/**
+ * Kimbunga! (0.36.0): big gold word over the table, a line under it and sparkles, before the end
+ * panel. It stays `showMs`, or until tapped. Centred on the table (moved by the hand setting).
+ */
+export const KIMBUNGA_BANNER = {
+  x: 590,
+  y: 300,
+  size: '120px',
+  color: '#f2c94c',
+  stroke: '#5a3a00',
+  strokeWidth: 10,
+  shadow: { x: 0, y: 6, color: '#000000', blur: 12 },
+  lineGap: 14,
+  lineSize: '30px',
+  /** Grows from this scale with a little bounce. */
+  fromScale: 0.2,
+  inMs: 450,
+  showMs: 2600,
+  sparkles: { count: 32, from: 60, to: 420, radius: 15, inner: 7, ms: 1300, colors: [0xf2c94c, 0xffe58a, 0xffffff] },
+  dim: { color: 0x000000, alpha: 0.45 },
+  depth: 25,
+} as const;
+
+/** Acha mchezo? over the table: who wins if you quit, then Acha and Endelea kucheza. */
+export const QUIT_PANEL = { area: { x: 590, y: 340, width: 560, height: 360, alpha: 0.96 } } as const;
 
 /** The MPYA (new) mark on a newly unlocked look or character in its picker. */
 export const NEW_MARK = { fill: 0xc62828, edge: 0xf2c94c, text: '#ffffff', padX: 6, padY: 1, size: '20px', inset: 2 } as const;

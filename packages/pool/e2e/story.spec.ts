@@ -14,6 +14,7 @@ import {
   playFromMenu,
   potTheBlack,
   pullPower,
+  quitGame,
   reopen,
   seedWins,
   setUpBlackPot,
@@ -207,6 +208,26 @@ test('a loss gives no stars and keeps the next stop closed; Rudia plays the stop
   await expect.poll(async () => (await state(page)).gameOverShown).toBe(false);
   expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
 
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  await openMap(page);
+  expect(await storyState(page)).toMatchObject({ stars: {}, open: ['mtaani'] });
+  expect(errors).toEqual([]);
+});
+
+test('Acha mchezo at a stop is a loss there: no stars, the next stop stays closed, and Rudia still works', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  await openMap(page, 'fundi');
+  await playStop(page, 'mtaani');
+  await quitGame(page);
+  expect((await state(page)).match).toMatchObject({ phase: 'over', winner: 1 });
+  expect(await litStars(page)).toBe(0);
+  expect(await textOf(page, SCENE, 'gameOverDetail')).toBe('Fundi ameacha mchezo');
+  expect((await state(page)).endButtons).toEqual(['gameOver-rematch', 'gameOver-menu']);
+  await tap(page, 'gameOver-rematch');
+  await expect.poll(async () => (await state(page)).gameOverShown).toBe(false);
+  expect((await state(page)).story).toEqual({ stop: 'mtaani', fouls: 0, shots: 0 });
   await tap(page, 'menuButton');
   await waitForScene(page, MENU_SCENE);
   await openMap(page);

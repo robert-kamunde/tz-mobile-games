@@ -26,6 +26,8 @@ export interface SavedMatch {
   readonly balls: readonly SavedBall[];
   /** Shots played in this game so far (seeds the computer's aim and numbers the log). */
   readonly shots: number;
+  /** Shots by player 1 and player 2, for Kimbunga (0.36.0). Missing in older saves: not known, so no Kimbunga. */
+  readonly shotsBy?: readonly [number, number];
   /** A story mode game: its stop and the person's fouls so far. Missing for Quick game and older saves. */
   readonly story?: StoryGame;
 }
@@ -96,5 +98,7 @@ export function validateSavedMatch(raw: unknown, table: TableConfig): SavedMatch
   const picks = validatePicks(r.picks) ?? DEFAULT_PICKS;
   const story = r.story === undefined ? null : validateStoryGame(r.story);
   if (r.story !== undefined && !story) return null;
-  return { opponent, picks, match, balls, shots: r.shots as number, ...(story ? { story } : {}) };
+  // A broken count only loses the Kimbunga, never the game.
+  const shotsBy = Array.isArray(r.shotsBy) && r.shotsBy.length === 2 && r.shotsBy.every((n) => Number.isInteger(n) && n >= 0) ? (r.shotsBy as [number, number]) : null;
+  return { opponent, picks, match, balls, shots: r.shots as number, ...(shotsBy ? { shotsBy } : {}), ...(story ? { story } : {}) };
 }

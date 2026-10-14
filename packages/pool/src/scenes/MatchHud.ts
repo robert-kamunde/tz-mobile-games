@@ -32,8 +32,8 @@ const PLAYERS: readonly PlayerId[] = [0, 1];
 const TRAY_SLOTS = Math.max(countInRack('red'), countInRack('yellow'));
 
 /**
- * Match heads-up display: a panel per player, the status line, the controls hint, the New game
- * button (with a confirming second tap mid-match) and the game-over panel. Text only comes from
+ * Match heads-up display: a panel per player, the status line, the controls hint, the Acha mchezo
+ * (quit) button, hidden once the game is over, and the game-over panel. Text only comes from
  * the translator; the scene decides what to say.
  */
 export class MatchHud {
@@ -41,7 +41,7 @@ export class MatchHud {
   private readonly trays: [TrayState, TrayState] = [{ potted: 0, slots: 0 }, { potted: 0, slots: 0 }];
   private readonly status: Phaser.GameObjects.Text;
   private readonly hint: Phaser.GameObjects.Text;
-  private readonly newGame: Phaser.GameObjects.Text;
+  private readonly quit: Phaser.GameObjects.Text;
   private readonly end: EndPanel;
   /** A story stop's character in the computer's seat, instead of its level's. */
   private rival: Character | undefined;
@@ -49,15 +49,13 @@ export class MatchHud {
   private readonly quipLabel: Phaser.GameObjects.Text;
   private quipTimer: Phaser.Time.TimerEvent | null = null;
   private quipSpeaker: PlayerId | null = null;
-  private confirmUntil = 0;
   private opponent: Opponent = { kind: 'human' };
   private picks: CharacterPicks = DEFAULT_PICKS;
-  private matchActive = true;
 
   constructor(
     private readonly scene: Phaser.Scene,
     private readonly t: Translator,
-    onNewGame: () => void,
+    onQuit: () => void,
     private readonly sides: ScreenSides,
     onEnd: EndChoices,
   ) {
@@ -105,33 +103,11 @@ export class MatchHud {
       .setName('quipText')
       .setVisible(false);
 
-    this.newGame = addButton(
-      scene,
-      sides.controlX(HUD.newGame.right),
-      HUD.newGame.y,
-      {
-        name: 'newGameButton',
-        label: '',
-        onTap: () => {
-          // Mid-match a restart needs a second tap, so a stray touch cannot throw a game away.
-          const now = scene.time.now;
-          if (this.matchActive && now > this.confirmUntil) {
-            this.confirmUntil = now + HUD.confirmMs;
-            this.newGame.setText(t.t('pool.confirmNewGame'));
-            scene.time.delayedCall(HUD.confirmMs, () => this.resetNewGameLabel());
-            return;
-          }
-          this.confirmUntil = 0;
-          this.resetNewGameLabel();
-          onNewGame();
-        },
-      },
-      { originX: sides.controlOriginX(1) },
-    );
-    this.resetNewGameLabel();
+    // Acha mchezo (0.36.0, replaced New game): the scene asks first, then the player whose turn it is gives up.
+    this.quit = addButton(scene, sides.controlX(HUD.quit.right), HUD.quit.y, { name: 'quitButton', label: t.t('pool.quit'), onTap: onQuit }, { originX: sides.controlOriginX(1) });
 
     // Above the table, balls and cue stick.
-    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, ...this.end.objects, this.quipBox, this.quipLabel, this.newGame];
+    const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, ...this.end.objects, this.quipBox, this.quipLabel, this.quit];
     for (const o of all) o.setDepth(HUD.depth);
     this.setCast(this.opponent, this.picks);
   }
@@ -271,9 +247,13 @@ export class MatchHud {
   }
 
   showGameOver(spec: EndSpec): void {
-    this.matchActive = false;
-    this.resetNewGameLabel();
+    this.quit.setVisible(false);
     this.end.show(spec);
+  }
+
+  /** The game is over: no quitting it (hidden before the end panel, under the Kimbunga banner). */
+  hideQuit(): void {
+    this.quit.setVisible(false);
   }
 
   /** The end panel stays until a button is pressed (an unlock popup is over it). */
@@ -282,11 +262,7 @@ export class MatchHud {
   }
 
   hideGameOver(): void {
-    this.matchActive = true;
+    this.quit.setVisible(true);
     this.end.hide();
-  }
-
-  private resetNewGameLabel(): void {
-    if (this.scene.time.now >= this.confirmUntil) this.newGame.setText(this.t.t('pool.newGame'));
   }
 }

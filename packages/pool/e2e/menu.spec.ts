@@ -278,7 +278,7 @@ test('Exit during a game asks first, says the game is saved, and the game contin
   expect(errors).toEqual([]);
 });
 
-test('the opponent picker fits the friend button, four cards and Back without overlapping, on the menu and on the table', async ({ page }) => {
+test('the opponent picker fits the friend button, four cards and Back without overlapping', async ({ page }) => {
   type Box = { left: number; top: number; right: number; bottom: number };
   const boxes = async (scene: string) =>
     (await Promise.all(['two', 'easy', 'medium', 'hard', 'impossible', 'back'].map((id) => page.evaluate(([s, n]) => window.__tzg!.boundsOf(s, n), [scene, `opponent-${id}`] as const)))) as Box[];
@@ -302,10 +302,4 @@ test('the opponent picker fits the friend button, four cards and Back without ov
   await playFromMenu(page, 'impossible');
   expect((await state(page)).opponent).toEqual({ kind: 'computer', level: 'impossible' });
   expect((await state(page)).players[1]).toBe('Bingwa');
-  await tap(page, 'newGameButton');
-  await tap(page, 'newGameButton');
-  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
-  await tap(page, 'character-confirm');
-  await expect.poll(async () => (await state(page)).setupStep).toBe('opponent');
-  expectApart(await boxes(SCENE));
 });

@@ -5,7 +5,7 @@ import type { SoundRecipe } from '@tzg/core';
  * same names. Version 2 (Part C, 0.19.0): each sound is built like the real thing, from a few short
  * ringing modes, band-limited noise for the contact, and soft starts so nothing clicks harshly.
  */
-export type PoolSound = 'cue' | 'ball' | 'cushion' | 'pocket' | 'underRoll' | 'tubeRoll' | 'tubeLand' | 'tap' | 'unlock';
+export type PoolSound = 'cue' | 'ball' | 'cushion' | 'pocket' | 'underRoll' | 'tubeRoll' | 'tubeLand' | 'tap' | 'unlock' | 'kimbunga';
 
 export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
   // Leather tip on the cue ball: a dull "tock". A low wooden body, the ball's own ring, a soft scuff.
@@ -99,6 +99,22 @@ export const SOUND_RECIPES: Readonly<Record<PoolSound, SoundRecipe>> = {
       { kind: 'noise', cutoffHz: 9000, highHz: 4000, decay: 0.15, level: 0.12, attack: 0.05, delay: 0.32, tremoloHz: 22 },
     ],
   },
+  // Kimbunga! (0.36.0): a gust of wind sweeping in, then a bold rising fanfare (G, C, E, G, high C).
+  kimbunga: {
+    seconds: 1.6,
+    peak: 0.75,
+    layers: [
+      { kind: 'noise', cutoffHz: 1800, highHz: 250, decay: 0.18, level: 0.5, attack: 0.25, tremoloHz: 9 },
+      { kind: 'tone', startHz: 392, endHz: 392, decay: 0.18, level: 0.75, attack: 0.004, delay: 0.35 },
+      { kind: 'tone', startHz: 523, endHz: 523, decay: 0.18, level: 0.75, attack: 0.004, delay: 0.47 },
+      { kind: 'tone', startHz: 659, endHz: 659, decay: 0.2, level: 0.8, attack: 0.004, delay: 0.59 },
+      { kind: 'tone', startHz: 784, endHz: 784, decay: 0.22, level: 0.85, attack: 0.004, delay: 0.71 },
+      { kind: 'tone', startHz: 1047, endHz: 1047, decay: 0.5, level: 1, attack: 0.004, delay: 0.83 },
+      { kind: 'tone', startHz: 523, endHz: 523, decay: 0.5, level: 0.5, attack: 0.004, delay: 0.83 },
+      { kind: 'tone', startHz: 2094, endHz: 2094, decay: 0.35, level: 0.25, attack: 0.004, delay: 0.83 },
+      { kind: 'noise', cutoffHz: 9000, highHz: 4000, decay: 0.2, level: 0.12, attack: 0.05, delay: 0.85, tremoloHz: 22 },
+    ],
+  },
 };
 
 /** Fixed seed for the noise in the recipes, so every phone gets the same sounds. */
@@ -132,6 +148,8 @@ export const SOUND_MIX = {
   tap: 0.3,
   /** The "Imefunguliwa!" popup. */
   unlock: 0.6,
+  /** The Kimbunga! banner. */
+  kimbunga: 0.7,
   /**
    * Thinning: a sound of the same kind within this many physics steps (1 ms each) of the last one is
    * dropped unless it is at least this much louder, and at most this many sounds start per frame.

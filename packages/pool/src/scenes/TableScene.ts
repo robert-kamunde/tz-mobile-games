@@ -5,7 +5,7 @@ import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
 import { ShotPlanner } from '../ai/planner';
 import { ShotSoundMixer, cueGain } from '../audio/shotSounds';
 import { AI_LEVELS } from '../config/ai';
-import { AIM_GUIDE, BALL_IN_HAND, HUD, PANEL, SIMULATION_LOOP, screenSides, type ScreenSides } from '../config/layout';
+import { AIM_GUIDE, BALL_IN_HAND, HUD, KIMBUNGA_BANNER, PANEL, QUIT_PANEL, SIMULATION_LOOP, screenSides, type ScreenSides } from '../config/layout';
 import { DEFAULT_PHYSICS } from '../config/physics';
 import { UK_7FT_TABLE } from '../config/table';
 import { tableTheme } from '../config/tables';
@@ -46,7 +46,6 @@ import {
 import type { CharacterPicks } from '../progress/characters';
 import type { StoryTwist } from '../config/story';
 import { STORY } from '../config/story';
-import { lockedCharacters } from './storyText';
 import { askForRemindersOnce } from './reminderSetup';
 import { opponentId, type Opponent } from '../progress/opponent';
 import { computerWins, recordGame } from '../progress/progress';
@@ -71,9 +70,11 @@ import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
 import type { EndSpec } from './EndPanel';
 import { UnlockPopup } from './UnlockPopup';
-import { announceUnlocks, startUnlockTracking, takeFresh } from './unlockFlow';
+import { announceUnlocks, startUnlockTracking } from './unlockFlow';
 import type { StoryStart } from './StoryScene';
-import { MatchSetup, type MatchChoice } from './MatchSetup';
+import type { MatchChoice } from './MatchSetup';
+import { KimbungaBanner } from './KimbungaBanner';
+import { isKimbunga } from '../rules/kimbunga';
 import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
 import type { MenuStart } from './MenuScene';
@@ -113,7 +114,9 @@ export class TableScene extends Phaser.Scene {
   private fineAim!: FineAim;
   private hud!: MatchHud;
   private unlockPopup!: UnlockPopup;
-  private setup!: MatchSetup;
+  private kimbunga!: KimbungaBanner;
+  /** Acha mchezo? while it asks. */
+  private quitPanel: Panel | null = null;
   /** The one-time "how to play" panel on the first game, while it shows. */
   private howToPlay: Panel | null = null;
   private computer!: ComputerTurn;
@@ -153,6 +156,8 @@ export class TableScene extends Phaser.Scene {
   private countsBeforeShot: GroupCounts = { red: 0, yellow: 0 };
   private lastResult: ShotResult | null = null;
   private shots = 0;
+  /** Shots by each player this game, for Kimbunga; null for a game saved before 0.36.0. */
+  private shotsBy: [number, number] | null = [0, 0];
 
   constructor() {
     super(TableScene.KEY);
@@ -194,16 +199,16 @@ export class TableScene extends Phaser.Scene {
     this.powerBar = new PowerBar(this, this.t.t('pool.power'), sides);
     this.spin = new SpinControl(this, this.t.t('pool.spin'), DEFAULT_PHYSICS.maxTipOffset, sides);
     this.fineAim = new FineAim(this, sides);
-    this.hud = new MatchHud(this, this.t, () => this.askForOpponent(), sides, {
+    this.hud = new MatchHud(this, this.t, () => this.askToQuit(), sides, {
       next: () => this.playNextStop(),
       // Rudia: the same opponent and characters; the break alternates as for any rematch.
       rematch: () => this.rematch(),
       leave: () => (this.story ? this.openStoryMap() : this.goToMenu()),
     });
     this.sides = sides;
-    this.setup = new MatchSetup(this, this.t, this.overTable, (choice) => this.onMatchChosen(choice), () => lockedCharacters(this.t, this.played), () => this.slots.progress.load().data.vsComputer, () => takeFresh(this.slots, 'character'));
     // The scene object is reused between starts; a panel from last time was destroyed with it.
     this.howToPlay = null;
+    this.quitPanel = null;
     addButton(this, sides.controlX(HUD.menu.left), HUD.menu.y, { name: 'menuButton', label: this.t.t('pool.menu'), onTap: () => this.goToMenu() }, { originX: sides.controlOriginX(0) }).setDepth(HUD.depth);
     this.computer = new ComputerTurn(
       {
@@ -241,14 +246,16 @@ export class TableScene extends Phaser.Scene {
     });
 
     this.unlockPopup = new UnlockPopup(this, this.t);
+    this.kimbunga = new KimbungaBanner(this);
     startUnlockTracking(this.slots);
     this.registerProbes();
-    // Back closes the help or steps back through choosing a game, otherwise does what Menu does (nothing while balls roll),
+    // Back closes the help, Acha mchezo? or Kimbunga, otherwise does what Menu does (nothing while balls roll),
     // or on a story game's end panel goes to the map.
     onBackButton(this, () => {
       if (this.unlockPopup.goBack()) return true;
-      if (this.howToPlay) this.closeHowToPlay();
-      else if (this.setup.goBack()) return true;
+      if (this.kimbunga.visible) this.kimbunga.finish();
+      else if (this.quitPanel) this.closeQuit();
+      else if (this.howToPlay) this.closeHowToPlay();
       // On the end panel Back does what its last button does: the map in story mode.
       else if (this.story && this.hud.gameOverVisible) this.openStoryMap();
       else this.goToMenu();
@@ -284,23 +291,51 @@ export class TableScene extends Phaser.Scene {
   // ---- Match flow -------------------------------------------------------------------------
 
   /**
-   * New game: choose the characters and opponent first. The current game stays behind the picker,
-   * and is still the saved game, until a choice is made; Back returns to it.
+   * Acha mchezo (0.36.0, Robert): asks first, saying who wins. Against the computer the person gives
+   * up; in a two-player game, the player whose turn it is. Not while balls roll or once it is over.
    */
-  private askForOpponent(): void {
-    if (this.sim.isMoving) return;
-    // In story mode New game replays the stop: the opponent is the stop's.
-    if (this.story) {
-      this.rematch();
-      return;
-    }
+  private askToQuit(): void {
+    if (this.sim.isMoving || this.match.phase === 'over' || this.overlayOpen) return;
     this.computer.cancel();
     this.cancelGestures();
-    const progress = this.slots.progress.load().data;
-    this.setup.show(progress.lastOpponent, progress.lastPicks, () => {
-      this.refresh();
-      this.startComputerTurnIfDue();
+    const quitter = this.quitter;
+    const t = this.t;
+    this.quitPanel = new Panel(this, {
+      name: 'quitPanel',
+      area: { ...QUIT_PANEL.area, x: QUIT_PANEL.area.x + this.sides.tableDx },
+      title: t.t('quit.title'),
+      body: t.t('quit.body', { opponent: this.hud.playerName(opponentOf(quitter)) }),
+      buttons: [
+        { name: 'quit-confirm', label: t.t('quit.confirm'), onTap: () => this.quit() },
+        { name: 'quit-keep', label: t.t('quit.keepPlaying'), primary: true, onTap: () => this.closeQuit() },
+      ],
+      modal: true,
     });
+    this.refresh();
+  }
+
+  private get quitter(): PlayerId {
+    return this.opponent.kind === 'computer' ? PERSON : this.match.current;
+  }
+
+  /** Endelea kucheza: back to the game as it was. */
+  private closeQuit(): void {
+    this.quitPanel?.destroy();
+    this.quitPanel = null;
+    this.refresh();
+    this.startComputerTurnIfDue();
+  }
+
+  /** Acha: a loss for the quitter, counted and shown like any other ending. */
+  private quit(): void {
+    const quitter = this.quitter;
+    this.quitPanel?.destroy();
+    this.quitPanel = null;
+    const winner = opponentOf(quitter);
+    this.logger.info(`player ${quitter + 1} quit; player ${winner + 1} wins`);
+    this.match = { ...this.match, phase: 'over', winner };
+    this.endGame(winner, 'forfeit');
+    this.saveMatch();
     this.refresh();
   }
 
@@ -378,6 +413,7 @@ export class TableScene extends Phaser.Scene {
     this.match = startMatch(breaker);
     this.lastResult = null;
     this.shots = 0;
+    this.shotsBy = [0, 0];
     this.aim = BREAK_AIM;
     this.hud.hideGameOver();
     this.view.syncBalls(this.sim.balls);
@@ -400,6 +436,7 @@ export class TableScene extends Phaser.Scene {
     this.sim = new PoolSimulation(this.geometry, DEFAULT_PHYSICS, restoreBalls(saved.balls, UK_7FT_TABLE), this.logger.child('physics'));
     this.match = saved.match;
     this.shots = saved.shots;
+    this.shotsBy = saved.shotsBy ? [...saved.shotsBy] : null;
     this.lastResult = null;
     this.aim = BREAK_AIM;
     this.view.syncBalls(this.sim.balls);
@@ -422,7 +459,6 @@ export class TableScene extends Phaser.Scene {
   private goToMenu(): void {
     if (this.sim.isMoving) return;
     this.computer.cancel();
-    this.setup.hide();
     this.saveMatch();
     this.openMenu();
   }
@@ -436,7 +472,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   private snapshot(): SavedMatch {
-    return { opponent: this.opponent, picks: this.picks, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots, ...(this.story ? { story: this.story } : {}) };
+    return { opponent: this.opponent, picks: this.picks, match: this.match, balls: toSavedBalls(this.sim.balls), shots: this.shots, ...(this.shotsBy ? { shotsBy: this.shotsBy } : {}), ...(this.story ? { story: this.story } : {}) };
   }
 
   /**
@@ -455,7 +491,7 @@ export class TableScene extends Phaser.Scene {
 
   /** A panel over the table (choosing a game or "how to play"): the table ignores the player meanwhile. */
   private get overlayOpen(): boolean {
-    return this.setup.visible || this.howToPlay !== null;
+    return this.howToPlay !== null || this.quitPanel !== null || this.kimbunga.visible;
   }
 
   /** Explains the controls on the player's first game; never again once dismissed. */
@@ -521,6 +557,7 @@ export class TableScene extends Phaser.Scene {
     // Spin is chosen for one shot at a time, so a forgotten setting never spoils the next one.
     this.spin.reset();
     this.shots += 1;
+    if (this.shotsBy) this.shotsBy[this.match.current] += 1;
     if (this.story && this.match.current === PERSON) this.story = { ...this.story, shots: this.story.shots + 1 };
     this.stepper.reset();
     this.aimView.hide();
@@ -580,18 +617,7 @@ export class TableScene extends Phaser.Scene {
     if (twistLoss) this.match = { ...this.match, phase: 'over', winner: COMPUTER_PLAYER };
     const ending = verdict.kind === 'game-over' ? { winner: verdict.winner, reason: verdict.reason } : twistLoss ? { winner: COMPUTER_PLAYER, reason: twistLoss } : null;
     if (ending) {
-      const winner = this.hud.playerName(ending.winner);
-      const loser = this.hud.playerName(opponentOf(ending.winner));
-      const title = this.t.t('over.title', { player: winner });
-      const detail = this.t.t(`over.${ending.reason}`, { loser });
-      const before = this.played;
-      const end = this.story ? this.finishStop(ending.winner === PERSON, title, detail) : { title, detail };
-      this.recordResult(ending.winner);
-      const notes = [...this.unlockNotes(before, this.played), ...(end.note ? [end.note] : [])];
-      this.hud.showGameOver({ ...end, ...(notes.length ? { note: notes.join('\n') } : {}) });
-      // Anything this game unlocked pops up over the end panel, which then waits for a button.
-      if (announceUnlocks(this.slots, this.unlockPopup)) this.hud.holdEndCount();
-      this.hud.setStatus('');
+      this.endGame(ending.winner, ending.reason, verdict.kind === 'game-over');
     } else {
       messages.push(this.turnMessage());
       this.hud.setStatus(messages.join('\n'));
@@ -601,6 +627,36 @@ export class TableScene extends Phaser.Scene {
     this.saveMatch();
     this.refresh();
     this.startComputerTurnIfDue();
+  }
+
+  /**
+   * The game is over: counted, then the end panel, after the Kimbunga banner when the breaker won
+   * before the other player took a shot (`fromPlay`: won by the rules, not by a twist or a quit).
+   */
+  private endGame(winnerId: PlayerId, reason: string, fromPlay = false): void {
+    const winner = this.hud.playerName(winnerId);
+    const loser = this.hud.playerName(opponentOf(winnerId));
+    const title = this.t.t('over.title', { player: winner });
+    const detail = this.t.t(`over.${reason}`, { loser });
+    const kimbunga = fromPlay && isKimbunga({ winner: winnerId, breaker: this.match.breaker, shotsBy: this.shotsBy, opponent: this.opponent });
+    const before = this.played;
+    const end = this.story ? this.finishStop(winnerId === PERSON, title, detail) : { title, detail };
+    this.recordResult(winnerId, kimbunga);
+    const notes = [...this.unlockNotes(before, this.played), ...(end.note ? [end.note] : [])];
+    this.hud.setStatus('');
+    this.hud.hideQuit();
+    const showEnd = () => {
+      this.hud.showGameOver({ ...end, ...(notes.length ? { note: notes.join('\n') } : {}) });
+      // Anything this game unlocked pops up over the end panel, which then waits for a button.
+      if (announceUnlocks(this.slots, this.unlockPopup)) this.hud.holdEndCount();
+      this.refresh();
+    };
+    if (!kimbunga) {
+      showEnd();
+      return;
+    }
+    this.logger.info(`kimbunga: player ${winnerId + 1} won from the break`);
+    this.kimbunga.show(KIMBUNGA_BANNER.x + this.sides.tableDx, this.t.t('kimbunga.title'), this.t.t('kimbunga.line', { player: winner, opponent: loser }), showEnd);
   }
 
   /**
@@ -644,9 +700,9 @@ export class TableScene extends Phaser.Scene {
   }
 
   /** Counts a finished game in the stats. */
-  private recordResult(winner: PlayerId): void {
+  private recordResult(winner: PlayerId, kimbunga: boolean): void {
     const progress = this.slots.progress.load().data;
-    this.slots.progress.save(recordGame(progress, this.opponent, winner));
+    this.slots.progress.save(recordGame(progress, this.opponent, winner, kimbunga));
     if (this.opponent.kind === 'computer' && winner === PERSON) askForRemindersOnce(getServices(this), this.slots);
   }
 
@@ -851,10 +907,10 @@ export class TableScene extends Phaser.Scene {
       controls: { spin: { x: this.spin.x, y: this.spin.y }, fineAim: { x: this.fineAim.x, y: this.fineAim.y }, tableLeft: this.view.toDesign(0, 0).x, tableRight: this.view.toDesign(this.geometry.length, 0).x },
       opponent: this.opponent,
       computer: this.computer.currentPhase,
-      pickerShown: this.setup.visible,
+      quitShown: this.quitPanel !== null,
+      kimbungaShown: this.kimbunga.visible,
+      shotsBy: this.shotsBy,
       unlockShown: this.unlockPopup.current,
-      setupStep: this.setup.step,
-      selectedCharacter: this.setup.selectedCharacter,
       players: [this.hud.playerName(0), this.hud.playerName(1)],
       picks: this.picks,
       howToPlayShown: this.howToPlay !== null,
@@ -866,7 +922,8 @@ export class TableScene extends Phaser.Scene {
     registerTestProbe('pool.tableToDesign', (x, y) => this.view.toDesign(Number(x), Number(y)));
     // Test-only: sets up a position (ball spots and match state) so browser tests can reach late-game
     // situations without playing a whole frame. Registered only in e2e builds.
-    registerTestProbe('pool.testLayout', (layout, match) => {
+    // A laid-out position is not a real game: who has shot is unknown (no Kimbunga) unless given.
+    registerTestProbe('pool.testLayout', (layout, match, shotsBy) => {
       if (this.sim.isMoving) throw new Error('cannot lay out the table while balls move');
       const spots = layout as { id: number; x?: number; y?: number; pocketed?: boolean }[];
       for (const spot of spots) {
@@ -877,6 +934,7 @@ export class TableScene extends Phaser.Scene {
         if (spot.pocketed !== undefined) ball.pocketed = spot.pocketed;
       }
       this.match = { ...this.match, ...(match as Partial<MatchState>) };
+      this.shotsBy = Array.isArray(shotsBy) ? (shotsBy as [number, number]) : null;
       this.lastResult = null;
       this.view.syncBalls(this.sim.balls);
       this.computer.cancel();

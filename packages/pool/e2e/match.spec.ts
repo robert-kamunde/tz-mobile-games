@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { trackErrors } from '../../../tooling/e2eHelpers';
 import { UK_7FT_TABLE } from '../src/config/table';
-import { MENU_SCENE, SCENE, boot, dragOnTable, layout, menuState, pickOpponent, potTheBlack, pullPower, setUpBlackPot, state, tablePoint, tap, waitForScene, waitUntilSettled } from './poolPage';
+import { MENU_SCENE, SCENE, boot, dragOnTable, layout, menuState, quitGame, potTheBlack, pullPower, setUpBlackPot, state, tablePoint, tap, waitForScene, waitUntilSettled } from './poolPage';
 
+const back = (page: Page) => page.evaluate(() => window.__tzg!.back());
 const textOf = (page: Page, name: string) => page.evaluate((n) => window.__tzg!.textOf('Table', n), name);
 
 /** Plays a game to a win by player 1 (Fundi). */
@@ -55,7 +56,7 @@ test('the cue ball cannot be dropped on top of another ball', async ({ page }) =
   expect(Math.hypot(cue.x - target.x, cue.y - target.y)).toBeGreaterThanOrEqual(cue.r + target.r - 1e-9);
 });
 
-test('potting the black when on it wins, and New game starts a match with the other player breaking', async ({ page }) => {
+test('potting the black when on it wins; Rudia starts a match with the other player breaking, and a finished game cannot be quit', async ({ page }) => {
   const errors = trackErrors(page);
   await boot(page);
   await setUpBlackPot(page);
@@ -69,8 +70,11 @@ test('potting the black when on it wins, and New game starts a match with the ot
   await pullPower(page, 0.5);
   expect((await state(page)).shots).toBe(1);
 
-  await tap(page, 'newGameButton');
-  await pickOpponent(page, 'two');
+  // No quitting a finished game; Rudia starts the next with the other player breaking.
+  await tap(page, 'quitButton');
+  await page.waitForTimeout(200);
+  expect((await state(page)).quitShown).toBe(false);
+  await tap(page, 'gameOver-rematch');
   await expect.poll(async () => (await state(page)).match).toMatchObject({ phase: 'break', breaker: 1, current: 1 });
   const fresh = await state(page);
   expect(fresh.gameOverShown).toBe(false);
@@ -78,20 +82,60 @@ test('potting the black when on it wins, and New game starts a match with the ot
   expect(errors).toEqual([]);
 });
 
-test('New game during a match needs a second tap', async ({ page }) => {
+test('Acha mchezo asks first; Endelea kucheza plays on, Acha gives the game to the other player', async ({ page }) => {
+  const errors = trackErrors(page);
   await boot(page);
-  await layout(page, [{ id: 1, pocketed: true }], { phase: 'play' });
-  await tap(page, 'newGameButton');
+  await layout(page, [{ id: 1, pocketed: true }], { phase: 'play', current: 1, ballInHand: null });
+  await tap(page, 'quitButton');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(true);
+  // The table ignores the player while it asks.
+  await pullPower(page, 0.8);
   await page.waitForTimeout(200);
-  let s = await state(page);
-  expect(s.match.phase).toBe('play');
-  expect(s.balls[1]!.pocketed).toBe(true);
+  expect((await state(page)).shots).toBe(0);
+  await tap(page, 'quit-keep');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(false);
+  expect((await state(page)).match.phase).toBe('play');
 
-  await tap(page, 'newGameButton');
-  await pickOpponent(page, 'two');
+  // Back closes it too.
+  await tap(page, 'quitButton');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(true);
+  await back(page);
+  await expect.poll(async () => (await state(page)).quitShown).toBe(false);
+
+  // Player 2 is to play, so player 2 gives up and player 1 wins.
+  await quitGame(page);
+  const s = await state(page);
+  expect(s.match).toMatchObject({ phase: 'over', winner: 0 });
+  expect(s.kimbungaShown).toBe(false);
+  expect(s.endButtons).toContain('gameOver-rematch');
+  expect(await page.evaluate(() => localStorage.getItem('pool.match'))).toBeNull();
+  const progress = JSON.parse((await page.evaluate(() => localStorage.getItem('pool.progress')))!) as { data: { twoPlayerGames: number } };
+  expect(progress.data.twoPlayerGames).toBe(1);
+  await tap(page, 'gameOver-rematch');
   await expect.poll(async () => (await state(page)).match.phase).toBe('break');
-  s = await state(page);
-  expect(s.balls[1]!.pocketed).toBe(false);
+  expect((await state(page)).balls[1]!.pocketed).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+test('Kimbunga: the breaker wins before the other player shoots; the banner comes before the end panel', async ({ page }) => {
+  const errors = trackErrors(page);
+  await boot(page);
+  await setUpBlackPot(page);
+  // Player 1 broke and has played on ever since.
+  const s = await state(page);
+  await layout(page, [], { current: 0 }, [4, 0]);
+  expect((await state(page)).balls).toEqual(s.balls);
+  await potTheBlack(page);
+  await expect.poll(async () => (await state(page)).kimbungaShown, { timeout: 15_000 }).toBe(true);
+  expect((await state(page)).gameOverShown).toBe(false);
+  expect(await textOf(page, 'kimbunga')).toBe('KIMBUNGA!');
+  // A tap skips it.
+  await tap(page, 'kimbunga');
+  await expect.poll(async () => (await state(page)).gameOverShown).toBe(true);
+  expect((await state(page)).kimbungaShown).toBe(false);
+  const progress = JSON.parse((await page.evaluate(() => localStorage.getItem('pool.progress')))!) as { data: { kimbunga: number } };
+  expect(progress.data.kimbunga).toBe(1);
+  expect(errors).toEqual([]);
 });
 
 test('each player sees their potted balls in a tray under their name once colours are decided', async ({ page }) => {

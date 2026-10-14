@@ -46,11 +46,14 @@ export interface PoolState {
   controls: { spin: { x: number; y: number }; fineAim: { x: number; y: number }; tableLeft: number; tableRight: number };
   opponent: { kind: 'human' } | { kind: 'computer'; level: string };
   computer: 'thinking' | 'placing' | 'aiming' | 'power' | null;
-  pickerShown: boolean;
+  /** Acha mchezo? is asking. */
+  quitShown: boolean;
+  /** The KIMBUNGA! banner is showing. */
+  kimbungaShown: boolean;
+  /** Shots by each player this game; null when not known (a laid-out position or an older save). */
+  shotsBy: [number, number] | null;
   /** The unlock shown in the "Imefunguliwa!" popup, or null. */
   unlockShown: string | null;
-  setupStep: 'opponent' | 'characters' | null;
-  selectedCharacter: string | null;
   players: [string, string];
   picks: [string, string];
   howToPlayShown: boolean;
@@ -125,11 +128,12 @@ export async function chooseMatch(page: Page, scene: string, choice: OpponentCho
   await tap(page, 'character-confirm', scene);
 }
 
-/** New game on the table: makes the choices with real taps, and waits for the picker to close. */
-export async function pickOpponent(page: Page, choice: OpponentChoice, characters: readonly string[] = []): Promise<void> {
-  await expect.poll(async () => (await state(page)).setupStep).toBe('characters');
-  await chooseMatch(page, SCENE, choice, characters);
-  await expect.poll(async () => (await state(page)).pickerShown).toBe(false);
+/** Acha mchezo with real taps: asks, then Acha; waits for the end panel. */
+export async function quitGame(page: Page): Promise<void> {
+  await tap(page, 'quitButton');
+  await expect.poll(async () => (await state(page)).quitShown).toBe(true);
+  await tap(page, 'quit-confirm');
+  await expect.poll(async () => (await state(page)).gameOverShown).toBe(true);
 }
 
 /** From the main menu: Play, pick the characters and opponent, and wait for the table. */
@@ -246,9 +250,12 @@ export async function dragOnTable(page: Page, from: { x: number; y: number }, to
   await touchDrag(page, await tablePoint(page, from.x, from.y), await tablePoint(page, to.x, to.y));
 }
 
-/** Test-only position setup (e2e builds): ball spots and match state. */
-export async function layout(page: Page, balls: { id: number; x?: number; y?: number; pocketed?: boolean }[], match: Partial<MatchState>): Promise<void> {
-  await page.evaluate(([b, m]) => window.__tzg!.probe('pool.testLayout', b, m), [balls, match] as const);
+/**
+ * Test-only position setup (e2e builds): ball spots and match state. Who has shot so far is unknown
+ * (so no Kimbunga) unless `shotsBy` is given.
+ */
+export async function layout(page: Page, balls: { id: number; x?: number; y?: number; pocketed?: boolean }[], match: Partial<MatchState>, shotsBy?: [number, number]): Promise<void> {
+  await page.evaluate(([b, m, by]) => window.__tzg!.probe('pool.testLayout', b, m, by), [balls, match, shotsBy ?? null] as const);
 }
 
 /** Player 1 on the black (reds all potted), with the black lined up on the top-left pocket. */
