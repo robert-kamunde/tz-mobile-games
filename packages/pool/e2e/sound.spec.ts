@@ -10,12 +10,15 @@ interface SoundReport {
 const sound = (page: Page) => page.evaluate(() => window.__tzg!.sound() as SoundReport);
 const played = async (page: Page) => (await sound(page)).played;
 
-/** Plays one break at the given power and returns the sounds it started. */
+/** Sounds of a ball on its way to the tube, which can still be playing from the shot before. */
+const TUBE_SOUNDS = new Set(['underRoll', 'tubeRoll', 'tubeLand']);
+
+/** Plays one break at the given power and returns the table sounds it started (not the tube's). */
 async function breakAndListen(page: Page, power: number): Promise<SoundReport['played']> {
   const before = (await played(page)).length;
   await pullPower(page, power);
   await waitUntilSettled(page);
-  return (await played(page)).slice(before);
+  return (await played(page)).slice(before).filter((s) => !TUBE_SOUNDS.has(s.name));
 }
 
 test('a break plays the cue, ball and cushion sounds, and a harder shot strikes louder', async ({ page }) => {
