@@ -72,6 +72,10 @@ test("Acha mchezo on the computer's turn stops it while asking; quitting is the 
   await tap(page, 'quit-confirm');
   await expect.poll(async () => (await state(page)).gameOverShown).toBe(true);
   expect((await state(page)).match).toMatchObject({ phase: 'over', winner: 1 });
+  // The computer's win: its face on the panel, no confetti and no ta-da.
+  expect(await page.evaluate(() => window.__tzg!.dataOf('Table', 'gameOverFace', 'character'))).toBe('mzee-kobe');
+  expect((await state(page)).confetti).toBe(0);
+  expect((await page.evaluate(() => window.__tzg!.sound())).played.map((p) => p.name)).not.toContain('win');
   const progress = JSON.parse((await page.evaluate(() => localStorage.getItem('pool.progress')))!) as { data: { vsComputer: { hard: { played: number; won: number } }; streak: { current: number } } };
   expect(progress.data.vsComputer.hard).toEqual({ played: 1, won: 0 });
   expect(progress.data.streak.current).toBe(0);

@@ -10,12 +10,17 @@ export interface Settings {
   soundVolume: number;
   /** 0..1 */
   musicVolume: number;
+  /**
+   * The player picked a language on the first-launch screen (pool 0.37.0). False only on a brand-new
+   * install; settings saved by an older version count as chosen, so existing players are not asked.
+   */
+  languageChosen: boolean;
 }
 
 export const SETTINGS_SCHEMA_VERSION = 1;
 
 export function defaultSettings(): Settings {
-  return { locale: DEFAULT_LOCALE, soundVolume: 1, musicVolume: 0.7 };
+  return { locale: DEFAULT_LOCALE, soundVolume: 1, musicVolume: 0.7, languageChosen: false };
 }
 
 function isVolume(value: unknown): value is number {
@@ -26,7 +31,7 @@ export function validateSettings(raw: unknown): Settings | null {
   if (typeof raw !== 'object' || raw === null) return null;
   const r = raw as Record<string, unknown>;
   if (!isLocale(r.locale) || !isVolume(r.soundVolume) || !isVolume(r.musicVolume)) return null;
-  return { locale: r.locale, soundVolume: r.soundVolume, musicVolume: r.musicVolume };
+  return { locale: r.locale, soundVolume: r.soundVolume, musicVolume: r.musicVolume, languageChosen: r.languageChosen !== false };
 }
 
 export function createSettingsSlot(gameId: string, store: KeyValueStore, logger?: Logger): SaveSlot<Settings> {

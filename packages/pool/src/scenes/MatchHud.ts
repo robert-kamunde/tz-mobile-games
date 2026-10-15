@@ -126,7 +126,8 @@ export class MatchHud {
     for (const player of PLAYERS) this.panels[player]!.face.show(this.seat(player));
   }
 
-  private seat(player: PlayerId): Character {
+  /** The character in a seat: the computer's, a story rival, or a pick. */
+  seat(player: PlayerId): Character {
     return seatCharacter(player, this.opponent, this.picks, this.rival);
   }
 

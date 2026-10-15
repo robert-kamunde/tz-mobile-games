@@ -108,6 +108,8 @@ export const HUD = {
     buttonWidths: { two: 230, three: 186 },
     buttonGap: 18,
     star: { radius: 19, inner: 8.5, spacing: 50, lit: 0xf2c94c, unlit: 0x3a4248, outline: 0x101418 },
+    /** The winner's face (0.37.0), centred on the panel's top edge in a gold ring; the title starts `gap` below it. */
+    face: { radius: 54, ring: 6, ringColor: 0xf2c94c, gap: 10 },
     autoMenuMs: 10_000,
     tickMs: 250,
   },
@@ -240,6 +242,34 @@ export const KIMBUNGA_BANNER = {
   dim: { color: 0x000000, alpha: 0.45 },
   depth: 25,
 } as const;
+
+/**
+ * Confetti when a person wins (0.37.0): paper pieces fall from above the screen over the table,
+ * drifting and spinning, and fade out by `fallMs` plus the longest `delayMs`.
+ */
+export const CONFETTI = {
+  count: 90,
+  /** Each piece starts somewhere between these x positions (design pixels), above the screen. */
+  fromX: 140,
+  toX: 1100,
+  startY: -30,
+  endY: 720,
+  width: { min: 8, max: 14 },
+  height: { min: 12, max: 22 },
+  drift: 120,
+  spins: 3,
+  fallMs: { min: 1800, max: 3000 },
+  /** Turning paper looks thinner: width squeezes to `flutterScale` and back every 2 x `flutterMs`. */
+  flutterMs: { min: 150, max: 350 },
+  flutterScale: 0.3,
+  delayMs: 700,
+  colors: [0xf2c94c, 0xe53935, 0x43a047, 0x1e88e5, 0xfb8c00, 0xffffff, 0x8e24aa],
+  /** Over the table and the end panel, under the unlock popup. */
+  depth: 22,
+} as const;
+
+/** First launch (0.37.0): "Chagua lugha / Choose language" over the menu, two big buttons. */
+export const LANGUAGE_PANEL = { area: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 600, height: 270, alpha: 1 } } as const;
 
 /** Acha mchezo? over the table: who wins if you quit, then Acha and Endelea kucheza. */
 export const QUIT_PANEL = { area: { x: 590, y: 340, width: 560, height: 360, alpha: 0.96 } } as const;

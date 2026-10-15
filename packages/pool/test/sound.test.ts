@@ -13,7 +13,7 @@ describe('sound effects', () => {
     const s = renderSound(SOUND_RECIPES[name], 44_100, SOUND_SEED);
     // Short, so the sounds take little memory (the pocket knock and the under-table rumble are the
     // longest table sounds; the unlock and Kimbunga fanfares, heard once in a while, up to a second and a half).
-    const longest = name === 'kimbunga' ? 1.7 : name === 'unlock' ? 1.2 : name === 'pocket' || name === 'underRoll' ? 0.3 : 0.15;
+    const longest = name === 'kimbunga' ? 1.7 : name === 'unlock' || name === 'win' ? 1.2 : name === 'pocket' || name === 'underRoll' ? 0.3 : 0.15;
     expect(s.length / 44_100).toBeLessThanOrEqual(longest);
     const peak = s.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
     expect(peak).toBeGreaterThan(0.5);

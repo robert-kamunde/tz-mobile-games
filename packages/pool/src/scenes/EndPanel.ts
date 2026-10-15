@@ -1,6 +1,8 @@
 import type * as Phaser from 'phaser';
 import type { Translator } from '@tzg/core';
 import { COLORS, HUD, TEXT_STYLE } from '../config/layout';
+import type { Character } from '../config/characters';
+import { Face } from './Face';
 import { STORY } from '../config/story';
 import { panelTexture } from './art/uiArt';
 import { addButton, popIn, textStyle } from './ui';
@@ -17,6 +19,8 @@ export interface EndSpec {
   readonly next?: boolean;
   /** Story mode: the last button is Ramani (the map) instead of Menyu. */
   readonly story?: boolean;
+  /** The winner, whose face sits on top of the panel (0.37.0). */
+  readonly winner?: Character;
 }
 
 export interface EndChoices {
@@ -27,13 +31,17 @@ export interface EndChoices {
 }
 
 /**
- * The panel over the table when a game ends. Objects are named `gameOverPanel`, `gameOverTitle`,
+ * The panel over the table when a game ends, with the winner's face on its top edge (`gameOverFace`, data
+ * `character`, in `gameOverRing`; 0.37.0). Objects are named `gameOverPanel`, `gameOverTitle`,
  * `gameOverDetail`, `gameOverNote`, `gameOverStar-<0..2>` (data `lit`) and the buttons
  * `gameOver-next`, `gameOver-rematch`, `gameOver-menu`. The last button counts down and is pressed
  * on its own after `HUD.gameOver.autoMenuMs`, unless the screen is touched first.
  */
 export class EndPanel {
   private readonly panel: Phaser.GameObjects.Image;
+  private readonly ring: Phaser.GameObjects.Arc;
+  private readonly face: Face;
+  private hasFace = false;
   private readonly title: Phaser.GameObjects.Text;
   private readonly detail: Phaser.GameObjects.Text;
   private readonly note: Phaser.GameObjects.Text;
@@ -55,6 +63,9 @@ export class EndPanel {
   ) {
     const g = HUD.gameOver;
     this.panel = scene.add.image(x, g.y, panelTexture(scene, g.width, g.height)).setAlpha(g.alpha).setName('gameOverPanel');
+    const f = g.face;
+    this.ring = scene.add.circle(x, 0, f.radius + f.ring, f.ringColor).setName('gameOverRing');
+    this.face = new Face(scene, x, 0, f.radius, 'gameOverFace');
     this.title = scene.add.text(x, 0, '', textStyle(TEXT_STYLE.titleSize, COLORS.accent)).setOrigin(0.5, 0).setName('gameOverTitle');
     this.detail = scene.add.text(x, 0, '', { ...textStyle(TEXT_STYLE.playerSize), align: 'center', wordWrap: { width: g.width - 60 } }).setOrigin(0.5, 0).setName('gameOverDetail');
     this.note = scene.add.text(x, 0, '', { ...textStyle(TEXT_STYLE.playerSize, COLORS.accent), align: 'center', wordWrap: { width: g.width - 60 } }).setOrigin(0.5, 0).setName('gameOverNote');
@@ -73,8 +84,8 @@ export class EndPanel {
     this.setVisible(false);
   }
 
-  get objects(): (Phaser.GameObjects.Image | Phaser.GameObjects.Text | Phaser.GameObjects.Star)[] {
-    return [this.panel, this.title, ...this.stars, this.detail, this.note, this.next, this.rematch, this.leave];
+  get objects(): (Phaser.GameObjects.Image | Phaser.GameObjects.Text | Phaser.GameObjects.Star | Phaser.GameObjects.Arc)[] {
+    return [this.panel, this.ring, ...this.face.objects, this.title, ...this.stars, this.detail, this.note, this.next, this.rematch, this.leave];
   }
 
   get visible(): boolean {
@@ -98,8 +109,12 @@ export class EndPanel {
     const g = HUD.gameOver;
     this.shown = true;
     this.setVisible(true);
-    // Lines stack down from the top of the panel; stars and the note only in story mode.
-    let y = g.y - g.height / 2 + g.padTop;
+    // The winner's face on the top edge; lines stack down below it. Stars and the note only in story mode.
+    this.hasFace = Boolean(spec.winner);
+    const panelTop = g.y - g.height / 2;
+    if (spec.winner) this.face.show(spec.winner);
+    for (const o of [this.ring, ...this.face.objects]) o.setY(panelTop).setVisible(this.hasFace);
+    let y = spec.winner ? panelTop + g.face.radius + g.face.gap : panelTop + g.padTop;
     this.title.setText(spec.title).setY(y);
     y += this.title.height + g.lineGap;
     const withStars = spec.stars !== undefined;
@@ -140,7 +155,7 @@ export class EndPanel {
   }
 
   private setVisible(on: boolean): void {
-    for (const o of [this.panel, this.title, this.detail, this.note, ...this.stars, this.next, this.rematch, this.leave]) o.setVisible(on);
+    for (const o of [this.panel, this.ring, ...this.face.objects, this.title, this.detail, this.note, ...this.stars, this.next, this.rematch, this.leave]) o.setVisible(on);
   }
 
   private choose(choice: () => void): void {

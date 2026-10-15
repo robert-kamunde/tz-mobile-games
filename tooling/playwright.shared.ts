@@ -12,8 +12,13 @@ const PHONES = [
   { name: 'tablet-landscape', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1.5, hasTouch: true, isMobile: true } },
 ];
 
-export function phoneTestConfig(options: { packageDir: string; port: number }): PlaywrightTestConfig {
-  const { packageDir, port } = options;
+/** Local storage every test starts with (`name` to `value`), e.g. a first-launch choice already made. */
+export type StartingStorage = Readonly<Record<string, string>>;
+
+export function phoneTestConfig(options: { packageDir: string; port: number; storage?: StartingStorage }): PlaywrightTestConfig {
+  const { packageDir, port, storage } = options;
+  const baseURL = `http://127.0.0.1:${port}`;
+  const storageState = storage ? { cookies: [], origins: [{ origin: baseURL, localStorage: Object.entries(storage).map(([name, value]) => ({ name, value })) }] } : undefined;
   return defineConfig({
     testDir: './e2e',
     // Tests that play several shots run in a software renderer, four at a time; with a random rack
@@ -21,7 +26,7 @@ export function phoneTestConfig(options: { packageDir: string; port: number }): 
     timeout: 60_000,
     fullyParallel: true,
     reporter: [['list']],
-    use: { baseURL: `http://127.0.0.1:${port}`, hasTouch: true, isMobile: true },
+    use: { baseURL, hasTouch: true, isMobile: true, ...(storageState ? { storageState } : {}) },
     webServer: {
       command: `npx vite preview --outDir dist-e2e --port ${port} --strictPort --host 127.0.0.1`,
       cwd: packageDir,

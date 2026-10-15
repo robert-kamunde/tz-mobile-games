@@ -50,6 +50,8 @@ export interface PoolState {
   quitShown: boolean;
   /** The KIMBUNGA! banner is showing. */
   kimbungaShown: boolean;
+  /** Confetti pieces still falling. */
+  confetti: number;
   /** Shots by each player this game; null when not known (a laid-out position or an older save). */
   shotsBy: [number, number] | null;
   /** The unlock shown in the "Imefunguliwa!" popup, or null. */
@@ -72,7 +74,7 @@ export interface MenuState {
   page: 'main' | 'play' | 'looks';
   /** The dot on CHEZA saying a game or journey is waiting. */
   savedDot: boolean;
-  panel: 'picker' | 'characters' | 'tables' | 'cues' | 'backgrounds' | 'stats' | 'rules' | 'settings' | 'exit' | null;
+  panel: 'picker' | 'characters' | 'tables' | 'cues' | 'backgrounds' | 'stats' | 'rules' | 'settings' | 'exit' | 'language' | null;
   selectedCharacter: string | null;
   /** Selected on the open table picker. */
   selectedTable: string | null;

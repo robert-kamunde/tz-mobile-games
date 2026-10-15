@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.37.0 (unreleased) - Winner's face, confetti, and the language on first launch
+- Robert chose "Build all three" (2026-10-15).
+- **Winner's face:** the end panel has the winner's face in a gold ring on its top edge, above "Fundi ameshinda!". When the computer wins, its face shows.
+- **Confetti:** when a person wins (against the computer, or either player in a two-player game), bright paper confetti falls over the table for about three seconds with a short "ta-da". There is none when the computer wins. After a Kimbunga it follows the banner. If the game also unlocked something, its popup's fanfare plays instead of the ta-da.
+- **Language on first launch:** a brand-new install opens with "Chagua lugha / Choose language" (Kiswahili or English) over the menu. It is asked once; Back does not skip it; Mipangilio still changes the language later. Players whose settings were saved by an older version are not asked.
+
 ## 0.36.0 (unreleased) - Kimbunga!, Acha mchezo, and wording
 - Robert chose "Build both" (2026-10-14).
 - **Kimbunga!** When the player who broke wins before the other player has taken a single shot, a big gold "KIMBUNGA!" bounces in over the table with "Fundi ameshinda kabla Mwamba hajapiga hata mara moja!", a burst of gold sparkles and a gust-then-fanfare sound, for about two and a half seconds (a tap skips it), before the end panel. It counts against the computer and in two-player games, never when the computer does it to you. Takwimu shows a sixth total, Kimbunga. Games saved by an older version and continued cannot be a Kimbunga (who had shot was not saved).

@@ -74,6 +74,8 @@ import { announceUnlocks, startUnlockTracking } from './unlockFlow';
 import type { StoryStart } from './StoryScene';
 import type { MatchChoice } from './MatchSetup';
 import { KimbungaBanner } from './KimbungaBanner';
+import { Confetti } from './Confetti';
+import { SOUND_MIX } from '../config/sound';
 import { isKimbunga } from '../rules/kimbunga';
 import { getPoolSlots } from './poolSlots';
 import { loadPoolSounds } from './poolSounds';
@@ -115,6 +117,7 @@ export class TableScene extends Phaser.Scene {
   private hud!: MatchHud;
   private unlockPopup!: UnlockPopup;
   private kimbunga!: KimbungaBanner;
+  private confetti!: Confetti;
   /** Acha mchezo? while it asks. */
   private quitPanel: Panel | null = null;
   /** The one-time "how to play" panel on the first game, while it shows. */
@@ -247,6 +250,7 @@ export class TableScene extends Phaser.Scene {
 
     this.unlockPopup = new UnlockPopup(this, this.t);
     this.kimbunga = new KimbungaBanner(this);
+    this.confetti = new Confetti(this);
     startUnlockTracking(this.slots);
     this.registerProbes();
     // Back closes the help, Acha mchezo? or Kimbunga, otherwise does what Menu does (nothing while balls roll),
@@ -645,10 +649,15 @@ export class TableScene extends Phaser.Scene {
     const notes = [...this.unlockNotes(before, this.played), ...(end.note ? [end.note] : [])];
     this.hud.setStatus('');
     this.hud.hideQuit();
+    // A person won (any win in a two-player game): confetti and a "ta-da" with the end panel.
+    const celebrate = this.opponent.kind === 'human' || winnerId === PERSON;
     const showEnd = () => {
-      this.hud.showGameOver({ ...end, ...(notes.length ? { note: notes.join('\n') } : {}) });
-      // Anything this game unlocked pops up over the end panel, which then waits for a button.
+      this.hud.showGameOver({ ...end, winner: this.hud.seat(winnerId), ...(notes.length ? { note: notes.join('\n') } : {}) });
+      if (celebrate) this.confetti.burst(this.sides.tableDx);
+      // Anything this game unlocked pops up over the end panel, which then waits for a button; its own fanfare
+      // replaces the ta-da.
       if (announceUnlocks(this.slots, this.unlockPopup)) this.hud.holdEndCount();
+      else if (celebrate) this.sfx.play('win', SOUND_MIX.win);
       this.refresh();
     };
     if (!kimbunga) {
@@ -909,6 +918,7 @@ export class TableScene extends Phaser.Scene {
       computer: this.computer.currentPhase,
       quitShown: this.quitPanel !== null,
       kimbungaShown: this.kimbunga.visible,
+      confetti: this.confetti.active,
       shotsBy: this.shotsBy,
       unlockShown: this.unlockPopup.current,
       players: [this.hud.playerName(0), this.hud.playerName(1)],

@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
-import { BUTTON, HANDS, LOOK_PICKER, MENU, PANEL } from '../config/layout';
+import { BUTTON, HANDS, LANGUAGE_PANEL, LOOK_PICKER, MENU, PANEL } from '../config/layout';
 import { moveStoryGame, type PoolSlots } from '../progress/slots';
 import { BACKGROUND_IDS, isBackgroundId } from '../config/backgrounds';
 import { CUE_IDS, isCueId } from '../config/cues';
@@ -32,7 +32,7 @@ const LOOK_KINDS: readonly UnlockKind[] = ['table', 'cue', 'background'];
 /** Sound is on or off for now; a volume slider can come with real sounds. */
 const SOUND_ON_VOLUME = 1;
 
-type MenuPanel = 'stats' | 'rules' | 'settings' | 'exit';
+type MenuPanel = 'stats' | 'rules' | 'settings' | 'exit' | 'language';
 /** The main page, CHEZA (ways to play) or Mapambo (tables, cues, scenery). */
 export type MenuPage = 'main' | 'play' | 'looks';
 
@@ -102,12 +102,16 @@ export class MenuScene extends Phaser.Scene {
       () => takeFresh(this.slots, 'character'),
     );
     this.unlockPopup = new UnlockPopup(this, t);
-    // Unlocks not shown yet (the app closed before their popup) show here.
-    announceUnlocks(this.slots, this.unlockPopup);
+    // A brand-new install asks for the language first (0.37.0); otherwise unlocks not shown yet
+    // (the app closed before their popup) show here.
+    if (!services.getSettings().languageChosen) this.askLanguage();
+    else announceUnlocks(this.slots, this.unlockPopup);
     this.looks = new LookPicker(this, PANEL.overMenu);
     if (data.panel) this.showPanel(data.panel);
     // Back steps back through choosing a game or closes a panel; on the menu itself it leaves the app.
     onBackButton(this, () => {
+      // The first-launch language choice waits for an answer.
+      if (this.openPanel === 'language') return true;
       if (this.unlockPopup.goBack()) return true;
       if (this.setup.goBack()) return true;
       if (this.looks.goBack()) return true;
@@ -402,6 +406,29 @@ export class MenuScene extends Phaser.Scene {
         { name: 'reminders-off', label: t.t('settings.off'), highlighted: !on, onTap: () => set(false) },
       ],
     };
+  }
+
+  /**
+   * First launch only: "Chagua lugha / Choose language" with Kiswahili and English. The choice is
+   * saved, never asked again, and the menu is drawn again in that language.
+   */
+  private askLanguage(): void {
+    const services = getServices(this);
+    const choose = (locale: 'sw' | 'en') => {
+      services.updateSettings({ locale, languageChosen: true });
+      this.scene.restart({} satisfies MenuStart);
+    };
+    this.openPanel = 'language';
+    this.panel = new Panel(this, {
+      name: 'languagePanel',
+      area: LANGUAGE_PANEL.area,
+      title: this.t.t('firstLanguage.title'),
+      buttons: [
+        { name: 'firstLanguage-sw', label: this.t.t('language.sw'), primary: true, onTap: () => choose('sw') },
+        { name: 'firstLanguage-en', label: this.t.t('language.en'), primary: true, onTap: () => choose('en') },
+      ],
+      modal: true,
+    });
   }
 
   private closePanel(): void {

@@ -9,10 +9,16 @@ describe('settings', () => {
   it('round-trips through a save slot, namespaced per game', () => {
     const store = new MemoryStore();
     const slot = createSettingsSlot('pool', store);
-    slot.save({ locale: 'en', soundVolume: 0.5, musicVolume: 0 });
+    slot.save({ locale: 'en', soundVolume: 0.5, musicVolume: 0, languageChosen: true });
     expect(store.get('pool.settings')).not.toBeNull();
-    expect(createSettingsSlot('pool', store).load().data).toEqual({ locale: 'en', soundVolume: 0.5, musicVolume: 0 });
+    expect(createSettingsSlot('pool', store).load().data).toEqual({ locale: 'en', soundVolume: 0.5, musicVolume: 0, languageChosen: true });
     expect(createSettingsSlot('daladala', store).load().outcome).toBe('missing');
+  });
+
+  it('a new install has not chosen a language; settings saved before the choice existed count as chosen', () => {
+    expect(defaultSettings().languageChosen).toBe(false);
+    expect(validateSettings({ locale: 'sw', soundVolume: 1, musicVolume: 1 })?.languageChosen).toBe(true);
+    expect(validateSettings({ locale: 'sw', soundVolume: 1, musicVolume: 1, languageChosen: false })?.languageChosen).toBe(false);
   });
 
   it.each([

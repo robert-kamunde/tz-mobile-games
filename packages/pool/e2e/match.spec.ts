@@ -199,6 +199,17 @@ test('after a win, a touch stops the countdown, and Menyu still goes to the menu
   expect(errors).toEqual([]);
 });
 
+test('a win shows the winner\'s face on the end panel, with confetti and a ta-da', async ({ page }) => {
+  const errors = trackErrors(page);
+  await winGame(page);
+  expect(await page.evaluate(() => window.__tzg!.dataOf('Table', 'gameOverFace', 'character'))).toBe('fundi');
+  expect((await state(page)).confetti).toBeGreaterThan(0);
+  expect((await page.evaluate(() => window.__tzg!.sound())).played.map((p) => p.name)).toContain('win');
+  // Every piece clears itself away.
+  await expect.poll(async () => (await state(page)).confetti, { timeout: 8_000 }).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 test('after a win, Rudia starts a rematch with the same players and the other player breaking', async ({ page }) => {
   const errors = trackErrors(page);
   await winGame(page);

@@ -131,6 +131,7 @@ Dependency direction is strictly `game -> shell -> core`. Core never imports she
 | `scenes/MatchSetup.ts`, `scenes/CharacterPicker.ts`, `scenes/Face.ts` | The new-game choice (player 1's character, the opponent, then player 2's character for two players, with Back stepping back), the face grid, and the face shown in the picker and the player panels. |
 | `scenes/OpponentPicker.ts` | "Unacheza na nani?" panel: two players or the computer at one of four levels, with the last choice marked. Used on the menu. |
 | `scenes/MatchHud.ts` | Player panels, status line, controls hint, Acha mchezo button (hidden once the game is over), game-over panel. |
+| `scenes/Confetti.ts` | Confetti burst when a person wins (0.37.0): tweened paper pieces that remove themselves; `active` counts those still falling. |
 | `scenes/KimbungaBanner.ts`, `rules/kimbunga.ts` | The "KIMBUNGA!" banner (word, line, sparkles, fanfare; `KIMBUNGA_BANNER`), and the pure rule for when a win is a Kimbunga. |
 | `scenes/LookPicker.ts` | "Chagua meza" and "Chagua fimbo": a grid of pictures with names, the selection frame, Choose and Back. Cue styles are data in `config/cues.ts`, drawn by `art/cueArt.ts`. |
 | `scenes/art/` | Canvas 2D drawing of the table (in each table style; `tableTexture.ts` makes the full-size and preview textures), balls and shadows, cue and its shadow, and the control parts (`canvasTexture` makes a texture once per key). |
