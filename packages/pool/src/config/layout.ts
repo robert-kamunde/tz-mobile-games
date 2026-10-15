@@ -108,8 +108,26 @@ export const HUD = {
     buttonWidths: { two: 230, three: 186 },
     buttonGap: 18,
     star: { radius: 19, inner: 8.5, spacing: 50, lit: 0xf2c94c, unlit: 0x3a4248, outline: 0x101418 },
-    /** The winner's face (0.37.0), centred on the panel's top edge in a gold ring; the title starts `gap` below it. */
-    face: { radius: 54, ring: 6, ringColor: 0xf2c94c, gap: 10 },
+    /**
+     * MSHINDI! (0.38.0, Robert 2026-10-15, after a picture he liked): over a dimmed table and turning
+     * gold rays, the winner's face card (left, crown and "MSHINDI!" above it), VS, and the other
+     * player's card greyed (right); the panel with the result and buttons sits below from `panelTop`.
+     */
+    showcase: {
+      dim: { color: 0x000000, alpha: 0.45 },
+      rays: { y: 245, size: 820, count: 20, color: 'rgba(242,201,76,0.45)', spinMs: 30_000 },
+      card: { y: 248, size: 158, dx: 175, edge: { width: 6, corner: 20, color: '#f2c94c' }, loserEdge: '#8a8f94', loserFilter: 'grayscale(0.75) brightness(0.7)' },
+      vs: { size: '66px', color: '#ffffff', stroke: '#101418', strokeWidth: 8 },
+      word: { y: 122, size: '60px', color: '#f2c94c', stroke: '#5a3a00', strokeWidth: 8 },
+      crown: { dy: -50, size: 62, angle: -14 },
+      badge: { size: '20px', text: '#101418', fill: '#f2c94c', padX: 8, padY: 3, inset: 6 },
+      twinkle: { count: 12, spread: 170, radius: 9, inner: 4, colors: [0xffffff, 0xffe58a], minMs: 500, maxMs: 1100 },
+      pop: { fromScale: 0.4, ms: 380 },
+      panelTop: 350,
+      bottomPad: 20,
+      /** The dim and the rays sit this much (and twice this) below the panel's depth. */
+      underPanel: 0.1,
+    },
     autoMenuMs: 10_000,
     tickMs: 250,
   },

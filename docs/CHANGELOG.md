@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.0 (unreleased) - MSHINDI! winner screen
+- Robert chose "Build it" (2026-10-15) after sharing a winner screen he liked; drawn in our own style, not copied.
+- When a game ends, the table dims and gold rays turn slowly behind the winner. The winner's face is a large card with a gold edge, a tilted gold crown and "MSHINDI!" ("WINNER!" in English) above it, with twinkling stars. Next to it is "VS" and the other player's card, greyed. The cards pop in.
+- Badges against the computer: its card shows its level (Ngumu), and in Quick game your card shows your record against it with this game counted ("3/7"). There are no badges in two-player games, and on the journey your stars show on the panel.
+- The panel below keeps "Fundi ameshinda!", the reason, journey stars, notes and Rudia / Menyu. The confetti and ta-da still come when a person wins. The face on the panel's edge from 0.37.0 is replaced by the cards.
+
 ## 0.37.0 (unreleased) - Winner's face, confetti, and the language on first launch
 - Robert chose "Build all three" (2026-10-15).
 - **Winner's face:** the end panel has the winner's face in a gold ring on its top edge, above "Fundi ameshinda!". When the computer wins, its face shows.

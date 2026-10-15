@@ -3,6 +3,7 @@
 Last updated: 2026-10-14
 
 ## Current milestone
+- **MSHINDI! winner screen (built, 0.38.0, 2026-10-15; Robert chose "Build it").**
 - **Winner's face, confetti, first-launch language (built, 0.37.0, 2026-10-15; Robert chose "Build all three").**
 - **Kimbunga! and Acha mchezo (built, 0.36.0, 2026-10-14; Robert chose "Build both"):** a gold banner when the breaker wins before the other player shoots (counted in Takwimu); Acha mchezo replaces Mchezo mpya, asks first, and counts as a loss (0 stars on the journey). Wording checked (four small capital fixes).
 Milestone 9: art and sound, in three parts, each sent to Robert as a phone build. Robert chose "Claude now, designer later" (2026-10-11): Claude draws the art in code, a designer may replace it later.

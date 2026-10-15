@@ -68,7 +68,7 @@ import { AimView } from './AimView';
 import { ComputerTurn } from './ComputerTurn';
 import { FineAim } from './FineAim';
 import { MatchHud } from './MatchHud';
-import type { EndSpec } from './EndPanel';
+import type { EndCards, EndSpec } from './EndPanel';
 import { UnlockPopup } from './UnlockPopup';
 import { announceUnlocks, startUnlockTracking } from './unlockFlow';
 import type { StoryStart } from './StoryScene';
@@ -652,7 +652,7 @@ export class TableScene extends Phaser.Scene {
     // A person won (any win in a two-player game): confetti and a "ta-da" with the end panel.
     const celebrate = this.opponent.kind === 'human' || winnerId === PERSON;
     const showEnd = () => {
-      this.hud.showGameOver({ ...end, winner: this.hud.seat(winnerId), ...(notes.length ? { note: notes.join('\n') } : {}) });
+      this.hud.showGameOver({ ...end, cards: this.endCards(winnerId), ...(notes.length ? { note: notes.join('\n') } : {}) });
       if (celebrate) this.confetti.burst(this.sides.tableDx);
       // Anything this game unlocked pops up over the end panel, which then waits for a button; its own fanfare
       // replaces the ta-da.
@@ -666,6 +666,29 @@ export class TableScene extends Phaser.Scene {
     }
     this.logger.info(`kimbunga: player ${winnerId + 1} won from the break`);
     this.kimbunga.show(KIMBUNGA_BANNER.x + this.sides.tableDx, this.t.t('kimbunga.title'), this.t.t('kimbunga.line', { player: winner, opponent: loser }), showEnd);
+  }
+
+  /**
+   * MSHINDI! cards: the winner and the other player. Against the computer its card shows its level,
+   * and in Quick game the person's card shows their record against that level, this game counted.
+   */
+  private endCards(winnerId: PlayerId): EndCards {
+    const badge = (seat: PlayerId): string | undefined => {
+      if (this.opponent.kind !== 'computer') return undefined;
+      if (seat === COMPUTER_PLAYER) return this.t.t(`level.${this.opponent.level}`);
+      if (this.story) return undefined;
+      const record = this.slots.progress.load().data.vsComputer[this.opponent.level];
+      return `${record.won}/${record.played}`;
+    };
+    const loserId = opponentOf(winnerId);
+    const winnerBadge = badge(winnerId);
+    const loserBadge = badge(loserId);
+    return {
+      winner: this.hud.seat(winnerId),
+      loser: this.hud.seat(loserId),
+      ...(winnerBadge ? { winnerBadge } : {}),
+      ...(loserBadge ? { loserBadge } : {}),
+    };
   }
 
   /**
@@ -910,6 +933,7 @@ export class TableScene extends Phaser.Scene {
       gameOverShown: this.hud.gameOverVisible,
       autoMenuSeconds: this.hud.autoMenuSeconds,
       endButtons: this.hud.endButtons,
+      endCards: this.hud.endCards,
       trays: this.hud.trayState,
       quip: this.hud.quip,
       hand: this.sides.hand,

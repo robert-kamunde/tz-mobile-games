@@ -38,6 +38,8 @@ export interface PoolState {
   autoMenuSeconds: number | null;
   /** The end panel's buttons showing, left to right. */
   endButtons: string[];
+  /** MSHINDI! cards' characters after a game, or null. */
+  endCards: { winner: string; loser: string } | null;
   trays: { potted: number; slots: number }[];
   /** The catchphrase showing and whose it is. */
   quip: { speaker: number; text: string } | null;

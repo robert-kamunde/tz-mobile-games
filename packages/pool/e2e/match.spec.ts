@@ -203,6 +203,10 @@ test('a win shows the winner\'s face on the end panel, with confetti and a ta-da
   const errors = trackErrors(page);
   await winGame(page);
   expect(await page.evaluate(() => window.__tzg!.dataOf('Table', 'gameOverFace', 'character'))).toBe('fundi');
+  expect((await state(page)).endCards).toEqual({ winner: 'fundi', loser: 'mwamba' });
+  expect(await textOf(page, 'gameOverWinnerWord')).toBe('MSHINDI!');
+  // Two players: no badges.
+  expect(await textOf(page, 'gameOverFace-badge')).toBeNull();
   expect((await state(page)).confetti).toBeGreaterThan(0);
   expect((await page.evaluate(() => window.__tzg!.sound())).played.map((p) => p.name)).toContain('win');
   // Every piece clears itself away.

@@ -226,3 +226,26 @@ export function badgeTexture(scene: Phaser.Scene, kind: 'crown' | 'tick', size: 
     ctx.fill();
   });
 }
+
+/**
+ * Sunburst rays (0.38.0, the MSHINDI! screen): `count` wedges of `color`, strongest in the middle and
+ * fading out towards the edge, on a transparent square `size` design pixels across.
+ */
+export function raysTexture(scene: Phaser.Scene, size: number, count: number, color: string): string {
+  const s = Math.ceil(size);
+  return canvasTexture(scene, `rays-${s}-${count}-${color}`, s, s, (ctx, w) => {
+    const c = w / 2;
+    const fade = ctx.createRadialGradient(c, c, 0, c, c, c);
+    fade.addColorStop(0, color);
+    fade.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fade;
+    const step = (Math.PI * 2) / count;
+    ctx.beginPath();
+    for (let i = 0; i < count; i++) {
+      ctx.moveTo(c, c);
+      ctx.arc(c, c, c, i * step, i * step + step / 2);
+      ctx.closePath();
+    }
+    ctx.fill();
+  });
+}

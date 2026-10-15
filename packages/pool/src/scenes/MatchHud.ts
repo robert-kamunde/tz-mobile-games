@@ -124,6 +124,7 @@ export class MatchHud {
     this.picks = picks;
     this.rival = rival;
     for (const player of PLAYERS) this.panels[player]!.face.show(this.seat(player));
+    this.end.prepare(PLAYERS.map((player) => this.seat(player)));
   }
 
   /** The character in a seat: the computer's, a story rival, or a pick. */
@@ -237,6 +238,11 @@ export class MatchHud {
   /** Seconds before the end panel leaves on its own, or null when it will not (tests). */
   get endButtons(): string[] {
     return this.end.buttonNames;
+  }
+
+  /** The MSHINDI! cards' characters, or null (tests). */
+  get endCards(): { winner: string; loser: string } | null {
+    return this.end.cardIds;
   }
 
   get autoMenuSeconds(): number | null {

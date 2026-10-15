@@ -35,6 +35,43 @@ export function portraitTexture(scene: Phaser.Scene, id: string, radius: number)
   });
 }
 
+/**
+ * A character's face as a card (0.38.0, the MSHINDI! screen): the picture's middle square (or the
+ * drawn portrait) with rounded corners inside a gold edge, `size` design pixels across; `muted` greys it.
+ */
+export function portraitCardTexture(scene: Phaser.Scene, id: string, size: number, edge: { width: number; corner: number; color: string; muted?: string }): string {
+  const px = Math.ceil(size * P.resolution);
+  const fileKey = portraitFileKey(id);
+  const picture = scene.textures.exists(fileKey) ? (scene.textures.get(fileKey).getSourceImage() as Picture) : null;
+  return canvasTexture(scene, `portrait-card-${id}-${px}-${edge.color}${edge.muted ? `-${edge.muted}` : ''}${picture ? '-file' : ''}`, px, px, (ctx, w) => {
+    const k = w / size;
+    const b = edge.width * k;
+    const r = edge.corner * k;
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, w, r);
+    ctx.fillStyle = edge.color;
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(b, b, w - 2 * b, w - 2 * b, Math.max(0, r - b));
+    ctx.clip();
+    ctx.translate(b, b);
+    // The other player's card is greyed (a CSS canvas filter, e.g. "grayscale(0.7) brightness(0.7)").
+    if (edge.muted) ctx.filter = edge.muted;
+    const inner = w - 2 * b;
+    if (picture) {
+      const side = Math.min(picture.width, picture.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(picture, (picture.width - side) / 2, (picture.height - side) / 2, side, side, 0, 0, inner, inner);
+    } else {
+      ctx.scale(inner / P.unit, inner / P.unit);
+      drawPortrait(ctx, PORTRAITS[id], true);
+    }
+    ctx.restore();
+  });
+}
+
 /** A loaded picture file. */
 export type Picture = HTMLImageElement | HTMLCanvasElement | ImageBitmap;
 
