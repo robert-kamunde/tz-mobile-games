@@ -352,6 +352,22 @@ export const LOOK_PICKER = {
 } as const;
 
 /**
+ * Splash (0.39.0, Robert chose "Build it" 2026-10-15): Android 12+ ignores the app's splash picture, so
+ * the game opens on its own: the logo big in the middle of the menu picture, which then glides up
+ * into its place on the menu (MENU.titleY) and the menu appears. It stays at least `holdMs`, longer
+ * if the pictures are still loading. A tap skips the wait.
+ */
+export const SPLASH = {
+  logoY: DESIGN.height / 2,
+  logoScale: 1.6,
+  /** The picture under the logo starts this dark and lightens as the logo moves away. */
+  dim: { color: 0x000000, from: 0.55 },
+  inMs: 450,
+  holdMs: 1200,
+  outMs: 450,
+} as const;
+
+/**
  * The strips beside the game on phones wider than 16:9 (Robert, 2026-10-15: the menu did not fill the
  * screen). While the menu shows, they get a small, blurred and darkened copy of the menu picture,
  * stretched to cover the page behind the game (scenes/pageBackdrop.ts).

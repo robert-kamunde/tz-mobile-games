@@ -26,8 +26,11 @@ function pictureOf(scene: Phaser.Scene, key: string): string | null {
   return url;
 }
 
-/** Shows texture `key`, blurred, behind the game until the scene shuts down. */
-export function showPageBackdrop(scene: Phaser.Scene, key: string): void {
+/**
+ * Shows texture `key`, blurred, behind the game; until the scene shuts down unless `keep` (the splash
+ * hands it straight on to the menu, so it does not blink off between them).
+ */
+export function showPageBackdrop(scene: Phaser.Scene, key: string, keep = false): void {
   const url = pictureOf(scene, key);
   if (!url) return;
   let el = document.getElementById(ELEMENT_ID);
@@ -43,7 +46,7 @@ export function showPageBackdrop(scene: Phaser.Scene, key: string): void {
   }
   el.style.backgroundImage = `url("${url}")`;
   el.style.display = 'block';
-  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => hidePageBackdrop());
+  if (!keep) scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => hidePageBackdrop());
 }
 
 export function hidePageBackdrop(): void {
