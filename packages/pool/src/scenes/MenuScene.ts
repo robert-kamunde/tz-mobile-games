@@ -1,7 +1,7 @@
 import * as Phaser from 'phaser';
 import { SUPPORTED_LOCALES, type Translator } from '@tzg/core';
 import { getServices, onBackButton, registerTestProbe } from '@tzg/shell';
-import { BUTTON, HANDS, LANGUAGE_PANEL, LOOK_PICKER, MENU, PANEL } from '../config/layout';
+import { BUTTON, EXIT_PANEL, HANDS, LANGUAGE_PANEL, LOOK_PICKER, MENU, PANEL } from '../config/layout';
 import { moveStoryGame, type PoolSlots } from '../progress/slots';
 import { BACKGROUND_IDS, isBackgroundId } from '../config/backgrounds';
 import { CUE_IDS, isCueId } from '../config/cues';
@@ -325,7 +325,7 @@ export class MenuScene extends Phaser.Scene {
       this.panel = new StatsPanel(this, t, PANEL.overMenu, this.slots.progress.load().data, this.slots.story.load().data, () => this.closePanel());
     } else if (kind === 'exit') {
       const exit = getServices(this).exit;
-      this.panel = new Panel(this, { ...common, body: t.t(this.hasSavedGame ? 'exit.body' : 'exit.sure'), buttons: [{ name: 'exit-confirm', label: t.t('exit.confirm'), onTap: () => exit.exit() }] });
+      this.panel = new Panel(this, { ...common, area: EXIT_PANEL.area, body: t.t(this.hasSavedGame ? 'exit.body' : 'exit.sure'), buttons: [{ name: 'exit-confirm', label: t.t('exit.confirm'), onTap: () => exit.exit() }] });
     } else if (kind === 'rules') {
       this.panel = new Panel(this, { ...common, body: t.t('rules.body') });
     } else {

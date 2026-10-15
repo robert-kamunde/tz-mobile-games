@@ -293,6 +293,9 @@ export const CONFETTI = {
 /** First launch (0.37.0): "Chagua lugha / Choose language" over the menu, two big buttons. */
 export const LANGUAGE_PANEL = { area: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 600, height: 270, alpha: 1 } } as const;
 
+/** Toka kwenye mchezo? over the menu (0.39.0: sized to its words, not the whole menu). */
+export const EXIT_PANEL = { area: { x: DESIGN.width / 2, y: DESIGN.height / 2, width: 640, height: 380, alpha: 1 } } as const;
+
 /** Acha mchezo? over the table: who wins if you quit, then Acha and Endelea kucheza. */
 export const QUIT_PANEL = { area: { x: 590, y: 340, width: 560, height: 360, alpha: 0.96 } } as const;
 

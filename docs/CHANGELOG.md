@@ -5,7 +5,7 @@
 - **Splash:** Android 12 and newer ignore an app's splash picture and only flash the icon, so the splash we made in 0.31.0 never showed on Robert's Android 14 phone. The game now opens on its own splash: the logo big in the middle of the menu picture, which after about 1.5 s glides up into its place on the menu as the menu appears. The menu's pictures load meanwhile. A tap skips the wait; Back waits.
 - **Acha mchezo** moved from under the power bar (it was pressed by accident when pulling to full power) to the top corner above the spin control, a little smaller. When playing left-handed it is top left.
 - **Menu fills the screen:** on phones wider than 16:9 the strips beside the menu were plain dark. They now show a blurred, darker copy of the menu picture. During play they stay dark, as before.
-- **Toka (Exit) always asks:** "Una uhakika unataka kutoka?" with Toka / Rudi when no game is waiting; with a game waiting it still says the game is saved.
+- **Toka (Exit) always asks:** "Una uhakika unataka kutoka?" with Toka / Rudi when no game is waiting; with a game waiting it still says the game is saved. The popup is now sized to its words instead of covering the whole menu.
 
 ## 0.38.0 (unreleased) - MSHINDI! winner screen
 - Robert chose "Build it" (2026-10-15) after sharing a winner screen he liked; drawn in our own style, not copied.
