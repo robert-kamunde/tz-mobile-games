@@ -25,6 +25,7 @@ import { announceUnlocks, takeFresh } from './unlockFlow';
 import { hasFresh, type UnlockKind } from '../progress/unlocks';
 import { loadPortraitFiles } from './art/portraitFiles';
 import { loadArtFiles } from './art/artFiles';
+import { showPageBackdrop } from './pageBackdrop';
 
 const LOOK_KINDS: readonly UnlockKind[] = ['table', 'cue', 'background'];
 
@@ -91,6 +92,7 @@ export class MenuScene extends Phaser.Scene {
     // `picture` tells tests whether Robert's pictures (art/) are showing rather than the drawn art.
     const background = menuBackgroundTexture(this);
     this.add.image(0, 0, background).setOrigin(0).setName('menu-background').setData('picture', background === MENU_PICTURE_KEY);
+    showPageBackdrop(this, background);
     const logo = logoTexture(this, t.t('menu.title'));
     this.add.image(MENU.x, MENU.titleY, logo.key).setDisplaySize(logo.width, logo.height).setName('menu-title').setData('picture', logo.picture);
     if (this.page === 'main') this.mainPage(services.exit, savedQuick || savedStory);
@@ -173,9 +175,9 @@ export class MenuScene extends Phaser.Scene {
         { id: 'rules', onTap: () => this.showPanel('rules') },
         { id: 'settings', onTap: () => this.showPanel('settings') },
       ],
-      // A web page cannot close itself, so Exit is only offered in the app. A game in progress is
-      // already saved, so the popup only reassures; with none, Exit closes at once.
-      ...(exit.available ? [[{ id: 'exit', onTap: () => (this.hasSavedGame ? this.showPanel('exit') : exit.exit()) }]] : []),
+      // A web page cannot close itself, so Exit is only offered in the app. It always asks first
+      // (Robert, 2026-10-15); with a game in progress the popup also says it is saved.
+      ...(exit.available ? [[{ id: 'exit', onTap: () => this.showPanel('exit') }]] : []),
     ];
     this.addRows(rows, m.firstRowY, m.rowSpacing);
   }
@@ -323,7 +325,7 @@ export class MenuScene extends Phaser.Scene {
       this.panel = new StatsPanel(this, t, PANEL.overMenu, this.slots.progress.load().data, this.slots.story.load().data, () => this.closePanel());
     } else if (kind === 'exit') {
       const exit = getServices(this).exit;
-      this.panel = new Panel(this, { ...common, body: t.t('exit.body'), buttons: [{ name: 'exit-confirm', label: t.t('exit.confirm'), onTap: () => exit.exit() }] });
+      this.panel = new Panel(this, { ...common, body: t.t(this.hasSavedGame ? 'exit.body' : 'exit.sure'), buttons: [{ name: 'exit-confirm', label: t.t('exit.confirm'), onTap: () => exit.exit() }] });
     } else if (kind === 'rules') {
       this.panel = new Panel(this, { ...common, body: t.t('rules.body') });
     } else {

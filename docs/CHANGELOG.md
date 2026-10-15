@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.38.1 (unreleased) - Quit button moved, full-screen menu, Exit asks
+- Robert's requests (2026-10-15).
+- **Acha mchezo** moved from under the power bar (it was pressed by accident when pulling to full power) to the top corner above the spin control, a little smaller. When playing left-handed it is top left.
+- **Menu fills the screen:** on phones wider than 16:9 the strips beside the menu were plain dark. They now show a blurred, darker copy of the menu picture. During play they stay dark, as before.
+- **Toka (Exit) always asks:** "Una uhakika unataka kutoka?" with Toka / Rudi when no game is waiting; with a game waiting it still says the game is saved.
+
 ## 0.38.0 (unreleased) - MSHINDI! winner screen
 - Robert chose "Build it" (2026-10-15) after sharing a winner screen he liked; drawn in our own style, not copied.
 - When a game ends, the table dims and gold rays turn slowly behind the winner. The winner's face is a large card with a gold edge, a tilted gold crown and "MSHINDI!" ("WINNER!" in English) above it, with twinkling stars. Next to it is "VS" and the other player's card, greyed. The cards pop in.

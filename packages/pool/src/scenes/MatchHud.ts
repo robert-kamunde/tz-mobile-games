@@ -104,7 +104,7 @@ export class MatchHud {
       .setVisible(false);
 
     // Acha mchezo (0.36.0, replaced New game): the scene asks first, then the player whose turn it is gives up.
-    this.quit = addButton(scene, sides.controlX(HUD.quit.right), HUD.quit.y, { name: 'quitButton', label: t.t('pool.quit'), onTap: onQuit }, { originX: sides.controlOriginX(1) });
+    this.quit = addButton(scene, sides.controlX(HUD.quit.right), HUD.quit.y, { name: 'quitButton', label: t.t('pool.quit'), onTap: onQuit }, { originX: sides.controlOriginX(1), fontSize: HUD.quit.fontSize });
 
     // Above the table, balls and cue stick.
     const all = [...this.panels.flatMap((p) => [p.label, p.chip, ...p.face.objects, ...p.tray, ...p.trayBalls]), this.status, this.hint, ...this.end.objects, this.quipBox, this.quipLabel, this.quit];

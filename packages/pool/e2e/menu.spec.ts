@@ -235,13 +235,38 @@ test('after changing the language, Menu from the table opens the main menu, not 
 
 const exits = (page: Page) => page.evaluate(() => window.__tzg!.exits());
 
-test('Exit with no game in progress closes the game at once', async ({ page }) => {
+test('Exit with no game in progress asks first too, and Rudi keeps the game open', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   expect(await textOf(page, MENU_SCENE, 'menu-exit')).toBe('Toka');
   await tap(page, 'menu-exit', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBe('exit');
+  expect(await textOf(page, MENU_SCENE, 'exitPanel-body')).toBe('Una uhakika unataka kutoka?');
+  expect(await exits(page)).toBe(0);
+  await tap(page, 'exit-back', MENU_SCENE);
+  await expect.poll(async () => (await menuState(page)).panel).toBeNull();
+  expect(await exits(page)).toBe(0);
+  await tap(page, 'menu-exit', MENU_SCENE);
+  await tap(page, 'exit-confirm', MENU_SCENE);
   expect(await exits(page)).toBe(1);
-  expect((await menuState(page)).panel).toBeNull();
+  expect(errors).toEqual([]);
+});
+
+test('the menu picture, blurred, fills the strips beside the game; it goes during play', async ({ page }) => {
+  const errors = trackErrors(page);
+  await bootTo(page, MENU_SCENE);
+  const backdrop = page.locator('#page-backdrop');
+  await expect(backdrop).toBeVisible();
+  expect(await backdrop.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain('data:image/jpeg');
+  const box = await backdrop.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(box!.width).toBeGreaterThanOrEqual(viewport.width);
+  expect(box!.height).toBeGreaterThanOrEqual(viewport.height);
+  await playFromMenu(page, 'two');
+  await expect(backdrop).toBeHidden();
+  await tap(page, 'menuButton');
+  await waitForScene(page, MENU_SCENE);
+  await expect(backdrop).toBeVisible();
   expect(errors).toEqual([]);
 });
 

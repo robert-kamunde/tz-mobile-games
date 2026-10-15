@@ -88,8 +88,12 @@ export const HUD = {
   menu: { left: 12, y: DESIGN.height - 30 },
   /** Between the bottom rail (ends at y 631) and the fine-aim strip. */
   hint: { x: 590, y: 668 },
-  /** Acha mchezo, anchored by its right edge so a longer label grows leftwards, never off screen. */
-  quit: { right: DESIGN.width - 12, y: DESIGN.height - 30 },
+  /**
+   * Acha mchezo, anchored by its right edge so a longer label grows leftwards, never off screen.
+   * Top corner above the spin control, smaller than other buttons (Robert, 2026-10-15: under the
+   * power bar it was hit by accident when pulling to full power). Left-handed, it is top left.
+   */
+  quit: { right: DESIGN.width - 12, y: 30, fontSize: '22px' },
   /**
    * End-of-game panel over the middle of the table (scenes/EndPanel.ts): who won and why, stars in
    * story mode, then Endelea (story: next stop), Rudia (a rematch) and Menyu (story: Ramani, the map).
@@ -346,6 +350,13 @@ export const LOOK_PICKER = {
   /** A look story mode has not earned yet: faded, with a padlock and what earns it. */
   locked: { alpha: 0.35, padlock: { width: 26, height: 20, shackle: 9, color: 0xd0d6d3 } },
 } as const;
+
+/**
+ * The strips beside the game on phones wider than 16:9 (Robert, 2026-10-15: the menu did not fill the
+ * screen). While the menu shows, they get a small, blurred and darkened copy of the menu picture,
+ * stretched to cover the page behind the game (scenes/pageBackdrop.ts).
+ */
+export const MENU_BACKDROP = { width: 256, height: 144, blur: 4, brightness: 0.6, jpegQuality: 0.8 } as const;
 
 /**
  * Main menu (Robert, 2026-10-13): a big CHEZA (Play) button, then pairs (Mapambo and Takwimu, Sheria and

@@ -73,7 +73,10 @@ async function expectClearLayout(page: Page): Promise<void> {
   for (const name of ['player-0', 'player-1', 'status']) {
     const b = await boundsOf(page, name);
     expect(b.left, name).toBeGreaterThanOrEqual(playLeft - rail);
+    expect(overlaps(b, buttons[1]!), `quit button over ${name}`).toBe(false);
   }
+  // Acha mchezo sits above the spin control, far from the power bar (pulled to full power at its bottom).
+  expect(buttons[1]!.bottom).toBeLessThan(controls[0]!.top);
 }
 
 test('left-handed: the controls move to the left, the table to the right, and everything still works', async ({ page }) => {
