@@ -4,6 +4,7 @@ import { UI_ART } from '../config/art';
 import { BUTTON, COLORS, DESIGN, NEW_MARK, PANEL, TEXT_STYLE } from '../config/layout';
 import { SOUND_MIX } from '../config/sound';
 import { buttonTexture, lockTagTexture, panelTexture, ribbonTexture } from './art/uiArt';
+import { addPageDim } from './pageBackdrop';
 import { loadPoolSounds } from './poolSounds';
 
 export interface ButtonSpec {
@@ -216,6 +217,7 @@ export function popIn(scene: Phaser.Scene, dim: Phaser.GameObjects.Rectangle | n
  * Built when shown and destroyed when closed.
  */
 export class Panel {
+  private readonly undim: () => void;
   private readonly objects: (Phaser.GameObjects.Rectangle | Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [];
 
   constructor(scene: Phaser.Scene, spec: PanelSpec) {
@@ -224,6 +226,8 @@ export class Panel {
     const d = UI_ART.panel.dim;
     const dim = scene.add.rectangle(DESIGN.width / 2, DESIGN.height / 2, DESIGN.width, DESIGN.height, d.color, d.alpha);
     if (spec.modal) dim.setInteractive();
+    // Over the menu, the strips beside the game darken too.
+    this.undim = addPageDim(d.color, d.alpha);
     // The box swallows taps; the drawn panel over it is what shows.
     const box = scene.add.rectangle(x, y, width, height, COLORS.overlay, PANEL.hitAlpha).setName(spec.name).setInteractive();
     const look = scene.add.image(x, y, panelTexture(scene, width, height)).setAlpha(alpha);
@@ -271,5 +275,6 @@ export class Panel {
   destroy(): void {
     for (const o of this.objects) o.destroy();
     this.objects.length = 0;
+    this.undim();
   }
 }

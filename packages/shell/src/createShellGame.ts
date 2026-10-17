@@ -14,6 +14,11 @@ export interface ShellOptions {
   design: { width: number; height: number };
   orientation: Orientation;
   backgroundColor: string;
+  /**
+   * A see-through canvas: scenes draw their own ground, and the page shows where they draw nothing
+   * (a game can put a picture behind the canvas that also fills the letterbox strips).
+   */
+  transparent?: boolean;
   strings: StringTables;
   scenes: Phaser.Types.Scenes.SceneType[];
   parent: string | HTMLElement;
@@ -40,6 +45,7 @@ export function createShellGame(options: ShellOptions): ShellGame {
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     backgroundColor: options.backgroundColor,
+    transparent: options.transparent ?? false,
     // Low-end phones: cap the canvas resolution at the design size instead of the device pixel ratio.
     scale: {
       parent: options.parent,

@@ -12,6 +12,9 @@ createShellGame({
   design: DESIGN,
   orientation: 'landscape',
   backgroundColor: COLORS.background,
+  // The menu picture lies on the page behind the canvas and fills the whole screen (scenes/pageBackdrop.ts);
+  // the page itself has the same dark colour as COLORS.background, so other scenes look the same.
+  transparent: true,
   strings: poolStrings,
   // The first scene listed starts first.
   scenes: [SplashScene, MenuScene, TableScene, StoryScene],

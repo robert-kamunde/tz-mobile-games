@@ -91,7 +91,9 @@ export class MenuScene extends Phaser.Scene {
     const t = this.t;
     // `picture` tells tests whether Robert's pictures (art/) are showing rather than the drawn art.
     const background = menuBackgroundTexture(this);
-    this.add.image(0, 0, background).setOrigin(0).setName('menu-background').setData('picture', background === MENU_PICTURE_KEY);
+    // The picture lies behind the see-through canvas, covering the whole screen (pageBackdrop); this copy
+    // stays hidden and only tells tests which picture it is.
+    this.add.image(0, 0, background).setOrigin(0).setName('menu-background').setData('picture', background === MENU_PICTURE_KEY).setVisible(false);
     showPageBackdrop(this, background);
     const logo = logoTexture(this, t.t('menu.title'));
     this.add.image(MENU.x, MENU.titleY, logo.key).setDisplaySize(logo.width, logo.height).setName('menu-title').setData('picture', logo.picture);

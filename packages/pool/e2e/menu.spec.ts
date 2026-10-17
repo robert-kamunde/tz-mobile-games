@@ -252,16 +252,26 @@ test('Exit with no game in progress asks first too, and Rudi keeps the game open
   expect(errors).toEqual([]);
 });
 
-test('the menu picture, blurred, fills the strips beside the game; it goes during play', async ({ page }) => {
+test('the menu picture fills the whole screen behind the see-through game; a panel dims the strips too; it goes during play', async ({ page }) => {
   const errors = trackErrors(page);
   await bootTo(page, MENU_SCENE);
   const backdrop = page.locator('#page-backdrop');
   await expect(backdrop).toBeVisible();
-  expect(await backdrop.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain('data:image/jpeg');
+  // Robert's picture file itself, not a blurred copy.
+  expect(await backdrop.evaluate((el) => getComputedStyle(el).backgroundImage)).toMatch(/menu-background.*\.jpg/);
+  expect(await backdrop.evaluate((el) => getComputedStyle(el).filter)).toBe('none');
   const box = await backdrop.boundingBox();
   const viewport = page.viewportSize()!;
   expect(box!.width).toBeGreaterThanOrEqual(viewport.width);
   expect(box!.height).toBeGreaterThanOrEqual(viewport.height);
+  // The game canvas lets it show through.
+  expect(await page.evaluate(() => window.__tzg!.dataOf('Menu', 'menu-background', 'picture'))).toBe(true);
+  const stripShadow = () => page.locator('#page-backdrop-dim').evaluate((el) => (el as HTMLElement).style.boxShadow);
+  expect(await stripShadow()).toMatch(/rgba\(0, 0, 0, 0\)/);
+  await tapMenu(page, 'menu-rules');
+  await expect.poll(stripShadow).not.toMatch(/rgba\(0, 0, 0, 0\)/);
+  await tap(page, 'rules-back', MENU_SCENE);
+  await expect.poll(stripShadow).toMatch(/rgba\(0, 0, 0, 0\)/);
   await playFromMenu(page, 'two');
   await expect(backdrop).toBeHidden();
   await tap(page, 'menuButton');

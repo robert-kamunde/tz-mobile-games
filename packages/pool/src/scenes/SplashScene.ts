@@ -4,7 +4,7 @@ import { DESIGN, MENU, SPLASH } from '../config/layout';
 import { loadArtFiles } from './art/artFiles';
 import { logoTexture, menuBackgroundTexture } from './art/menuArt';
 import { loadPortraitFiles } from './art/portraitFiles';
-import { showPageBackdrop } from './pageBackdrop';
+import { addPageDim, setPageDim, showPageBackdrop } from './pageBackdrop';
 import { SCENE_KEYS } from './sceneKeys';
 
 /**
@@ -30,9 +30,12 @@ export class SplashScene extends Phaser.Scene {
     const s = SPLASH;
     this.leaving = false;
     const background = menuBackgroundTexture(this);
-    this.add.image(0, 0, background).setOrigin(0).setName('splash-background');
+    // The picture itself lies behind the see-through canvas, covering the whole screen (pageBackdrop);
+    // this copy stays hidden and only names the spot tests tap.
+    this.add.image(0, 0, background).setOrigin(0).setName('splash-background').setVisible(false);
     showPageBackdrop(this, background, true);
     const dim = this.add.rectangle(DESIGN.width / 2, DESIGN.height / 2, DESIGN.width, DESIGN.height, s.dim.color, s.dim.from).setInteractive();
+    addPageDim(s.dim.color, s.dim.from);
     const logo = logoTexture(this, getServices(this).translator.t('menu.title'));
     const image = this.add
       .image(MENU.x, s.logoY, logo.key)
@@ -44,7 +47,7 @@ export class SplashScene extends Phaser.Scene {
     const leave = () => {
       if (this.leaving) return;
       this.leaving = true;
-      this.tweens.add({ targets: dim, alpha: 0, duration: s.outMs, ease: 'Sine.InOut' });
+      this.tweens.add({ targets: dim, alpha: 0, duration: s.outMs, ease: 'Sine.InOut', onUpdate: () => setPageDim(s.dim.from * dim.alpha) });
       this.tweens.add({
         targets: image,
         y: MENU.titleY,

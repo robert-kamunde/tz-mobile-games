@@ -371,11 +371,12 @@ export const SPLASH = {
 } as const;
 
 /**
- * The strips beside the game on phones wider than 16:9 (Robert, 2026-10-15: the menu did not fill the
- * screen). While the menu shows, they get a small, blurred and darkened copy of the menu picture,
- * stretched to cover the page behind the game (scenes/pageBackdrop.ts).
+ * The menu fills the whole screen (Robert, 2026-10-15 and 2026-10-17: not just the 16:9 middle, and
+ * not blurred at the edges). The game canvas is see-through, and while the menu or splash shows, the
+ * menu picture lies on the page behind it, scaled to cover the screen (scenes/pageBackdrop.ts). A
+ * panel's dim also darkens the strips beside the game, fading in over `dimMs`.
  */
-export const MENU_BACKDROP = { width: 256, height: 144, blur: 4, brightness: 0.6, jpegQuality: 0.8 } as const;
+export const MENU_BACKDROP = { jpegQuality: 0.9, dimMs: 200 } as const;
 
 /**
  * Main menu (Robert, 2026-10-13): a big CHEZA (Play) button, then pairs (Mapambo and Takwimu, Sheria and

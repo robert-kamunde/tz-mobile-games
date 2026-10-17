@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.39.1 (unreleased) - The menu fills the whole screen
+- Robert (2026-10-17): the menu still was not full screen, with blurred edges, while the table was.
+- The menu picture now covers the whole screen, sharp, on any phone shape: the game canvas is see-through and Robert's picture lies on the page behind it, scaled to cover (a little of its top and bottom is cut on phones wider than 16:9). The splash uses it the same way. Panels over the menu darken the whole screen, the sides included.
+- Shell: `transparent` option for a see-through canvas. Other scenes look the same: the page behind them has the game's dark colour. The journey map still has plain dark sides on wide phones.
+
 ## 0.39.0 (unreleased) - Splash screen, quit button moved, full-screen menu, Exit asks
 - Robert's requests (2026-10-15); the splash after he chose "Build it".
 - **Splash:** Android 12 and newer ignore an app's splash picture and only flash the icon, so the splash we made in 0.31.0 never showed on Robert's Android 14 phone. The game now opens on its own splash: the logo big in the middle of the menu picture, which after about 1.5 s glides up into its place on the menu as the menu appears. The menu's pictures load meanwhile. A tap skips the wait; Back waits.
